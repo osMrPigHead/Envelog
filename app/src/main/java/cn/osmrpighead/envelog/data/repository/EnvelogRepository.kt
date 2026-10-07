@@ -3,6 +3,9 @@ package cn.osmrpighead.envelog.data.repository
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
+import cn.osmrpighead.envelog.data.model.Transaction
+import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.query.EnvelopeResult
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -10,10 +13,13 @@ import java.util.UUID
 
 interface EnvelogRepository {
     fun observeActiveEnvelopes(): Flow<List<Envelope>>
-    fun observeBudgetsBetween(startDate: LocalDate, endDate: LocalDate): Flow<List<Budget>>
-    fun observeExpenditureEnvelopeAllocationBetween(
-        startDate: LocalDate, endDate: LocalDate,
+    fun observeActiveEnvelopesWithExtra(startDate: LocalDate, endDate: LocalDate): Flow<List<EnvelopeResult>>
+    fun observeBudgets(envelopeId: UUID, startDate: LocalDate, endDate: LocalDate): Flow<List<Budget>>
+    fun observeExpenditureEnvelopeAllocations(
+        envelopeId: UUID, startDate: LocalDate, endDate: LocalDate,
     ): Flow<List<ExpenditureEnvelopeAllocation>>
+    fun observeTransactions(startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>>
+    fun observeTransactions(type: TransactionType, startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>>
 
     suspend fun createEnvelope(name: String, isBudgeted: Boolean): Result<UUID>
     suspend fun renameEnvelope(id: UUID, name: String): Result<Unit>

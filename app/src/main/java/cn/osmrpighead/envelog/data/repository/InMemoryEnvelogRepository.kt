@@ -5,13 +5,16 @@ import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
 import cn.osmrpighead.envelog.data.model.Transaction
 import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.query.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
 import cn.osmrpighead.envelog.util.HasId
+import cn.osmrpighead.envelog.util.mapEach
 import cn.osmrpighead.envelog.util.trimAndCheck
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
@@ -33,25 +36,39 @@ class InMemoryEnvelogRepository(
     override fun observeActiveEnvelopes(): Flow<List<Envelope>> =
         envelopes.map { envelopes -> envelopes.filter { !it.archived } }
 
-    override fun observeBudgetsBetween(startDate: LocalDate, endDate: LocalDate): Flow<List<Budget>> =
-        budgets.map { budgets ->
-            budgets.filter {
-                val envelope = envelopes.value.find { envelope -> envelope.id == it.envelopeId }
-                it.startDate in startDate..<endDate && envelope != null && envelope.isBudgeted && !envelope.archived
-            }
+    override fun observeActiveEnvelopesWithExtra(startDate: LocalDate, endDate: LocalDate): Flow<List<EnvelopeResult>> =
+        observeActiveEnvelopes().mapEach {
+            combine(
+                observeBudgets(it.id, startDate, endDate),
+                observeExpenditureEnvelopeAllocations(it.id, startDate, endDate),
+            ) { budgets, allocations -> EnvelopeResult(it, budgets, allocations) }
         }
 
-    override fun observeExpenditureEnvelopeAllocationBetween(
-        startDate: LocalDate, endDate: LocalDate,
+    override fun observeBudgets(envelopeId: UUID, startDate: LocalDate, endDate: LocalDate): Flow<List<Budget>> =
+        budgets.map { budgets -> budgets.filter { it.startDate in startDate..<endDate && it.envelopeId == envelopeId } }
+
+    override fun observeExpenditureEnvelopeAllocations(
+        envelopeId: UUID, startDate: LocalDate, endDate: LocalDate,
     ): Flow<List<ExpenditureEnvelopeAllocation>> =
         allocations.map { allocations ->
             allocations.filter {
                 val transactionDate = transactions.value
                     .find { transaction -> it.transactionId == transaction.id }
                     ?.dateTime?.toLocalDate()
-                transactionDate != null && transactionDate in startDate..<endDate
+                transactionDate != null && transactionDate in startDate..<endDate && it.envelopeId == envelopeId
             }
         }
+
+    override fun observeTransactions(startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>> =
+        transactions.map { transactions -> transactions.filter { it.dateTime.toLocalDate() in startDate..<endDate } }
+
+    override fun observeTransactions(
+        type: TransactionType,
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): Flow<List<Transaction>> = transactions.map { transactions ->
+        transactions.filter { it.dateTime.toLocalDate() in startDate..<endDate && it.type == type }
+    }
 
     override suspend fun createEnvelope(name: String, isBudgeted: Boolean): Result<UUID> =
         EnvelogRepositoryException.catch {

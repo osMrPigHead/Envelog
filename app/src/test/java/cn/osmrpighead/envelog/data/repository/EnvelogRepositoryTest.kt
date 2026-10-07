@@ -63,7 +63,7 @@ abstract class EnvelogRepositoryTest {
     @Test
     fun observeBudgetsBetween_JudgedByStartDate() {
         runBlocking {
-            repository.observeBudgetsBetween(startDate, endDate).take(1).collect {
+            repository.observeBudgets(startDate, endDate).take(1).collect {
                 assertEquals(budgets, it.toSet())
             }
         }
@@ -72,7 +72,7 @@ abstract class EnvelogRepositoryTest {
     @Test
     fun observeExpenditureBetween_JudgedByStartDate() {
         runBlocking {
-            repository.observeExpenditureEnvelopeAllocationBetween(startDate, endDate).take(1).collect {
+            repository.observeExpenditureEnvelopeAllocations(startDate, endDate).take(1).collect {
                 assertEquals(allocations, it.toSet())
             }
         }
@@ -134,7 +134,7 @@ abstract class EnvelogRepositoryTest {
         runBlocking {
             val id = budgets.elementAt(0).id
             repository.clearBudget(id)
-            repository.observeBudgetsBetween(startDate, endDate).take(1).collect {
+            repository.observeBudgets(startDate, endDate).take(1).collect {
                 assert(!it.any { budget -> budget.id == id })
             }
         }
@@ -145,7 +145,7 @@ abstract class EnvelogRepositoryTest {
         runBlocking {
             val id = envelopeWithBudgets.id
             repository.clearBudget(id, clearStartDate, clearEndDate)
-            repository.observeBudgetsBetween(startDate, endDate).take(1).collect { budgets ->
+            repository.observeBudgets(startDate, endDate).take(1).collect { budgets ->
                 assert(
                     !budgets.any {
                         it.envelopeId == id && maxOf(clearStartDate, it.startDate) < minOf(clearEndDate, it.endDate)
@@ -159,7 +159,7 @@ abstract class EnvelogRepositoryTest {
     fun clearBudget_ByDate_ClearedNotListed() {
         runBlocking {
             repository.clearBudget(clearStartDate, clearEndDate)
-            repository.observeBudgetsBetween(startDate, endDate).take(1).collect { budgets ->
+            repository.observeBudgets(startDate, endDate).take(1).collect { budgets ->
                 assert(
                     !budgets.any { maxOf(clearStartDate, it.startDate) < minOf(clearEndDate, it.endDate) },
                 )
@@ -173,7 +173,7 @@ abstract class EnvelogRepositoryTest {
             val id = budgets.elementAt(0).id
             val newAmount = 800.toLong()
             repository.setBudget(id, newAmount)
-            repository.observeBudgetsBetween(startDate, endDate).take(1).collect {
+            repository.observeBudgets(startDate, endDate).take(1).collect {
                 assertEquals(newAmount, it.find { budget -> budget.id == id }?.amount)
             }
         }
@@ -206,7 +206,7 @@ abstract class EnvelogRepositoryTest {
                 allocations = mapOf(envelopeId to amount),
             ).getOrNull()
             assertNotNull(transactionId)
-            repository.observeExpenditureEnvelopeAllocationBetween(startDate, endDate).take(1).collect {
+            repository.observeExpenditureEnvelopeAllocations(startDate, endDate).take(1).collect {
                 assert(
                     it.contains(
                         ExpenditureEnvelopeAllocation(
@@ -240,7 +240,7 @@ abstract class EnvelogRepositoryTest {
             val transaction = transactions.elementAt(0)
             var envelopeId = envelopes.random().id
             assert(repository.reallocate(transaction.id, mapOf(envelopeId to transaction.amount)).isSuccess)
-            repository.observeExpenditureEnvelopeAllocationBetween(startDate, endDate).take(1).collect {
+            repository.observeExpenditureEnvelopeAllocations(startDate, endDate).take(1).collect {
                 assert(
                     it.contains(
                         ExpenditureEnvelopeAllocation(
@@ -254,7 +254,7 @@ abstract class EnvelogRepositoryTest {
             val newAmount = 800.toLong()
             envelopeId = envelopes.random().id
             assert(repository.reallocate(transaction.id, newAmount, mapOf(envelopeId to newAmount)).isSuccess)
-            repository.observeExpenditureEnvelopeAllocationBetween(startDate, endDate).take(1).collect {
+            repository.observeExpenditureEnvelopeAllocations(startDate, endDate).take(1).collect {
                 assert(
                     it.contains(
                         ExpenditureEnvelopeAllocation(
@@ -283,7 +283,7 @@ abstract class EnvelogRepositoryTest {
         runBlocking {
             val id = transactions.elementAt(0).id
             repository.deleteTransaction(id)
-            repository.observeExpenditureEnvelopeAllocationBetween(startDate, endDate).take(1).collect {
+            repository.observeExpenditureEnvelopeAllocations(startDate, endDate).take(1).collect {
                 assert(!it.any { allocation -> allocation.transactionId == id })
             }
         }
