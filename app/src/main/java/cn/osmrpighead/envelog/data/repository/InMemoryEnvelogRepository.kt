@@ -6,6 +6,7 @@ import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
 import cn.osmrpighead.envelog.data.model.Transaction
 import cn.osmrpighead.envelog.data.model.TransactionType
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.query.ExpenditureResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
 import cn.osmrpighead.envelog.util.HasId
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
@@ -39,7 +41,7 @@ class InMemoryEnvelogRepository(
     override fun observeActiveEnvelopesWithExtra(startDate: LocalDate, endDate: LocalDate): Flow<List<EnvelopeResult>> =
         observeActiveEnvelopes().mapEach {
             combine(
-                observeBudgets(it.id, startDate, endDate),
+                if (it.isBudgeted) observeBudgets(it.id, startDate, endDate) else flowOf(null),
                 observeExpenditureEnvelopeAllocations(it.id, startDate, endDate),
             ) { budgets, allocations -> EnvelopeResult(it, budgets, allocations) }
         }
@@ -49,13 +51,14 @@ class InMemoryEnvelogRepository(
 
     override fun observeExpenditureEnvelopeAllocations(
         envelopeId: UUID, startDate: LocalDate, endDate: LocalDate,
-    ): Flow<List<ExpenditureEnvelopeAllocation>> =
+    ): Flow<List<ExpenditureResult>> =
         allocations.map { allocations ->
-            allocations.filter {
-                val transactionDate = transactions.value
-                    .find { transaction -> it.transactionId == transaction.id }
-                    ?.dateTime?.toLocalDate()
-                transactionDate != null && transactionDate in startDate..<endDate && it.envelopeId == envelopeId
+            allocations.mapNotNull {
+                val transaction = transactions.value.find { transaction -> it.transactionId == transaction.id }
+                if (transaction != null) ExpenditureResult(transaction = transaction, allocations = listOf(it))
+                else null
+            }.filter { (transaction, allocations) ->
+                transaction.dateTime.toLocalDate() in startDate..<endDate && allocations[0].envelopeId == envelopeId
             }
         }
 

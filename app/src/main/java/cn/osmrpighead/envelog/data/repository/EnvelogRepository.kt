@@ -6,6 +6,7 @@ import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
 import cn.osmrpighead.envelog.data.model.Transaction
 import cn.osmrpighead.envelog.data.model.TransactionType
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.query.ExpenditureResult
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -17,7 +18,7 @@ interface EnvelogRepository {
     fun observeBudgets(envelopeId: UUID, startDate: LocalDate, endDate: LocalDate): Flow<List<Budget>>
     fun observeExpenditureEnvelopeAllocations(
         envelopeId: UUID, startDate: LocalDate, endDate: LocalDate,
-    ): Flow<List<ExpenditureEnvelopeAllocation>>
+    ): Flow<List<ExpenditureResult>>
     fun observeTransactions(startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>>
     fun observeTransactions(type: TransactionType, startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>>
 
