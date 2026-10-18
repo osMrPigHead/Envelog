@@ -3,12 +3,12 @@
     <string name="year">%1$04d</string>
     <string name="month">%1$02d</string>
     <string name="summary_remaining_title">Remaining</string>
-    <string name="summary_budgetRemaining_caption">Used: %1$s%%</string>
+    <string name="summary_remaining_caption">Used: %1$s</string>
     <string name="summary_expenses_title">Expenses</string>
     <string name="summary_balance_title">Balance</string>
-    <string name="envelope_used">(%1$s%% used)</string>
+    <string name="envelope_used">(%1$s used)</string>
     <string name="envelope_caption" translatable="false">%3$s%1$s\u2009/\u2009%2$s%4$s</string>
-    <string name="envelope_available">Available for %1$s</string>
+    <string name="envelope_available">Available %1$s</string>
     <string name="time_today">today</string>
     <string name="currency_cny_prefix">¥\u2009</string>
     <string name="currency_cny_suffix">\u200b</string>
@@ -16,7 +16,11 @@
     <string name="prompt_main_manage">Manage envelopes</string>
     <string name="envelope_manage_edit">Edit</string>
     <string name="envelope_manage_archive">Archive</string>
-    <string name="envelope_manage_delete">Delete</string>
     <string name="prompt_main_manage_finish">Finish managing</string>
     <string name="envelope_caption_non_budget">%2$s%1$s%3$s used</string>
+    <string name="separator_word" translatable="false">\u0020</string>
+    <string name="separator_thin" translatable="false">\u200a</string>
+    <string name="separator_small" translatable="false">\u2009</string>
+    <string name="text_percent_nan" translatable="false">\u2014</string>
+    <string name="time_within_days">within %1$dd</string>
 </resources>

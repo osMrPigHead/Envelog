@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.data.model
 
-import cn.osmrpighead.envelog.util.HasId
 import java.time.ZonedDateTime
 import java.util.UUID
 

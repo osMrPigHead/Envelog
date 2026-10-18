@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.util
+package cn.osmrpighead.envelog.ui.theme
 
 object MotionTokens {
     const val DurationSwitchSlide = 220

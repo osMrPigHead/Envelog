@@ -1,11 +1,13 @@
 package cn.osmrpighead.envelog.ui.overview.component
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,20 +16,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.component.StatItem
-import cn.osmrpighead.envelog.ui.component.StatItemStyle
+import cn.osmrpighead.envelog.data.model.CurrencyType
+import cn.osmrpighead.envelog.ui.component.statitem.*
 import cn.osmrpighead.envelog.ui.icon.Icon
-import cn.osmrpighead.envelog.ui.overview.BudgetRelated
-import cn.osmrpighead.envelog.ui.overview.BudgetScope
-import cn.osmrpighead.envelog.ui.overview.CurrencyType
-import cn.osmrpighead.envelog.ui.overview.EnvelopeModel
-import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
-import cn.osmrpighead.envelog.util.MotionTokens
-import cn.osmrpighead.envelog.util.annotation.LangPreviews
-import java.util.*
+import cn.osmrpighead.envelog.ui.overview.model.EnvelopeModel
+import cn.osmrpighead.envelog.ui.text.orDefault
+import cn.osmrpighead.envelog.ui.text.relativeDate
+import cn.osmrpighead.envelog.ui.text.Formatter
+import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.text.Formatter.formatAsPercent
+import cn.osmrpighead.envelog.ui.text.Formatter.formattedAmount
+import cn.osmrpighead.envelog.ui.theme.MotionTokens
+import java.math.BigDecimal
 
 @Composable
 private fun EnvelopeCardShell(
@@ -41,32 +43,50 @@ private fun EnvelopeCardShell(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             StatItem(
-                style = StatItemStyle.of(StatItemStyle.Size.Large, Alignment.Start).run {
-                    copy(valueStyle = valueStyle.copy(fontWeight = FontWeight.Normal))
-                },
+                style = StatItemStyle.LargeCenterStart.update(
+                    value = { copy(textStyle = textStyle.copy(fontWeight = FontWeight.Normal)) },
+                ),
+                content = StatItemContent(
+                    title = StatItemSlot.Empty,
+                    value = StatItemSlot.Text(
+                        buildAnnotatedString {
+                            append(model.name)
+                            append(stringResource(R.string.separator_word))
+                            if (model.budgetRelated != null)
+                                withStyle(
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ).toSpanStyle(),
+                                ) {
+                                    append(
+                                        stringResource(
+                                            R.string.envelope_used,
+                                            model.budgetRelated.usedProportion
+                                                .formatAsPercent(Formatter.PercentInteger)
+                                                .orDefault(R.string.text_percent_nan),
+                                        ),
+                                    )
+                                }
+                        },
+                    ),
+                    caption = StatItemSlot.Text(
+                        if (model.budgetRelated != null) stringResource(
+                            R.string.envelope_caption,
+                            model.usedAmount.formatAsAmount(Formatter.AmountConcise),
+                            model.budgetRelated.budgetAmount.formatAsAmount(Formatter.AmountConcise),
+                            model.currency.prefix,
+                            model.currency.suffix,
+                        ) else stringResource(
+                            R.string.envelope_caption_non_budget,
+                            model.usedAmount.formatAsAmount(Formatter.AmountConcise),
+                            model.currency.prefix, model.currency.suffix,
+                        ),
+                    ),
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = dimensionResource(R.dimen.spacingBold))
                     .padding(vertical = dimensionResource(R.dimen.spacingBold)),
-                value = buildAnnotatedString {
-                    append(model.name)
-                    append(" ")
-                    if (model.budgetRelated != null)
-                        withStyle(
-                            MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ).toSpanStyle(),
-                        ) { append(stringResource(R.string.envelope_used, model.budgetRelated.usedPercent)) }
-                },
-                caption = if (model.budgetRelated != null) stringResource(
-                    R.string.envelope_caption,
-                    model.usedAmount, model.budgetRelated.totalAmount,
-                    model.currency.prefix, model.currency.suffix,
-                ) else stringResource(
-                    R.string.envelope_caption_non_budget,
-                    model.usedAmount,
-                    model.currency.prefix, model.currency.suffix,
-                ),
             )
             rightSlot()
         }
@@ -83,34 +103,43 @@ private val CurrencyType.suffix: String
         CurrencyType.CNY -> stringResource(R.string.currency_cny_suffix)
     }
 
+private val EnvelopeModel.BudgetRelated.relativeDate: String
+    @Composable get() = if (endDate == null) stringResource(R.string.time_today)
+    else relativeDate(today, endDate)
+
 @Composable
 private fun EnvelopeCardViewContent(
     model: EnvelopeModel,
-    diffColor: Color,
+    diffColor: @Composable (diffAmount: Long) -> Color,
     modifier: Modifier = Modifier,
 ) {
     if (model.budgetRelated != null)
         StatItem(
-            style = StatItemStyle.of(StatItemStyle.Size.Medium, Alignment.End),
+            style = StatItemStyle.MediumCenterEnd,
+            content = StatItemContent(
+                title = StatItemSlot.Text(stringResource(R.string.envelope_available, model.budgetRelated.relativeDate)),
+                value = StatItemSlot.Text(
+                    buildAnnotatedString {
+                        append(model.budgetRelated.currentAvailable.formatAsAmount(Formatter.AmountInteger))
+                        val formattedDiff = model.budgetRelated.diffAmount.formattedAmount(Formatter.AmountSignedInteger)
+                        if (formattedDiff.toBigDecimal().compareTo(BigDecimal.ZERO) != 0) {
+                            append(stringResource(R.string.separator_thin))
+                            withStyle(
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color = diffColor(model.budgetRelated.diffAmount),
+                                    letterSpacing = 0.0.sp,
+                                ).toSpanStyle(),
+                            ) {
+                                append(formattedDiff.toString())
+                            }
+                        }
+                    },
+                ),
+                caption = StatItemSlot.Empty,
+            ),
             modifier = modifier,
-            title = stringResource(R.string.envelope_available, model.budgetRelated.availableFor.label),
-            value = buildAnnotatedString {
-                append(model.budgetRelated.availableNow)
-                append("\u200a")
-                withStyle(
-                    MaterialTheme.typography.bodyMedium.copy(
-                        color = diffColor,
-                        letterSpacing = 0.0.sp,
-                    ).toSpanStyle(),
-                ) { append(model.budgetRelated.availableDiff) }
-            },
         )
 }
-
-private val BudgetScope.label: String
-    @Composable get() = when (this) {
-        is BudgetScope.Today -> stringResource(R.string.time_today)
-    }
 
 @Composable
 private fun EnvelopeCardManageContent(
@@ -138,8 +167,7 @@ private fun EnvelopeCardManageContent(
 fun EnvelopeCard(
     model: EnvelopeModel,
     managing: Boolean,
-    diffColor: Color,
-    onDeleteClick: () -> Unit,
+    diffColor: @Composable (diffAmount: Long) -> Color,
     onArchiveClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -176,78 +204,6 @@ fun EnvelopeCard(
                     modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingBold)),
                 )
             }
-        }
-    }
-}
-
-private val previewEnvelopeModel = EnvelopeModel(
-    id = UUID.randomUUID(),
-    name = "餐饮",
-    usedAmount = "1415.14",
-    currency = CurrencyType.CNY,
-    diffNeg = false,
-    budgetRelated = BudgetRelated(
-        usedPercent = "74",
-        totalAmount = "1919.81",
-        availableFor = BudgetScope.Today,
-        availableNow = "67",
-        availableDiff = "+16",
-    ),
-)
-
-@Preview
-@LangPreviews
-@Composable
-private fun EnvelopeCardViewPreview() {
-    EnvelogTheme {
-        EnvelopeCardShell(
-            model = previewEnvelopeModel,
-            modifier = Modifier.padding(dimensionResource(R.dimen.spacingBold)),
-        ) {
-            EnvelopeCardViewContent(
-                model = previewEnvelopeModel,
-                diffColor = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingBold)),
-            )
-        }
-    }
-}
-
-@Preview
-@LangPreviews
-@Composable
-private fun EnvelopeCardManagePreview() {
-    EnvelogTheme {
-        EnvelopeCardShell(
-            model = previewEnvelopeModel,
-            modifier = Modifier.padding(dimensionResource(R.dimen.spacingBold)),
-        ) {
-            EnvelopeCardManageContent(
-                onArchiveClick = {},
-                onEditClick = {},
-                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingMedium)),
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun EnvelopeCardPreview() {
-    EnvelogTheme {
-        var managing by remember { mutableStateOf(false) }
-        Column {
-            Button(onClick = { managing = !managing }) {
-                Text("Toggle Managing")
-            }
-            EnvelopeCard(
-                model = previewEnvelopeModel,
-                managing = managing,
-                diffColor = MaterialTheme.colorScheme.error,
-                onDeleteClick = {},
-                onArchiveClick = {},
-                onEditClick = {},
-            )
         }
     }
 }

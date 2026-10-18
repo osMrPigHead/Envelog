@@ -7,15 +7,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.component.StatItem
-import cn.osmrpighead.envelog.ui.component.StatItemStyle
-import cn.osmrpighead.envelog.ui.component.rememberValueHeight
-import cn.osmrpighead.envelog.ui.overview.SummaryItem
-import cn.osmrpighead.envelog.ui.overview.SummaryType
-import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
-import cn.osmrpighead.envelog.util.annotation.LangPreviews
+import cn.osmrpighead.envelog.ui.component.statitem.StatItem
+import cn.osmrpighead.envelog.ui.component.statitem.StatItemContent
+import cn.osmrpighead.envelog.ui.component.statitem.StatItemSlot
+import cn.osmrpighead.envelog.ui.component.statitem.StatItemStyle
+import cn.osmrpighead.envelog.ui.overview.model.SummaryItem
+import cn.osmrpighead.envelog.ui.text.orDefault
+import cn.osmrpighead.envelog.ui.text.Formatter
+import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.text.Formatter.formatAsPercent
 import java.time.YearMonth
 
 @Composable
@@ -30,9 +31,12 @@ fun Summary(
         verticalAlignment = Alignment.Bottom,
     ) {
         StatItem(
-            style = StatItemStyle.of(StatItemStyle.Size.Extreme, Alignment.Start),
-            title = stringResource(R.string.year, yearMonth.year),
-            value = stringResource(R.string.month, yearMonth.monthValue),
+            style = StatItemStyle.ExtremeCenterStart,
+            content = StatItemContent(
+                title = StatItemSlot.Text(stringResource(R.string.year, yearMonth.year)),
+                value = StatItemSlot.Text(stringResource(R.string.month, yearMonth.monthValue)),
+                caption = StatItemSlot.Empty,
+            ),
         )
         VerticalDivider(
             modifier = Modifier
@@ -42,63 +46,42 @@ fun Summary(
                     bottom = dimensionResource(R.dimen.spacingMini),
                 ),
         )
-        val statItemStyle = StatItemStyle.of(StatItemStyle.Size.Large, Alignment.Start)
-        val statValueHeight = statItemStyle.rememberValueHeight()
-        val hasCaption = items.any { it.captionValue != null }
+        val statItemStyle = StatItemStyle.LargeCenterStart
+        val reserveCaption = items.any { it.caption }
         for (item in items)
             StatItem(
                 style = statItemStyle,
+                content = item.statItemContent(reserveCaption),
                 modifier = Modifier.weight(1f),
-                valueHeight = statValueHeight,
-                title = item.title,
-                value = item.value,
-                caption = if (hasCaption) item.caption ?: "" else item.caption,
             )
     }
 }
 
-private val SummaryItem.title: String
-    @Composable get() {
-        return when (type) {
-            SummaryType.Remaining -> stringResource(R.string.summary_remaining_title)
-            SummaryType.Expenses -> stringResource(R.string.summary_expenses_title)
-            SummaryType.Balance -> stringResource(R.string.summary_balance_title)
-        }
-    }
+private val Boolean.Empty: StatItemSlot
+    get() = if (this) StatItemSlot.Space else StatItemSlot.Empty
 
-private val SummaryItem.caption: String?
-    @Composable get() {
-        return when (type) {
-            SummaryType.Remaining -> stringResource(R.string.summary_budgetRemaining_caption, captionValue!!)
-            else -> null
-        }
-    }
-
-@Preview
-@LangPreviews
 @Composable
-private fun SummaryPreview() {
-    EnvelogTheme {
-        Summary(
-            yearMonth = YearMonth.of(2026, 9),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            items = listOf(
-                SummaryItem(
-                    type = SummaryType.Remaining,
-                    value = "11451411.14",
-                    captionValue = "91",
-                ),
-                SummaryItem(
-                    type = SummaryType.Expenses,
-                    value = "9191.78",
-                ),
-                SummaryItem(
-                    type = SummaryType.Balance,
-                    value = "-1451.14",
-                ),
+fun SummaryItem.statItemContent(reserveCaption: Boolean): StatItemContent = when (this) {
+    is SummaryItem.Balance -> StatItemContent(
+        title = StatItemSlot.Text(stringResource(R.string.summary_balance_title)),
+        value = StatItemSlot.Text(cents.formatAsAmount(Formatter.AmountStandard)),
+        caption = reserveCaption.Empty,
+    )
+
+    is SummaryItem.Expenses -> StatItemContent(
+        title = StatItemSlot.Text(stringResource(R.string.summary_expenses_title)),
+        value = StatItemSlot.Text(cents.formatAsAmount(Formatter.AmountStandard)),
+        caption = reserveCaption.Empty,
+    )
+
+    is SummaryItem.Remaining -> StatItemContent(
+        title = StatItemSlot.Text(stringResource(R.string.summary_remaining_title)),
+        value = StatItemSlot.Text(cents.formatAsAmount(Formatter.AmountStandard)),
+        caption = StatItemSlot.Text(
+            stringResource(
+                R.string.summary_remaining_caption,
+                usedProportion.formatAsPercent(Formatter.PercentInteger).orDefault(R.string.text_percent_nan),
             ),
-        )
-    }
+        ),
+    )
 }

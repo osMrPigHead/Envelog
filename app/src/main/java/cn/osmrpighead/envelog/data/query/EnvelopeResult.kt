@@ -6,6 +6,6 @@ import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
 
 data class EnvelopeResult(
     val envelope: Envelope,
-    val budgets: List<Budget>?,
-    val allocations: List<ExpenditureResult>,
+    val budgets: List<Budget>,
+    val allocations: List<AllocationResult>,
 )

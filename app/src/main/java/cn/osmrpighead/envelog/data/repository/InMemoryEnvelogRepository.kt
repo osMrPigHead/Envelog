@@ -6,10 +6,10 @@ import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
 import cn.osmrpighead.envelog.data.model.Transaction
 import cn.osmrpighead.envelog.data.model.TransactionType
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
-import cn.osmrpighead.envelog.data.query.ExpenditureResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
-import cn.osmrpighead.envelog.util.HasId
+import cn.osmrpighead.envelog.data.model.HasId
+import cn.osmrpighead.envelog.data.query.AllocationResult
 import cn.osmrpighead.envelog.util.mapEach
 import cn.osmrpighead.envelog.util.trimAndCheck
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +41,7 @@ class InMemoryEnvelogRepository(
     override fun observeActiveEnvelopesWithExtra(startDate: LocalDate, endDate: LocalDate): Flow<List<EnvelopeResult>> =
         observeActiveEnvelopes().mapEach {
             combine(
-                if (it.isBudgeted) observeBudgets(it.id, startDate, endDate) else flowOf(null),
+                if (it.isBudgeted) observeBudgets(it.id, startDate, endDate) else flowOf(emptyList()),
                 observeExpenditureEnvelopeAllocations(it.id, startDate, endDate),
             ) { budgets, allocations -> EnvelopeResult(it, budgets, allocations) }
         }
@@ -51,14 +51,14 @@ class InMemoryEnvelogRepository(
 
     override fun observeExpenditureEnvelopeAllocations(
         envelopeId: UUID, startDate: LocalDate, endDate: LocalDate,
-    ): Flow<List<ExpenditureResult>> =
+    ): Flow<List<AllocationResult>> =
         allocations.map { allocations ->
             allocations.mapNotNull {
                 val transaction = transactions.value.find { transaction -> it.transactionId == transaction.id }
-                if (transaction != null) ExpenditureResult(transaction = transaction, allocations = listOf(it))
+                if (transaction != null) AllocationResult(transaction = transaction, allocation = it)
                 else null
-            }.filter { (transaction, allocations) ->
-                transaction.dateTime.toLocalDate() in startDate..<endDate && allocations[0].envelopeId == envelopeId
+            }.filter { (transaction, allocation) ->
+                transaction.dateTime.toLocalDate() in startDate..<endDate && allocation.envelopeId == envelopeId
             }
         }
 

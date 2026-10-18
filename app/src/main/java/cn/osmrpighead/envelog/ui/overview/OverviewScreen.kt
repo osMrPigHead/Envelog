@@ -12,19 +12,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.tooling.preview.Preview
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.overview.component.EnvelopeCard
 import cn.osmrpighead.envelog.ui.overview.component.PromptBar
 import cn.osmrpighead.envelog.ui.overview.component.Summary
-import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
-import java.time.YearMonth
-import java.util.UUID
+import java.util.*
 
 @Composable
 fun OverviewScreen(
-    uiState: OverviewViewModel.UiState,
-    onDeleteClick: (UUID) -> Unit,
+    uiState: OverviewUiState,
     onArchiveClick: (UUID) -> Unit,
     onEditClick: (UUID) -> Unit,
     modifier: Modifier = Modifier,
@@ -51,8 +47,10 @@ fun OverviewScreen(
                 EnvelopeCard(
                     model = it,
                     managing = managing,
-                    diffColor = if (it.diffNeg) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    onDeleteClick = { onDeleteClick(it.id) },
+                    diffColor = { diffAmount ->
+                        if (diffAmount < 0) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.primary
+                    },  // TODO: User rule
                     onArchiveClick = { onArchiveClick(it.id) },
                     onEditClick = { onEditClick(it.id) },
                     modifier = Modifier
@@ -63,65 +61,5 @@ fun OverviewScreen(
                 )
             }
         }
-    }
-}
-
-@Preview
-@Composable
-fun OverviewScreenPreview() {
-    EnvelogTheme {
-        OverviewScreen(
-            uiState = OverviewViewModel.UiState(
-                yearMonth = YearMonth.now(),
-                summaryItems = listOf(
-                    SummaryItem(
-                        type = SummaryType.Remaining,
-                        value = "11451411.14",
-                        captionValue = "91",
-                    ),
-                    SummaryItem(
-                        type = SummaryType.Expenses,
-                        value = "9191.78",
-                    ),
-                    SummaryItem(
-                        type = SummaryType.Balance,
-                        value = "-1451.14",
-                    ),
-                ),
-                envelopes = listOf(
-                    EnvelopeModel(
-                        id = UUID.randomUUID(),
-                        name = "餐饮",
-                        usedAmount = "1415.14",
-                        currency = CurrencyType.CNY,
-                        diffNeg = false,
-                        budgetRelated = BudgetRelated(
-                            usedPercent = "74",
-                            totalAmount = "1919.8",
-                            availableFor = BudgetScope.Today,
-                            availableNow = "67",
-                            availableDiff = "+16",
-                        )
-                    ),
-                    EnvelopeModel(
-                        id = UUID.randomUUID(),
-                        name = "娱乐",
-                        usedAmount = "1415.14",
-                        currency = CurrencyType.CNY,
-                        diffNeg = true,
-                        budgetRelated = BudgetRelated(
-                            usedPercent = "74",
-                            totalAmount = "1919.8",
-                            availableFor = BudgetScope.Today,
-                            availableNow = "67",
-                            availableDiff = "-16",
-                        )
-                    ),
-                ),
-            ),
-            onDeleteClick = {},
-            onArchiveClick = {},
-            onEditClick = {},
-        )
     }
 }

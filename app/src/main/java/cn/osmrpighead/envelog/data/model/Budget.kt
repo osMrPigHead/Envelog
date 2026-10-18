@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.data.model
 
-import cn.osmrpighead.envelog.util.HasId
 import java.time.LocalDate
 import java.util.UUID
 

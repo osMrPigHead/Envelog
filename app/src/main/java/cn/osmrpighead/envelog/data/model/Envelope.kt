@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.data.model
 
-import cn.osmrpighead.envelog.util.HasId
 import java.util.UUID
 
 data class Envelope(
