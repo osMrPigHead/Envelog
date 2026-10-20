@@ -57,7 +57,7 @@ private fun operatorInput(state: NumKeypadState, operator: Operator): NumKeypadS
 
 private fun clear(state: NumKeypadState): NumKeypadState =
     if (state.fatal) state.copy(fatal = false)
-    else if (state.operator == null || state.rightOperand.trimZero() != "0")
+    else if (state.operator == null || state.rightOperand.trimZero() == "0")
         state.copy(leftOperand = "0", operator = null, rightOperand = "0")
     else state.copy(rightOperand = "0")
 
@@ -126,9 +126,9 @@ fun ClearButton(
     ) {
         Text(
             text = stringResource(
-                if (state.operator == null || state.rightOperand.trimZero() != "0")
-                    R.string.numkeypad_clear
-                else R.string.numkeypad_allclear,
+                if (state.operator == null || state.rightOperand.trimZero() == "0")
+                    R.string.numkeypad_allclear
+                else R.string.numkeypad_clear,
             ),
             style = MaterialTheme.typography.titleLarge,
         )
