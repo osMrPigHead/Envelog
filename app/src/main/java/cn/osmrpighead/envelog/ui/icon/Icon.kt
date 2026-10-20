@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.ui.icon
 
 object Icon {
+    val Backspace = backspace
     val Delete = delete
     val Edit = edit
     val Inventory2 = inventory_2

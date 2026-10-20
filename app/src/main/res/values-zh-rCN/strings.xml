@@ -18,5 +18,8 @@
     <string name="envelope_manage_archive">归档</string>
     <string name="prompt_main_manage_finish">完成管理</string>
     <string name="envelope_caption_non_budget">已用 %2$s%1$s%3$s</string>
-    <string name="time_within_days">%1$d日内</string>
+    <string name="time_within_days">%1$d\u200a日内</string>
+    <string name="numkeypad_confirm">确认</string>
+    <string name="numkeypad_divided_by_zero">错误：零不能作除数</string>
+    <string name="numkeypad_backspace">退格</string>
 </resources>
