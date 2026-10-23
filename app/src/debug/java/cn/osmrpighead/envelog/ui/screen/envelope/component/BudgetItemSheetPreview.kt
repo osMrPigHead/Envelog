@@ -14,19 +14,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.preview.LangPreview
+import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetFields
+import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetModel
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import java.time.LocalDate
+import java.util.UUID
 
 @LangPreview
 @Composable
-private fun BudgetEditorPreview() {
+private fun BudgetItemSheetPreview() {
     EnvelogTheme(dynamicColor = false) {
-        var period by remember { mutableStateOf(LocalDate.of(2026, 9, 1) to LocalDate.of(2026, 10, 1)) }
-        var amount by remember { mutableStateOf(30_000L) }
+        var budget by remember { mutableStateOf(previewBudget) }
         val host = rememberNumKeypadHostState()
+        val uiState = BudgetItemSheetModel(
+            value = budget,
+            fields = BudgetItemSheetFields(),
+        )
 
         Column(
             modifier = Modifier
@@ -34,13 +41,12 @@ private fun BudgetEditorPreview() {
                 .padding(dimensionResource(R.dimen.spacingBold)),
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
         ) {
-            BudgetEditor(
+            BudgetItemSheet(
                 label = "Budget",
                 numKeypadHost = host,
-                period = period,
-                onPeriodChange = { period = it },
-                amount = amount,
-                onAmountChange = { amount = it },
+                uiState = uiState,
+                onPeriodChange = { budget = budget.copy(startDate = it.start, endDate = it.endExclusive) },
+                onAmountChange = { budget = budget.copy(amount = it) },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.weight(1f))
@@ -48,3 +54,11 @@ private fun BudgetEditorPreview() {
         }
     }
 }
+
+private val previewBudget: Budget = Budget(
+    id = UUID(0L, 3L),
+    envelopeId = UUID.fromString("00000000-0000-0000-0000-000000000101"),
+    startDate = LocalDate.of(2026, 9, 1),
+    endDate = LocalDate.of(2026, 9, 8),
+    amount = 30_000,
+)

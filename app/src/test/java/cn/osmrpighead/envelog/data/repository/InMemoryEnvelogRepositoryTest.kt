@@ -7,6 +7,7 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.Argumen
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.RuleViolation.AllocationMismatch
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.RuleViolation.BudgetOverlap
+import cn.osmrpighead.envelog.util.date.untilExclusive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -432,7 +433,7 @@ class InMemoryEnvelogRepositoryTest {
 
         val id = repository.setBudget(
             envelopeId = TestData.envelopeAId,
-            period = TestData.periodStart to TestData.periodStart.plusDays(10),
+            period = TestData.periodStart untilExclusive TestData.periodStart.plusDays(10),
             amount = 50_000,
         ).getOrThrow()
 
@@ -463,29 +464,29 @@ class InMemoryEnvelogRepositoryTest {
         assertTrue(
             repository.setBudget(
                 TestData.envelopeAId,
-                TestData.periodStart.plusDays(10) to TestData.periodStart.plusDays(20),
+                TestData.periodStart.plusDays(10) untilExclusive TestData.periodStart.plusDays(20),
                 10_000,
             ).isSuccess,
         )
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart.plusDays(9) to TestData.periodStart.plusDays(11),
+            TestData.periodStart.plusDays(9) untilExclusive TestData.periodStart.plusDays(11),
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart to TestData.periodStart.plusDays(10),
+            TestData.periodStart untilExclusive TestData.periodStart.plusDays(10),
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart.minusDays(5) to TestData.periodStart.plusDays(5),
+            TestData.periodStart.minusDays(5) untilExclusive TestData.periodStart.plusDays(5),
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
         assertTrue(
             repository.setBudget(
                 TestData.envelopeBId,
-                TestData.periodStart to TestData.periodStart.plusDays(10),
+                TestData.periodStart untilExclusive TestData.periodStart.plusDays(10),
                 10_000,
             ).isSuccess,
         )
@@ -501,7 +502,7 @@ class InMemoryEnvelogRepositoryTest {
 
         repository.setBudget(
             TestData.unknownId,
-            TestData.periodStart to TestData.periodEnd,
+            TestData.periodStart untilExclusive TestData.periodEnd,
             10_000,
         ).assertFailureIs(NoSuch.Envelope::class.java)
 
@@ -546,7 +547,7 @@ class InMemoryEnvelogRepositoryTest {
 
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart to TestData.periodEnd,
+            TestData.periodStart untilExclusive TestData.periodEnd,
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
 
@@ -569,7 +570,7 @@ class InMemoryEnvelogRepositoryTest {
 
         val id = repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart.minusDays(10) to TestData.periodStart,
+            TestData.periodStart.minusDays(10) untilExclusive TestData.periodStart,
             10_000,
         ).getOrThrow()
 

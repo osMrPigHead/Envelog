@@ -2,16 +2,14 @@ package cn.osmrpighead.envelog.data.query
 
 import cn.osmrpighead.envelog.data.query.DateRangeRule.*
 import cn.osmrpighead.envelog.util.date.DatePeriod
-import cn.osmrpighead.envelog.util.date.contains
-import cn.osmrpighead.envelog.util.date.isMajorityOf
-import cn.osmrpighead.envelog.util.date.overlap
+import cn.osmrpighead.envelog.util.date.untilExclusive
 import java.time.LocalDate
 
 data class DateRange(
     val period: DatePeriod,
     val rule: DateRangeRule,
 ) {
-    constructor(start: LocalDate, end: LocalDate, rule: DateRangeRule) : this(start to end, rule)
+    constructor(start: LocalDate, end: LocalDate, rule: DateRangeRule) : this(start untilExclusive end, rule)
 }
 
 enum class DateRangeRule {
@@ -19,11 +17,11 @@ enum class DateRangeRule {
 }
 
 fun DateRange.judge(range: DatePeriod): Boolean = when (rule) {
-    StartInRange -> range.first in period
-    EndInRange -> range.second in period
+    StartInRange -> range.start in period
+    EndInRange -> range.endExclusive in period
     Overlap -> range overlap period
-    MajorityOverlapFallbackStart -> period.isMajorityOf(range) { it.first in period }
-    MajorityOverlapFallbackEnd -> period.isMajorityOf(range) { it.second in period }
+    MajorityOverlapFallbackStart -> period.isMajorityOf(range) { it.start in period }
+    MajorityOverlapFallbackEnd -> period.isMajorityOf(range) { it.endExclusive in period }
 }
 
 operator fun DateRange.contains(date: LocalDate): Boolean = date in period

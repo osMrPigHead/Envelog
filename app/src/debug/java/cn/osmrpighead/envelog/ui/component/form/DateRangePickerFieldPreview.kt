@@ -16,13 +16,16 @@ import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.preview.LangPreview
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
+import cn.osmrpighead.envelog.util.date.ClosedDatePeriod
 import java.time.LocalDate
 
 @LangPreview
 @Composable
 private fun DateRangePickerFieldPreview() {
     EnvelogTheme(dynamicColor = false) {
-        var period by remember { mutableStateOf(LocalDate.of(2026, 9, 1) to LocalDate.of(2026, 10, 1)) }
+        var period by remember {
+            mutableStateOf(ClosedDatePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 1)))
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -53,7 +56,9 @@ private fun DateRangePickerFieldPreview() {
 @Composable
 private fun DateRangePickerFieldStatePreview() {
     EnvelogTheme(dynamicColor = false) {
-        var period by remember { mutableStateOf(LocalDate.of(2026, 9, 1) to LocalDate.of(2026, 9, 1)) }
+        var period by remember {
+            mutableStateOf(ClosedDatePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)))
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()

@@ -34,6 +34,7 @@ private fun BudgetCalendarSample(model: BudgetCalendarModel) {
             period = EnvelopePreviewData.period,
             model = model,
             firstDayOfWeek = EnvelopePreviewData.firstDayOfWeek,
+            onClick = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(dimensionResource(R.dimen.spacingBold)),

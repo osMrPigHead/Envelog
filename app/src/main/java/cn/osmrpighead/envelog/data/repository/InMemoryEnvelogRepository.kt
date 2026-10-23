@@ -15,7 +15,7 @@ import cn.osmrpighead.envelog.data.query.judge
 import cn.osmrpighead.envelog.data.query.contains
 import cn.osmrpighead.envelog.util.date.DatePeriod
 import cn.osmrpighead.envelog.util.mapEach
-import cn.osmrpighead.envelog.util.date.overlap
+import cn.osmrpighead.envelog.util.date.untilExclusive
 import cn.osmrpighead.envelog.util.trimAndCheck
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +52,7 @@ class InMemoryEnvelogRepository(
 
     override fun observeBudgets(envelopeId: UUID, range: DateRange): Flow<List<Budget>> =
         budgets.map { budgets ->
-            budgets.filter { range.judge(it.startDate to it.endDate) && it.envelopeId == envelopeId }
+            budgets.filter { range.judge(it.startDate untilExclusive it.endDate) && it.envelopeId == envelopeId }
         }
 
     override fun observeExpenditureEnvelopeAllocations(
@@ -145,7 +145,7 @@ class InMemoryEnvelogRepository(
     ): Result<List<Budget>> {
         var results = emptyList<Budget>()
         budgets.update { budgets ->
-            results = budgets.filter { function(it) && range.judge(it.startDate to it.endDate) }
+            results = budgets.filter { function(it) && range.judge(it.startDate untilExclusive it.endDate) }
             budgets.toMutableList().apply { removeAll(results) }
         }
         return Result.success(results)
@@ -164,14 +164,14 @@ class InMemoryEnvelogRepository(
     ): Result<UUID> = EnvelogRepositoryException.catch {
         budgets.create { id, budgets ->
             if (budgets.any { budget ->
-                    budget.envelopeId == envelopeId && budget.startDate to budget.endDate overlap period
+                    budget.envelopeId == envelopeId && (budget.startDate untilExclusive budget.endDate) overlap period
                 }) throw RuleViolation.BudgetOverlap()
             if (!envelopes.value.any { envelope -> envelope.id == envelopeId }) throw NoSuch.Envelope()
             Budget(
                 id = id,
                 envelopeId = envelopeId,
-                startDate = period.first,
-                endDate = period.second,
+                startDate = period.start,
+                endDate = period.endExclusive,
                 amount = amount,
             )
         }

@@ -11,6 +11,8 @@ import java.util.Locale
 
 infix fun LocalDate.countDaysTo(other: LocalDate): Long = other.toEpochDay() - toEpochDay()
 
+infix fun LocalDate.untilExclusive(endExclusive: LocalDate): DatePeriod = DatePeriod(this, endExclusive)
+
 val LocalDate.yearMonth: YearMonth get() = YearMonth.from(this)
 
 fun LocalDate.next(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.next(dayOfWeek))

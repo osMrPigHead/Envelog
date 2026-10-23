@@ -36,4 +36,8 @@
     <string name="cancel">Cancel</string>
     <string name="budget_range">Date Range</string>
     <string name="budget_amount">Amount</string>
+    <string name="budget_should_be_positive">Budget should be positive</string>
+    <string name="name">Name</string>
+    <string name="envelope_budgeted">Budgeted</string>
+    <string name="budget_title">Budget</string>
 </resources>

@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,7 @@ private fun DayCell(
     style: StatItemStyle,
     date: LocalDate,
     allocation: Long?,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     StatItem(
@@ -51,7 +53,7 @@ private fun DayCell(
             value = date.dayOfMonth.toString().asSlot(),
             caption = allocation?.formatAsAmount(Formatter.AmountConcise)?.asSlot() ?: StatItemSlot.Space,
         ),
-        modifier = modifier,
+        modifier = modifier.clickable(onClick = onClick),
     )
 }
 
@@ -91,12 +93,13 @@ fun BudgetCalendar(
     period: DatePeriod,
     model: BudgetCalendarModel,
     firstDayOfWeek: DayOfWeek,
+    onClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val weeks = period.splitIntoWeeks(firstDayOfWeek).map { Pair(it, emptyList<Budget>().toMutableList()) }
     for ((_, _, startDate, endDate, amount) in model.budgets) {
         for ((week, budgets) in weeks) {
-            val full = startDate to endDate
+            val full = startDate untilExclusive endDate
             val intersect = full intersect week
             if (intersect.length <= 0) continue
             budgets += when (Pair(full hasBefore intersect, full hasAfter intersect)) {
@@ -110,18 +113,18 @@ fun BudgetCalendar(
     val style = StatItemStyle.SmallCenter
     Column(modifier = modifier) {
         for ((week, budgets) in weeks) {
-            val firstDayOfThisWeek = week.first.previousOrSame(firstDayOfWeek)
-            val firstDayOfNextWeek = week.second.nextOrSame(firstDayOfWeek)
+            val firstDayOfThisWeek = week.start.previousOrSame(firstDayOfWeek)
+            val firstDayOfNextWeek = week.endExclusive.nextOrSame(firstDayOfWeek)
             Row {
-                DaySpacer(firstDayOfThisWeek to week.first)
-                for (date in week) DayCell(style, date, model.allocations[date], Modifier.weight(1f))
-                DaySpacer(week.second to firstDayOfNextWeek)
+                DaySpacer(firstDayOfThisWeek untilExclusive week.start)
+                for (date in week) DayCell(style, date, model.allocations[date], { onClick(date) }, Modifier.weight(1f))
+                DaySpacer(week.endExclusive untilExclusive firstDayOfNextWeek)
             }
             Row {
-                budgets.sortBy { it.period.first }
+                budgets.sortBy { it.period.start }
                 var date = firstDayOfThisWeek
                 for (budget in budgets) {
-                    DaySpacer(date to budget.period.first)
+                    DaySpacer(date untilExclusive budget.period.start)
                     BudgetCapsule(
                         budget = budget,
                         fill = budget.period.length != 1L,
@@ -129,9 +132,9 @@ fun BudgetCalendar(
                             .padding(horizontal = dimensionResource(R.dimen.spacingMedium))
                             .weight(budget.period.length.toFloat()),
                     )
-                    date = budget.period.second
+                    date = budget.period.endExclusive
                 }
-                DaySpacer(date to firstDayOfNextWeek)
+                DaySpacer(date untilExclusive firstDayOfNextWeek)
             }
         }
     }

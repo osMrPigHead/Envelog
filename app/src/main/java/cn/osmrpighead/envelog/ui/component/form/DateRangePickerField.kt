@@ -25,8 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.util.date.DatePeriod
-import cn.osmrpighead.envelog.util.date.format
+import cn.osmrpighead.envelog.util.date.ClosedDatePeriod
 import cn.osmrpighead.envelog.util.date.toLocalDate
 import java.time.LocalDate
 
@@ -38,10 +37,10 @@ sealed interface ConfirmEventHandler {
             handler(start, end, hideDialog)
     }
 
-    class Default(private val onPeriodChange: (DatePeriod) -> Unit) : ConfirmEventHandler {
+    class Default(private val onPeriodChange: (ClosedDatePeriod) -> Unit) : ConfirmEventHandler {
         override fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit) {
             if (start == null || end == null) return
-            onPeriodChange(start to end)
+            onPeriodChange(ClosedDatePeriod(start, end))
             hideDialog()
         }
     }
@@ -101,7 +100,7 @@ sealed interface DateRangePickerDialogBuilder {
 
 @Composable
 fun DateRangePickerField(
-    period: DatePeriod,
+    period: ClosedDatePeriod,
     dialogBuilder: DateRangePickerDialogBuilder,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,

@@ -26,4 +26,8 @@
     <string name="cancel">取消</string>
     <string name="budget_range">日期范围</string>
     <string name="budget_amount">限额</string>
+    <string name="budget_should_be_positive">预算必须为正数</string>
+    <string name="name">名称</string>
+    <string name="envelope_budgeted">启用预算</string>
+    <string name="budget_title">预算</string>
 </resources>
