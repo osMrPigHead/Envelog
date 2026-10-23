@@ -5,6 +5,8 @@ import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
 import cn.osmrpighead.envelog.data.model.Transaction
 import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.query.DateRange
+import cn.osmrpighead.envelog.data.query.DateRangeRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import java.time.LocalDate
@@ -16,6 +18,9 @@ import java.util.UUID
 internal object TestData {
     val periodStart: LocalDate = LocalDate.of(2026, 10, 1)
     val periodEnd: LocalDate = LocalDate.of(2026, 11, 1)
+
+    val period: DateRange = range()
+    val overlapPeriod: DateRange = range(rule = DateRangeRule.Overlap)
 
     val envelopeAId: UUID = UUID.fromString("00000000-0000-0000-0000-00000000000a")
     val envelopeBId: UUID = UUID.fromString("00000000-0000-0000-0000-00000000000b")
@@ -32,6 +37,12 @@ internal object TestData {
     val unknownId: UUID = UUID.fromString("00000000-0000-0000-0000-0000000000ff")
 
     private val zone: ZoneId = ZoneId.of("Asia/Shanghai")
+
+    fun range(
+        start: LocalDate = periodStart,
+        end: LocalDate = periodEnd,
+        rule: DateRangeRule = DateRangeRule.StartInRange,
+    ): DateRange = DateRange(start = start, end = end, rule = rule)
 
     fun at(date: LocalDate): ZonedDateTime = ZonedDateTime.of(date, LocalTime.of(12, 0), zone)
 

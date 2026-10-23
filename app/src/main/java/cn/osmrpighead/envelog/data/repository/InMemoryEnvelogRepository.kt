@@ -10,7 +10,12 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
 import cn.osmrpighead.envelog.data.model.HasId
 import cn.osmrpighead.envelog.data.query.AllocationResult
+import cn.osmrpighead.envelog.data.query.DateRange
+import cn.osmrpighead.envelog.data.query.judge
+import cn.osmrpighead.envelog.data.query.contains
+import cn.osmrpighead.envelog.util.date.DatePeriod
 import cn.osmrpighead.envelog.util.mapEach
+import cn.osmrpighead.envelog.util.date.overlap
 import cn.osmrpighead.envelog.util.trimAndCheck
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +24,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.collections.filter
@@ -38,19 +42,22 @@ class InMemoryEnvelogRepository(
     override fun observeActiveEnvelopes(): Flow<List<Envelope>> =
         envelopes.map { envelopes -> envelopes.filter { !it.archived } }
 
-    override fun observeActiveEnvelopesWithExtra(startDate: LocalDate, endDate: LocalDate): Flow<List<EnvelopeResult>> =
+    override fun observeActiveEnvelopesWithExtra(range: DateRange): Flow<List<EnvelopeResult>> =
         observeActiveEnvelopes().mapEach {
             combine(
-                if (it.isBudgeted) observeBudgets(it.id, startDate, endDate) else flowOf(emptyList()),
-                observeExpenditureEnvelopeAllocations(it.id, startDate, endDate),
+                if (it.isBudgeted) observeBudgets(it.id, range) else flowOf(emptyList()),
+                observeExpenditureEnvelopeAllocations(it.id, range),
             ) { budgets, allocations -> EnvelopeResult(it, budgets, allocations) }
         }
 
-    override fun observeBudgets(envelopeId: UUID, startDate: LocalDate, endDate: LocalDate): Flow<List<Budget>> =
-        budgets.map { budgets -> budgets.filter { it.startDate in startDate..<endDate && it.envelopeId == envelopeId } }
+    override fun observeBudgets(envelopeId: UUID, range: DateRange): Flow<List<Budget>> =
+        budgets.map { budgets ->
+            budgets.filter { range.judge(it.startDate to it.endDate) && it.envelopeId == envelopeId }
+        }
 
     override fun observeExpenditureEnvelopeAllocations(
-        envelopeId: UUID, startDate: LocalDate, endDate: LocalDate,
+        envelopeId: UUID,
+        range: DateRange,
     ): Flow<List<AllocationResult>> =
         allocations.map { allocations ->
             allocations.mapNotNull {
@@ -58,19 +65,37 @@ class InMemoryEnvelogRepository(
                 if (transaction != null) AllocationResult(transaction = transaction, allocation = it)
                 else null
             }.filter { (transaction, allocation) ->
-                transaction.dateTime.toLocalDate() in startDate..<endDate && allocation.envelopeId == envelopeId
+                transaction.dateTime.toLocalDate() in range && allocation.envelopeId == envelopeId
             }
         }
 
-    override fun observeTransactions(startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>> =
-        transactions.map { transactions -> transactions.filter { it.dateTime.toLocalDate() in startDate..<endDate } }
+    override fun observeTransactions(range: DateRange): Flow<List<Transaction>> =
+        transactions.map { transactions ->
+            transactions.filter { it.dateTime.toLocalDate() in range }
+        }
 
-    override fun observeTransactions(
-        type: TransactionType,
-        startDate: LocalDate,
-        endDate: LocalDate,
-    ): Flow<List<Transaction>> = transactions.map { transactions ->
-        transactions.filter { it.dateTime.toLocalDate() in startDate..<endDate && it.type == type }
+    override fun observeTransactions(type: TransactionType, range: DateRange): Flow<List<Transaction>> =
+        transactions.map { transactions ->
+            transactions.filter { it.dateTime.toLocalDate() in range && it.type == type }
+        }
+
+    override suspend fun getEnvelope(envelopeId: UUID): Envelope {
+        val envelope = envelopes.value.find { it.id == envelopeId }
+        if (envelope == null) throw NoSuch.Envelope()
+        return envelope
+    }
+
+    /*
+    TODO: observeEnvelopeWithExtra 是 suspend 且返回 Flow，其中 getEnvelope 的检查在“订阅时”之前同步完成，
+     因此信封被删除或归档后，已建立的 Flow 不会重新校验信封存在性，只会继续发出旧的 Envelope 快照；如果后续需要
+     “信封删除后 Flow 结束或报错”的行为，现有签名要改成在 flow { } 内获取信封，需要补充测试用例
+     */
+    override suspend fun observeEnvelopeWithExtra(envelopeId: UUID, range: DateRange): Flow<EnvelopeResult> {
+        val envelope = getEnvelope(envelopeId)
+        return combine(
+            if (envelope.isBudgeted) observeBudgets(envelope.id, range) else flowOf(emptyList()),
+            observeExpenditureEnvelopeAllocations(envelope.id, range),
+        ) { budgets, allocations -> EnvelopeResult(envelope, budgets, allocations) }
     }
 
     override suspend fun createEnvelope(name: String, isBudgeted: Boolean): Result<UUID> =
@@ -115,42 +140,38 @@ class InMemoryEnvelogRepository(
     }
 
     private fun clearBudget(
-        startDate: LocalDate,
-        endDate: LocalDate,
+        range: DateRange,
         function: (Budget) -> Boolean,
     ): Result<List<Budget>> {
         var results = emptyList<Budget>()
         budgets.update { budgets ->
-            results =
-                budgets.filter { function(it) && maxOf(startDate, it.startDate) < minOf(endDate, it.endDate) }
-            budgets.toMutableList().apply {
-                removeAll(results)
-            }
+            results = budgets.filter { function(it) && range.judge(it.startDate to it.endDate) }
+            budgets.toMutableList().apply { removeAll(results) }
         }
         return Result.success(results)
     }
 
-    override suspend fun clearBudget(envelopeId: UUID, startDate: LocalDate, endDate: LocalDate): Result<List<Budget>> =
-        clearBudget(startDate, endDate) { it.envelopeId == envelopeId }
+    override suspend fun clearBudget(envelopeId: UUID, range: DateRange): Result<List<Budget>> =
+        clearBudget(range) { it.envelopeId == envelopeId }
 
-    override suspend fun clearBudget(startDate: LocalDate, endDate: LocalDate): Result<List<Budget>> =
-        clearBudget(startDate, endDate) { true }
+    override suspend fun clearBudget(range: DateRange): Result<List<Budget>> =
+        clearBudget(range) { true }
 
     override suspend fun setBudget(
         envelopeId: UUID,
-        startDate: LocalDate, endDate: LocalDate,
+        period: DatePeriod,
         amount: Long,
     ): Result<UUID> = EnvelogRepositoryException.catch {
         budgets.create { id, budgets ->
             if (budgets.any { budget ->
-                    budget.envelopeId == envelopeId && startDate < budget.endDate && budget.startDate < endDate
+                    budget.envelopeId == envelopeId && budget.startDate to budget.endDate overlap period
                 }) throw RuleViolation.BudgetOverlap()
             if (!envelopes.value.any { envelope -> envelope.id == envelopeId }) throw NoSuch.Envelope()
             Budget(
                 id = id,
                 envelopeId = envelopeId,
-                startDate = startDate,
-                endDate = endDate,
+                startDate = period.first,
+                endDate = period.second,
                 amount = amount,
             )
         }

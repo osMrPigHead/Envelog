@@ -25,11 +25,15 @@
     <string name="time_within_days">within %1$dd</string>
     <string name="numkeypad_allclear" translatable="false">AC</string>
     <string name="numkeypad_clear" translatable="false">C</string>
-    <string name="numkeypad_confirm">OK</string>
+    <string name="ok">OK</string>
     <string name="numkeypad_plus" translatable="false">+</string>
     <string name="numkeypad_minus" translatable="false">\u2212</string>
     <string name="numkeypad_times" translatable="false">\u00d7</string>
     <string name="numkeypad_divides" translatable="false">\u00f7</string>
     <string name="numkeypad_divided_by_zero">ERROR: Divided by Zero</string>
     <string name="numkeypad_backspace">Backspace</string>
+    <string name="envelope_manage_new">New Envelope</string>
+    <string name="cancel">Cancel</string>
+    <string name="budget_range">Date Range</string>
+    <string name="budget_amount">Amount</string>
 </resources>

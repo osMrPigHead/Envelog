@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.data.repository
 
 import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.query.DateRangeRule
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.EnvelopeReferenced
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NameBlank
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch
@@ -125,6 +126,35 @@ class InMemoryEnvelogRepositoryTest {
     }
 
     @Test
+    fun getEnvelope_returnsEnvelopeById() = runTest {
+        val requested = TestData.envelope(id = TestData.envelopeBId, name = "Gift", isBudgeted = false)
+        val repository = TestData.repository(
+            envelopes = listOf(
+                TestData.envelope(id = TestData.envelopeAId),
+                requested,
+            ),
+        )
+
+        assertEquals(requested, repository.getEnvelope(TestData.envelopeBId))
+    }
+
+    @Test
+    fun getEnvelope_returnsArchivedEnvelope() = runTest {
+        val archived = TestData.envelope(id = TestData.archivedEnvelopeId, archived = true)
+        val repository = TestData.repository(envelopes = listOf(archived))
+
+        assertEquals(archived, repository.getEnvelope(TestData.archivedEnvelopeId))
+    }
+
+    @Test
+    fun getEnvelope_rejectsUnknownEnvelope() = runTest {
+        val repository = TestData.repository()
+
+        runCatching { repository.getEnvelope(TestData.unknownId) }
+            .assertFailureIs(NoSuch.Envelope::class.java)
+    }
+
+    @Test
     fun observeActiveEnvelopesWithExtra_joinsBudgetsAndAllocations() = runTest {
         val budget = TestData.budget()
         val otherBudget = TestData.budget(id = TestData.budgetBId, envelopeId = TestData.envelopeBId)
@@ -141,7 +171,7 @@ class InMemoryEnvelogRepositoryTest {
         )
 
         val results = repository
-            .observeActiveEnvelopesWithExtra(TestData.periodStart, TestData.periodEnd)
+            .observeActiveEnvelopesWithExtra(TestData.period)
             .first()
 
         assertEquals(listOf(TestData.envelopeAId, TestData.envelopeBId), results.map { it.envelope.id })
@@ -151,12 +181,87 @@ class InMemoryEnvelogRepositoryTest {
         assertTrue(results[1].allocations.isEmpty())
     }
 
+    @Test
+    fun observeEnvelopeWithExtra_joinsFilteredBudgetsAndAllocations() = runTest {
+        val envelope = TestData.envelope(id = TestData.envelopeAId)
+        val inPeriodBudget = TestData.budget(id = TestData.budgetAId)
+        val outOfPeriodBudget = TestData.budget(
+            id = TestData.budgetBId,
+            startDate = TestData.periodEnd,
+            endDate = TestData.periodEnd.plusDays(10),
+        )
+        val otherEnvelopeBudget = TestData.budget(id = TestData.budgetCId, envelopeId = TestData.envelopeBId)
+        val inPeriodTransaction = TestData.transaction(id = TestData.transactionAId, amount = 6_000)
+        val outOfPeriodTransaction = TestData.transaction(id = TestData.transactionBId, date = TestData.periodEnd)
+        val repository = TestData.repository(
+            envelopes = listOf(envelope, TestData.envelope(id = TestData.envelopeBId, isBudgeted = false)),
+            budgets = listOf(inPeriodBudget, outOfPeriodBudget, otherEnvelopeBudget),
+            transactions = listOf(inPeriodTransaction, outOfPeriodTransaction),
+            allocations = listOf(
+                TestData.allocation(
+                    transactionId = inPeriodTransaction.id,
+                    envelopeId = TestData.envelopeAId,
+                    amount = 6_000,
+                ),
+                TestData.allocation(
+                    transactionId = inPeriodTransaction.id,
+                    envelopeId = TestData.envelopeBId,
+                    amount = 4_000,
+                ),
+                TestData.allocation(
+                    transactionId = outOfPeriodTransaction.id,
+                    envelopeId = TestData.envelopeAId,
+                    amount = 1_000,
+                ),
+            ),
+        )
+
+        val result = repository
+            .observeEnvelopeWithExtra(TestData.envelopeAId, TestData.period)
+            .first()
+
+        assertEquals(envelope, result.envelope)
+        assertEquals(listOf(inPeriodBudget), result.budgets)
+        assertEquals(listOf(inPeriodTransaction.id), result.allocations.map { it.transaction.id })
+        assertEquals(6_000L, result.allocations.single().allocation.amount)
+    }
+
+    @Test
+    fun observeEnvelopeWithExtra_returnsNoBudgetsWhenNotBudgeted() = runTest {
+        val envelope = TestData.envelope(id = TestData.envelopeBId, isBudgeted = false)
+        val transaction = TestData.transaction()
+        val repository = TestData.repository(
+            envelopes = listOf(envelope),
+            budgets = listOf(TestData.budget(id = TestData.budgetAId, envelopeId = TestData.envelopeBId)),
+            transactions = listOf(transaction),
+            allocations = listOf(
+                TestData.allocation(transactionId = transaction.id, envelopeId = TestData.envelopeBId),
+            ),
+        )
+
+        val result = repository
+            .observeEnvelopeWithExtra(TestData.envelopeBId, TestData.period)
+            .first()
+
+        assertEquals(envelope, result.envelope)
+        assertTrue(result.budgets.isEmpty())
+        assertEquals(listOf(transaction.id), result.allocations.map { it.transaction.id })
+    }
+
+    @Test
+    fun observeEnvelopeWithExtra_rejectsUnknownEnvelope() = runTest {
+        val repository = TestData.repository()
+
+        runCatching { repository.observeEnvelopeWithExtra(TestData.unknownId, TestData.period) }
+            .assertFailureIs(NoSuch.Envelope::class.java)
+    }
+
     // endregion
 
     // region Budget
 
     @Test
-    fun observeBudgets_filtersByEnvelopeAndStartDate() = runTest {
+    fun observeBudgets_filtersByEnvelopeAndStartInRange() = runTest {
         val inPeriod = TestData.budget(id = TestData.budgetAId)
         val startsBefore = TestData.budget(
             id = TestData.budgetBId,
@@ -175,10 +280,150 @@ class InMemoryEnvelogRepositoryTest {
         val repository = TestData.repository(budgets = listOf(inPeriod, startsBefore, startsAtEnd, otherEnvelope))
 
         val result = repository
-            .observeBudgets(TestData.envelopeAId, TestData.periodStart, TestData.periodEnd)
+            .observeBudgets(TestData.envelopeAId, TestData.period)
             .first()
 
         assertEquals(listOf(inPeriod), result)
+    }
+
+    @Test
+    fun observeBudgets_filtersByEndInRangeRule() = runTest {
+        val endsInPeriod = TestData.budget(
+            id = TestData.budgetAId,
+            startDate = TestData.periodStart.minusDays(6),
+            endDate = TestData.periodStart.plusDays(9),
+        )
+        val endsAtPeriodEnd = TestData.budget(
+            id = TestData.budgetBId,
+            startDate = TestData.periodStart.plusDays(9),
+            endDate = TestData.periodEnd,
+        )
+        val endsBeforeStart = TestData.budget(
+            id = TestData.budgetCId,
+            startDate = TestData.periodStart.minusDays(20),
+            endDate = TestData.periodStart.minusDays(1),
+        )
+        val endsAfterEnd = TestData.budget(
+            id = TestData.budgetDId,
+            startDate = TestData.periodStart.plusDays(9),
+            endDate = TestData.periodEnd.plusDays(5),
+        )
+        val repository = TestData.repository(
+            budgets = listOf(endsInPeriod, endsAtPeriodEnd, endsBeforeStart, endsAfterEnd),
+        )
+
+        val result = repository
+            .observeBudgets(TestData.envelopeAId, TestData.range(rule = DateRangeRule.EndInRange))
+            .first()
+
+        assertEquals(listOf(endsInPeriod), result)
+    }
+
+    @Test
+    fun observeBudgets_filtersByMajorityOverlapFallbackStart() = runTest {
+        // 共 8 天，重叠 5 天：多数重叠，不受回退影响
+        val majorityOverlap = TestData.budget(
+            id = TestData.budgetAId,
+            startDate = TestData.periodStart.minusDays(3),
+            endDate = TestData.periodStart.plusDays(5),
+        )
+        // 共 24 天，重叠 12 天：恰好一半，回退到 StartInRange，起点在区间内
+        val tieStartInside = TestData.budget(
+            id = TestData.budgetBId,
+            startDate = TestData.periodStart.plusDays(19),
+            endDate = TestData.periodEnd.plusDays(12),
+        )
+        // 共 14 天，重叠 7 天：恰好一半，回退到 StartInRange，起点在区间外
+        val tieStartOutside = TestData.budget(
+            id = TestData.budgetCId,
+            startDate = TestData.periodStart.minusDays(7),
+            endDate = TestData.periodStart.plusDays(7),
+        )
+        // 共 76 天，重叠 31 天：不到一半，即使整体包住查询区间也不算命中
+        val containing = TestData.budget(
+            id = TestData.budgetDId,
+            startDate = TestData.periodStart.minusDays(30),
+            endDate = TestData.periodEnd.plusDays(15),
+        )
+        val repository = TestData.repository(
+            budgets = listOf(majorityOverlap, tieStartInside, tieStartOutside, containing),
+        )
+
+        val result = repository
+            .observeBudgets(TestData.envelopeAId, TestData.range(rule = DateRangeRule.MajorityOverlapFallbackStart))
+            .first()
+
+        assertEquals(listOf(majorityOverlap, tieStartInside), result)
+    }
+
+    @Test
+    fun observeBudgets_filtersByMajorityOverlapFallbackEnd() = runTest {
+        // 共 8 天，重叠 5 天：多数重叠，不受回退影响
+        val majorityOverlap = TestData.budget(
+            id = TestData.budgetAId,
+            startDate = TestData.periodStart.minusDays(3),
+            endDate = TestData.periodStart.plusDays(5),
+        )
+        // 共 24 天，重叠 12 天：恰好一半，回退到 EndInRange，终点在区间外
+        val tieEndOutside = TestData.budget(
+            id = TestData.budgetBId,
+            startDate = TestData.periodStart.plusDays(19),
+            endDate = TestData.periodEnd.plusDays(12),
+        )
+        // 共 14 天，重叠 7 天：恰好一半，回退到 EndInRange，终点在区间内
+        val tieEndInside = TestData.budget(
+            id = TestData.budgetCId,
+            startDate = TestData.periodStart.minusDays(7),
+            endDate = TestData.periodStart.plusDays(7),
+        )
+        // 共 76 天，重叠 31 天：不到一半，即使整体包住查询区间也不算命中
+        val containing = TestData.budget(
+            id = TestData.budgetDId,
+            startDate = TestData.periodStart.minusDays(30),
+            endDate = TestData.periodEnd.plusDays(15),
+        )
+        val repository = TestData.repository(
+            budgets = listOf(majorityOverlap, tieEndOutside, tieEndInside, containing),
+        )
+
+        val result = repository
+            .observeBudgets(TestData.envelopeAId, TestData.range(rule = DateRangeRule.MajorityOverlapFallbackEnd))
+            .first()
+
+        assertEquals(listOf(majorityOverlap, tieEndInside), result)
+    }
+
+    @Test
+    fun observeBudgets_filtersByOverlapRule() = runTest {
+        val inside = TestData.budget(
+            id = TestData.budgetAId,
+            startDate = TestData.periodStart.plusDays(4),
+            endDate = TestData.periodStart.plusDays(9),
+        )
+        val containing = TestData.budget(
+            id = TestData.budgetBId,
+            startDate = TestData.periodStart.minusDays(30),
+            endDate = TestData.periodEnd.plusDays(15),
+        )
+        val touchingStart = TestData.budget(
+            id = TestData.budgetCId,
+            startDate = TestData.periodStart.minusDays(5),
+            endDate = TestData.periodStart,
+        )
+        val touchingEnd = TestData.budget(
+            id = TestData.budgetDId,
+            startDate = TestData.periodEnd,
+            endDate = TestData.periodEnd.plusDays(5),
+        )
+        val repository = TestData.repository(
+            budgets = listOf(inside, containing, touchingStart, touchingEnd),
+        )
+
+        val result = repository
+            .observeBudgets(TestData.envelopeAId, TestData.overlapPeriod)
+            .first()
+
+        assertEquals(listOf(inside, containing), result)
     }
 
     @Test
@@ -187,13 +432,12 @@ class InMemoryEnvelogRepositoryTest {
 
         val id = repository.setBudget(
             envelopeId = TestData.envelopeAId,
-            startDate = TestData.periodStart,
-            endDate = TestData.periodStart.plusDays(10),
+            period = TestData.periodStart to TestData.periodStart.plusDays(10),
             amount = 50_000,
         ).getOrThrow()
 
         val budget = repository
-            .observeBudgets(TestData.envelopeAId, TestData.periodStart, TestData.periodEnd)
+            .observeBudgets(TestData.envelopeAId, TestData.period)
             .first()
             .single()
         assertEquals(id, budget.id)
@@ -219,52 +463,50 @@ class InMemoryEnvelogRepositoryTest {
         assertTrue(
             repository.setBudget(
                 TestData.envelopeAId,
-                TestData.periodStart.plusDays(10),
-                TestData.periodStart.plusDays(20),
+                TestData.periodStart.plusDays(10) to TestData.periodStart.plusDays(20),
                 10_000,
             ).isSuccess,
         )
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart.plusDays(9),
-            TestData.periodStart.plusDays(11),
+            TestData.periodStart.plusDays(9) to TestData.periodStart.plusDays(11),
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart,
-            TestData.periodStart.plusDays(10),
+            TestData.periodStart to TestData.periodStart.plusDays(10),
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
         repository.setBudget(
             TestData.envelopeAId,
-            TestData.periodStart.minusDays(5),
-            TestData.periodStart.plusDays(5),
+            TestData.periodStart.minusDays(5) to TestData.periodStart.plusDays(5),
             10_000,
         ).assertFailureIs(BudgetOverlap::class.java)
         assertTrue(
             repository.setBudget(
                 TestData.envelopeBId,
-                TestData.periodStart,
-                TestData.periodStart.plusDays(10),
+                TestData.periodStart to TestData.periodStart.plusDays(10),
                 10_000,
             ).isSuccess,
         )
     }
 
+    /*
+    TODO: “未写入”断言用 observeBudgets(unknownId, ...) 验证，而该查询本身按信封过滤，结果恒为空，无法证明没写入；
+     若要真正固定这一行为，需要仓库提供不带信封过滤的预算查询，或改为断言其他信封下也没有意外数据。
+     */
     @Test
     fun setBudget_rejectsUnknownEnvelope() = runTest {
         val repository = TestData.repository()
 
         repository.setBudget(
             TestData.unknownId,
-            TestData.periodStart,
-            TestData.periodEnd,
+            TestData.periodStart to TestData.periodEnd,
             10_000,
         ).assertFailureIs(NoSuch.Envelope::class.java)
 
         assertTrue(
-            repository.observeBudgets(TestData.unknownId, TestData.periodStart, TestData.periodEnd)
+            repository.observeBudgets(TestData.unknownId, TestData.period)
                 .first()
                 .isEmpty(),
         )
@@ -278,7 +520,7 @@ class InMemoryEnvelogRepositoryTest {
         repository.setBudget(budget.id, 20_000).getOrThrow()
 
         val updated = repository
-            .observeBudgets(TestData.envelopeAId, TestData.periodStart, TestData.periodEnd)
+            .observeBudgets(TestData.envelopeAId, TestData.period)
             .first()
             .single()
         assertEquals(20_000L, updated.amount)
@@ -292,6 +534,55 @@ class InMemoryEnvelogRepositoryTest {
     }
 
     @Test
+    fun setBudget_rejectsPeriodContainingExistingBudget() = runTest {
+        val existing = TestData.budget(
+            startDate = TestData.periodStart.plusDays(4),
+            endDate = TestData.periodStart.plusDays(9),
+        )
+        val repository = TestData.repository(
+            envelopes = listOf(TestData.envelope()),
+            budgets = listOf(existing),
+        )
+
+        repository.setBudget(
+            TestData.envelopeAId,
+            TestData.periodStart to TestData.periodEnd,
+            10_000,
+        ).assertFailureIs(BudgetOverlap::class.java)
+
+        assertEquals(
+            listOf(existing),
+            repository.observeBudgets(TestData.envelopeAId, TestData.period).first(),
+        )
+    }
+
+    @Test
+    fun setBudget_allowsPeriodTouchingExistingStart() = runTest {
+        val existing = TestData.budget(
+            startDate = TestData.periodStart,
+            endDate = TestData.periodStart.plusDays(10),
+        )
+        val repository = TestData.repository(
+            envelopes = listOf(TestData.envelope()),
+            budgets = listOf(existing),
+        )
+
+        val id = repository.setBudget(
+            TestData.envelopeAId,
+            TestData.periodStart.minusDays(10) to TestData.periodStart,
+            10_000,
+        ).getOrThrow()
+
+        assertEquals(
+            setOf(existing.id, id),
+            repository.observeBudgets(
+                TestData.envelopeAId,
+                TestData.range(TestData.periodStart.minusDays(30), TestData.periodEnd),
+            ).first().map { it.id }.toSet(),
+        )
+    }
+
+    @Test
     fun clearBudget_removesBudgetById() = runTest {
         val budget = TestData.budget()
         val repository = TestData.repository(budgets = listOf(budget))
@@ -299,7 +590,7 @@ class InMemoryEnvelogRepositoryTest {
         assertEquals(budget, repository.clearBudget(budget.id).getOrThrow())
 
         assertTrue(
-            repository.observeBudgets(TestData.envelopeAId, TestData.periodStart, TestData.periodEnd)
+            repository.observeBudgets(TestData.envelopeAId, TestData.period)
                 .first()
                 .isEmpty(),
         )
@@ -336,13 +627,12 @@ class InMemoryEnvelogRepositoryTest {
         )
         val repository = TestData.repository(budgets = listOf(before, first, second, after))
 
-        val removed = repository.clearBudget(TestData.periodStart, TestData.periodEnd).getOrThrow()
+        val removed = repository.clearBudget(TestData.overlapPeriod).getOrThrow()
 
         assertEquals(setOf(first.id, second.id), removed.map { it.id }.toSet())
         val remaining = repository.observeBudgets(
             TestData.envelopeAId,
-            TestData.periodStart.minusDays(30),
-            TestData.periodEnd.plusDays(30),
+            TestData.range(TestData.periodStart.minusDays(30), TestData.periodEnd.plusDays(30)),
         ).first()
         assertEquals(setOf(before.id, after.id), remaining.map { it.id }.toSet())
     }
@@ -354,13 +644,77 @@ class InMemoryEnvelogRepositoryTest {
         val repository = TestData.repository(budgets = listOf(budgetA, budgetB))
 
         val removed = repository
-            .clearBudget(TestData.envelopeAId, TestData.periodStart, TestData.periodEnd)
+            .clearBudget(TestData.envelopeAId, TestData.overlapPeriod)
             .getOrThrow()
 
         assertEquals(listOf(budgetA), removed)
         assertEquals(
             listOf(budgetB),
-            repository.observeBudgets(TestData.envelopeBId, TestData.periodStart, TestData.periodEnd).first(),
+            repository.observeBudgets(TestData.envelopeBId, TestData.period).first(),
+        )
+    }
+
+    @Test
+    fun clearBudget_removesBudgetContainingRange() = runTest {
+        val containing = TestData.budget(
+            startDate = TestData.periodStart.minusDays(30),
+            endDate = TestData.periodEnd.plusDays(15),
+        )
+        val repository = TestData.repository(budgets = listOf(containing))
+
+        assertEquals(listOf(containing), repository.clearBudget(TestData.overlapPeriod).getOrThrow())
+    }
+
+    @Test
+    fun clearBudget_respectsDateRangeRule() = runTest {
+        fun budgets() = listOf(
+            // 起点在区间外但与区间重叠：StartInRange 不命中，Overlap 命中
+            TestData.budget(
+                id = TestData.budgetAId,
+                startDate = TestData.periodStart.minusDays(20),
+                endDate = TestData.periodStart.plusDays(5),
+            ),
+            // 起点在区间内：两种规则都命中
+            TestData.budget(
+                id = TestData.budgetBId,
+                startDate = TestData.periodStart.plusDays(9),
+                endDate = TestData.periodStart.plusDays(19),
+            ),
+            // 与区间首尾相接：两种规则都不命中
+            TestData.budget(
+                id = TestData.budgetCId,
+                startDate = TestData.periodEnd,
+                endDate = TestData.periodEnd.plusDays(5),
+            ),
+        )
+
+        val removedByStart = TestData.repository(budgets = budgets())
+            .clearBudget(TestData.period)
+            .getOrThrow()
+        val removedByOverlap = TestData.repository(budgets = budgets())
+            .clearBudget(TestData.overlapPeriod)
+            .getOrThrow()
+
+        assertEquals(listOf(TestData.budgetBId), removedByStart.map { it.id })
+        assertEquals(
+            setOf(TestData.budgetAId, TestData.budgetBId),
+            removedByOverlap.map { it.id }.toSet(),
+        )
+    }
+
+    @Test
+    fun clearBudget_withUnknownEnvelopeRemovesNothing() = runTest {
+        val budget = TestData.budget()
+        val repository = TestData.repository(budgets = listOf(budget))
+
+        val removed = repository
+            .clearBudget(TestData.unknownId, TestData.overlapPeriod)
+            .getOrThrow()
+
+        assertTrue(removed.isEmpty())
+        assertEquals(
+            listOf(budget),
+            repository.observeBudgets(TestData.envelopeAId, TestData.period).first(),
         )
     }
 
@@ -374,7 +728,7 @@ class InMemoryEnvelogRepositoryTest {
         val onEnd = TestData.transaction(id = TestData.transactionBId, date = TestData.periodEnd)
         val repository = TestData.repository(transactions = listOf(inside, onEnd))
 
-        val result = repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first()
+        val result = repository.observeTransactions(TestData.period).first()
 
         assertEquals(listOf(inside), result)
     }
@@ -385,7 +739,7 @@ class InMemoryEnvelogRepositoryTest {
         val repository = TestData.repository(transactions = listOf(transaction))
 
         val result = repository
-            .observeTransactions(TransactionType.Expenditure, TestData.periodStart, TestData.periodEnd)
+            .observeTransactions(TransactionType.Expenditure, TestData.period)
             .first()
 
         assertEquals(listOf(transaction), result)
@@ -406,9 +760,7 @@ class InMemoryEnvelogRepositoryTest {
         )
 
         val result = repository.observeExpenditureEnvelopeAllocations(
-            TestData.envelopeAId,
-            TestData.periodStart,
-            TestData.periodEnd,
+            TestData.envelopeAId, TestData.period,
         ).first()
 
         assertEquals(listOf(tracked.id), result.map { it.transaction.id })
@@ -431,21 +783,17 @@ class InMemoryEnvelogRepositoryTest {
             allocations = mapOf(TestData.envelopeAId to 6_000, TestData.envelopeBId to 4_000),
         ).getOrThrow()
 
-        val transaction = repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().single()
+        val transaction = repository.observeTransactions(TestData.period).first().single()
         assertEquals(id, transaction.id)
         assertEquals(10_000L, transaction.amount)
         assertEquals(date, transaction.dateTime.toLocalDate())
 
         val allocationA = repository.observeExpenditureEnvelopeAllocations(
-            TestData.envelopeAId,
-            TestData.periodStart,
-            TestData.periodEnd,
+            TestData.envelopeAId, TestData.period,
         ).first().single()
         assertEquals(6_000L, allocationA.allocation.amount)
         val allocationB = repository.observeExpenditureEnvelopeAllocations(
-            TestData.envelopeBId,
-            TestData.periodStart,
-            TestData.periodEnd,
+            TestData.envelopeBId, TestData.period,
         ).first().single()
         assertEquals(4_000L, allocationB.allocation.amount)
     }
@@ -460,12 +808,10 @@ class InMemoryEnvelogRepositoryTest {
             allocations = mapOf(TestData.envelopeAId to 9_000),
         ).assertFailureIs(AllocationMismatch::class.java)
 
-        assertTrue(repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().isEmpty())
+        assertTrue(repository.observeTransactions(TestData.period).first().isEmpty())
         assertTrue(
             repository.observeExpenditureEnvelopeAllocations(
-                TestData.envelopeAId,
-                TestData.periodStart,
-                TestData.periodEnd,
+                TestData.envelopeAId, TestData.period,
             ).first().isEmpty(),
         )
     }
@@ -480,7 +826,7 @@ class InMemoryEnvelogRepositoryTest {
             allocations = mapOf(TestData.unknownId to 10_000),
         ).assertFailureIs(NoSuch.Envelope::class.java)
 
-        assertTrue(repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().isEmpty())
+        assertTrue(repository.observeTransactions(TestData.period).first().isEmpty())
     }
 
     @Test
@@ -494,20 +840,16 @@ class InMemoryEnvelogRepositoryTest {
 
         assertTrue(
             repository.observeExpenditureEnvelopeAllocations(
-                TestData.envelopeAId,
-                TestData.periodStart,
-                TestData.periodEnd,
+                TestData.envelopeAId, TestData.period,
             ).first().isEmpty(),
         )
         val allocationB = repository.observeExpenditureEnvelopeAllocations(
-            TestData.envelopeBId,
-            TestData.periodStart,
-            TestData.periodEnd,
+            TestData.envelopeBId, TestData.period,
         ).first().single()
         assertEquals(10_000L, allocationB.allocation.amount)
         assertEquals(
             10_000L,
-            repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().single().amount,
+            repository.observeTransactions(TestData.period).first().single().amount,
         )
     }
 
@@ -523,22 +865,18 @@ class InMemoryEnvelogRepositoryTest {
 
         assertEquals(
             20_000L,
-            repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().single().amount,
+            repository.observeTransactions(TestData.period).first().single().amount,
         )
         assertEquals(
             12_000L,
             repository.observeExpenditureEnvelopeAllocations(
-                TestData.envelopeAId,
-                TestData.periodStart,
-                TestData.periodEnd,
+                TestData.envelopeAId, TestData.period,
             ).first().single().allocation.amount,
         )
         assertEquals(
             8_000L,
             repository.observeExpenditureEnvelopeAllocations(
-                TestData.envelopeBId,
-                TestData.periodStart,
-                TestData.periodEnd,
+                TestData.envelopeBId, TestData.period,
             ).first().single().allocation.amount,
         )
     }
@@ -555,12 +893,10 @@ class InMemoryEnvelogRepositoryTest {
 
         assertEquals(
             10_000L,
-            repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().single().amount,
+            repository.observeTransactions(TestData.period).first().single().amount,
         )
         val allocation = repository.observeExpenditureEnvelopeAllocations(
-            TestData.envelopeAId,
-            TestData.periodStart,
-            TestData.periodEnd,
+            TestData.envelopeAId, TestData.period,
         ).first().single()
         assertEquals(10_000L, allocation.allocation.amount)
     }
@@ -581,12 +917,10 @@ class InMemoryEnvelogRepositoryTest {
 
         repository.deleteTransaction(TestData.transactionAId).getOrThrow()
 
-        assertTrue(repository.observeTransactions(TestData.periodStart, TestData.periodEnd).first().isEmpty())
+        assertTrue(repository.observeTransactions(TestData.period).first().isEmpty())
         assertTrue(
             repository.observeExpenditureEnvelopeAllocations(
-                TestData.envelopeAId,
-                TestData.periodStart,
-                TestData.periodEnd,
+                TestData.envelopeAId, TestData.period,
             ).first().isEmpty(),
         )
     }

@@ -16,3 +16,6 @@ data class StatItemContent(
     val value: StatItemSlot,
     val caption: StatItemSlot,
 )
+
+fun AnnotatedString.asSlot(): StatItemSlot = StatItemSlot.Text(this)
+fun String.asSlot(): StatItemSlot = StatItemSlot.Text(this)

@@ -16,7 +16,7 @@ data class StatItemStyle(
     val value: AutoSizedTextStyle,
     val caption: AutoSizedTextStyle,
 ) {
-    enum class Size { Extreme, Large, Medium }
+    enum class Size { Extreme, Large, Medium, Small }
 
     companion object {
         @Composable
@@ -24,6 +24,7 @@ data class StatItemStyle(
             Size.Extreme -> extreme(containerAlignment, contentAlignment)
             Size.Large -> large(containerAlignment, contentAlignment)
             Size.Medium -> medium(containerAlignment, contentAlignment)
+            Size.Small -> small(containerAlignment, contentAlignment)
         }
 
         @Composable
@@ -100,18 +101,51 @@ data class StatItemStyle(
             ),
         )
 
+        @Composable
+        private fun small(containerAlignment: Alignment.Horizontal, contentAlignment: Alignment) = StatItemStyle(
+            containerAlignment = containerAlignment,
+            contentAlignment = contentAlignment,
+            title = AutoSizedTextStyle(
+                MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ),
+            value = AutoSizedTextStyle(
+                MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+            ),
+            caption = AutoSizedTextStyle(
+                MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ),
+        )
+
         val ExtremeCenterStart: StatItemStyle
             @Composable get() = of(Size.Extreme, Alignment.Start, Alignment.CenterStart)
+        val ExtremeCenter: StatItemStyle
+            @Composable get() = of(Size.Extreme, Alignment.CenterHorizontally, Alignment.Center)
         val ExtremeCenterEnd: StatItemStyle
             @Composable get() = of(Size.Extreme, Alignment.End, Alignment.CenterEnd)
         val LargeCenterStart: StatItemStyle
             @Composable get() = of(Size.Large, Alignment.Start, Alignment.CenterStart)
+        val LargeCenter: StatItemStyle
+            @Composable get() = of(Size.Large, Alignment.CenterHorizontally, Alignment.Center)
         val LargeCenterEnd: StatItemStyle
             @Composable get() = of(Size.Large, Alignment.End, Alignment.CenterEnd)
         val MediumCenterStart: StatItemStyle
             @Composable get() = of(Size.Medium, Alignment.Start, Alignment.CenterStart)
+        val MediumCenter: StatItemStyle
+            @Composable get() = of(Size.Medium, Alignment.CenterHorizontally, Alignment.Center)
         val MediumCenterEnd: StatItemStyle
             @Composable get() = of(Size.Medium, Alignment.End, Alignment.CenterEnd)
+        val SmallCenterStart: StatItemStyle
+            @Composable get() = of(Size.Small, Alignment.Start, Alignment.CenterStart)
+        val SmallCenter: StatItemStyle
+            @Composable get() = of(Size.Small, Alignment.CenterHorizontally, Alignment.Center)
+        val SmallCenterEnd: StatItemStyle
+            @Composable get() = of(Size.Small, Alignment.End, Alignment.CenterEnd)
     }
 }
 

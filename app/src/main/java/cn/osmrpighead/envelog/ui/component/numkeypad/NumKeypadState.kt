@@ -26,12 +26,12 @@ sealed interface EvaluatedResult {
 }
 
 data class NumKeypadState(
-    val scale: Int,
-    val roundingMode: RoundingMode,
-    val fatal: Boolean,
-    val leftOperand: String,
-    val rightOperand: String,
-    val operator: Operator?,
+    val scale: Int = 2,
+    val roundingMode: RoundingMode = RoundingMode.HALF_UP,
+    val fatal: Boolean = false,
+    val leftOperand: String = "0",
+    val rightOperand: String = "0",
+    val operator: Operator? = null,
 ) {
     fun evaluate(): EvaluatedResult {
         return when (operator) {

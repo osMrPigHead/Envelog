@@ -22,6 +22,10 @@ fun BigDecimal.clamp(min: BigDecimal, max: BigDecimal, step: BigDecimal): BigDec
     }
 }
 
+// TODO: Currency
+fun BigDecimal.asAmount(scale: Int, roundingMode: RoundingMode): Long =
+    setScale(scale, roundingMode).movePointRight(2).toLong()
+
 fun Long.percent(denominator: Long): Ratio {
     return if (denominator == 0L) Ratio("0", false)
     else Ratio(BigDecimal(this).divide(BigDecimal(denominator), 4, RoundingMode.HALF_EVEN), true)
