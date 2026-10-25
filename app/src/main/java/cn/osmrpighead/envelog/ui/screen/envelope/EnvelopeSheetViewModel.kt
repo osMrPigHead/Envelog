@@ -6,11 +6,15 @@ import cn.osmrpighead.envelog.data.query.DateRange
 import cn.osmrpighead.envelog.data.query.DateRangeRule
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException
-import cn.osmrpighead.envelog.ui.model.EnvelogViewModel
+import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.model.MutableField
-import cn.osmrpighead.envelog.ui.navigation.Screen
+import cn.osmrpighead.envelog.navigation.AppRoute
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 
@@ -26,12 +30,13 @@ data class EnvelopeSheetFields(
     val isBudgeted: Field<Boolean> = Field(),
 )
 
-class EnvelopeViewModel(
-    private val route: Screen.Envelope,
-    shared: EnvelogViewModel,
+@HiltViewModel(assistedFactory = EnvelopeSheetViewModel.Factory::class)
+class EnvelopeSheetViewModel @AssistedInject constructor(
+    @Assisted private val route: AppRoute.Envelope,
+    appState: AppStateHolder,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
-    private val yearMonth = shared.yearMonth
+    private val yearMonth = appState.yearMonth
 
     private var fields: MutableFields = MutableFields()
 
@@ -68,4 +73,9 @@ class EnvelopeViewModel(
         SharingStarted.WhileSubscribed(5000),
         EnvelopeSheetUiState.Loading,
     )
+
+    @AssistedFactory
+    interface Factory {
+        fun create(route: AppRoute.Envelope): EnvelopeSheetViewModel
+    }
 }

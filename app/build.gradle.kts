@@ -1,6 +1,9 @@
 plugins {
     id("com.android.application")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -37,6 +40,17 @@ android {
 }
 
 dependencies {
+    implementation("androidx.lifecycle:lifecycle-process:2.11.0")
+    val nav3Version = "1.2.0"
+    val hiltVersion = "2.60.1"
+
+    implementation("com.google.dagger:hilt-android:$hiltVersion")
+    ksp("com.google.dagger:hilt-compiler:$hiltVersion")
+    implementation("androidx.hilt:hilt-lifecycle-viewmodel-compose:1.4.0")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+    implementation("androidx.navigation3:navigation3-runtime:$nav3Version")
+    implementation("androidx.navigation3:navigation3-ui:$nav3Version")
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.activity:activity-compose:1.13.0")

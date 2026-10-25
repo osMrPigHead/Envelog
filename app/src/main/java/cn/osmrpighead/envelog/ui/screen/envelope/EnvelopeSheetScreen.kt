@@ -1,7 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +23,6 @@ import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetItemSheet
 import cn.osmrpighead.envelog.util.date.DatePeriod
 import cn.osmrpighead.envelog.util.date.toPeriod
-import cn.osmrpighead.envelog.util.date.untilExclusive
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -82,10 +80,7 @@ fun Success(
                     },
                     sheetState = sheetState,
                 ) {
-                    Scaffold(
-                        contentWindowInsets = WindowInsets(0),
-                        bottomBar = { NumKeypadHost(numKeypadHost) },
-                    ) { innerPadding ->
+                    Scaffold(bottomBar = { NumKeypadHost(numKeypadHost) }) { innerPadding ->
                         BudgetItemSheet(
                             label = stringResource(R.string.budget_title),
                             numKeypadHost = numKeypadHost,
@@ -106,7 +101,7 @@ fun Success(
 }
 
 @Composable
-fun EnvelopeScreen(
+fun EnvelopeSheetScreen(
     uiState: EnvelopeSheetUiState,
     onNameChange: (String) -> Unit,
     onBudgetedChange: (Boolean) -> Unit,

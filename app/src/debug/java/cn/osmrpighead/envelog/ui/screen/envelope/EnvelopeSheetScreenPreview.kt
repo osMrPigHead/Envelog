@@ -25,10 +25,10 @@ import java.util.UUID
 
 @LangPreview
 @Composable
-private fun EnvelopeSheetScreenPreview() {
+private fun EnvelopeSheetSheetScreenPreview() {
     EnvelogTheme(dynamicColor = false) {
         var uiState by remember { mutableStateOf(previewUiState) }
-        EnvelopeScreen(
+        EnvelopeSheetScreen(
             uiState = uiState,
             onNameChange = { name ->
                 uiState = uiState.copy(fields = uiState.fields.copy(name = Field(name)))

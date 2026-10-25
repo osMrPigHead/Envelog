@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,79 +46,81 @@ fun OverviewScreen(
     modifier: Modifier = Modifier,
 ) {
     var managing by rememberSaveable { mutableStateOf(false) }
-    Column(modifier = modifier) {
-        Summary(
-            yearMonth = uiState.yearMonth,
-            items = uiState.summaryItems,
-            modifier = Modifier
-                .padding(horizontal = dimensionResource(R.dimen.spacingBold))
-                .padding(
-                    top = dimensionResource(R.dimen.spacingBold),
-                    bottom = dimensionResource(R.dimen.spacingMedium),
-                ),
-        )
-        PromptBar(
-            managing = managing,
-            onManageButtonClick = { managing = !managing },
-            modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold)),
-        )
-        val cardModifier = Modifier.padding(
-            horizontal = dimensionResource(R.dimen.spacingLarge),
-            vertical = dimensionResource(R.dimen.spacingSmall),
-        )
-        LazyColumn {
-            items(uiState.envelopes, key = { it.id }) {
-                EnvelopeCard(
-                    model = it,
-                    managing = managing,
-                    diffColor = { diffAmount ->
-                        if (diffAmount < 0) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.primary
-                    },  // TODO: User rule
-                    onArchiveClick = { onArchiveClick(it.id) },
-                    onEditClick = { onEditClick(it.id) },
-                    modifier = cardModifier,
-                )
-            }
-            item {
-                AnimatedContent(
-                    targetState = uiState.envelopes.isEmpty() || managing,
-                    contentAlignment = Alignment.CenterEnd,
-                    transitionSpec = {
-                        val direction = if (targetState) 1 else -1
-                        val enter = slideInVertically(
-                            animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
-                            initialOffsetY = { height -> -direction * height / 4 },
-                        ) + fadeIn(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
-                        val exit = slideOutVertically(
-                            animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
-                            targetOffsetY = { height -> direction * height / 4 },
-                        ) + fadeOut(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
-                        (enter togetherWith exit).using(null)
-                    },
-                ) {
-                    if (it) Card(modifier = cardModifier) {
-                        Row(
-                            modifier = Modifier
-                                .padding(dimensionResource(R.dimen.spacingBold))
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icon.AddCircle,
-                                contentDescription = null,
+    Scaffold { innerPadding ->
+        Column(modifier = modifier.padding(innerPadding)) {
+            Summary(
+                yearMonth = uiState.yearMonth,
+                items = uiState.summaryItems,
+                modifier = Modifier
+                    .padding(horizontal = dimensionResource(R.dimen.spacingBold))
+                    .padding(
+                        top = dimensionResource(R.dimen.spacingBold),
+                        bottom = dimensionResource(R.dimen.spacingMedium),
+                    ),
+            )
+            PromptBar(
+                managing = managing,
+                onManageButtonClick = { managing = !managing },
+                modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+            )
+            val cardModifier = Modifier.padding(
+                horizontal = dimensionResource(R.dimen.spacingLarge),
+                vertical = dimensionResource(R.dimen.spacingSmall),
+            )
+            LazyColumn {
+                items(uiState.envelopes, key = { it.id }) {
+                    EnvelopeCard(
+                        model = it,
+                        managing = managing,
+                        diffColor = { diffAmount ->
+                            if (diffAmount < 0) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.primary
+                        },  // TODO: User rule
+                        onArchiveClick = { onArchiveClick(it.id) },
+                        onEditClick = { onEditClick(it.id) },
+                        modifier = cardModifier,
+                    )
+                }
+                item {
+                    AnimatedContent(
+                        targetState = uiState.envelopes.isEmpty() || managing,
+                        contentAlignment = Alignment.CenterEnd,
+                        transitionSpec = {
+                            val direction = if (targetState) 1 else -1
+                            val enter = slideInVertically(
+                                animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
+                                initialOffsetY = { height -> -direction * height / 4 },
+                            ) + fadeIn(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
+                            val exit = slideOutVertically(
+                                animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
+                                targetOffsetY = { height -> direction * height / 4 },
+                            ) + fadeOut(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
+                            (enter togetherWith exit).using(null)
+                        },
+                    ) {
+                        if (it) Card(modifier = cardModifier) {
+                            Row(
                                 modifier = Modifier
-                                    .size(
-                                        with(LocalDensity.current) {
-                                            MaterialTheme.typography.titleLarge.lineHeight.toDp()
-                                        },
-                                    )
-                                    .padding(end = dimensionResource(R.dimen.spacingThin)),
-                            )
-                            Text(
-                                text = stringResource(R.string.envelope_manage_new),
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal),
-                            )
+                                    .padding(dimensionResource(R.dimen.spacingBold))
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icon.AddCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(
+                                            with(LocalDensity.current) {
+                                                MaterialTheme.typography.titleLarge.lineHeight.toDp()
+                                            },
+                                        )
+                                        .padding(end = dimensionResource(R.dimen.spacingThin)),
+                                )
+                                Text(
+                                    text = stringResource(R.string.envelope_manage_new),
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal),
+                                )
+                            }
                         }
                     }
                 }

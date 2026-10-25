@@ -9,18 +9,21 @@ import cn.osmrpighead.envelog.data.query.DateRange
 import cn.osmrpighead.envelog.data.query.DateRangeRule
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
-import cn.osmrpighead.envelog.ui.model.EnvelogViewModel
+import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.model.SummaryItem
 import cn.osmrpighead.envelog.util.date.first
 import cn.osmrpighead.envelog.util.date.next
 import cn.osmrpighead.envelog.util.percent
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
+import javax.inject.Inject
 
 private data class PeriodData(
     val start: LocalDate, val end: LocalDate,
@@ -98,12 +101,27 @@ private fun PeriodData.toUiState(yearMonth: YearMonth, today: LocalDate): Overvi
     )
 }
 
-class OverviewViewModel(
-    shared: EnvelogViewModel,
+@HiltViewModel
+class OverviewViewModel @Inject constructor(
+    appState: AppStateHolder,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
-    private val yearMonth = shared.yearMonth
-    private val today = shared.today
+    private val yearMonth = appState.yearMonth
+    private val today = appState.today
+
+    init {
+        appState.updateMonthIfFollowing()
+        viewModelScope.launch {
+            var lastMonth = YearMonth.from(appState.today.value)
+            appState.today.collect { today ->
+                val currentMonth = YearMonth.from(today)
+                if (lastMonth != currentMonth) {
+                    lastMonth = currentMonth
+                    appState.updateMonthIfFollowing()
+                }
+            }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val data: Flow<PeriodData> = yearMonth.flatMapLatest { yearMonth ->
@@ -123,9 +141,5 @@ class OverviewViewModel(
             OverviewUiState(yearMonth.value, emptyList(), emptyList()),
         )
 
-    fun archiveEnvelope(id: UUID) {
-        runBlocking {
-            repository.archiveEnvelope(id)
-        }
-    }
+    fun archiveEnvelope(id: UUID) = runBlocking { repository.archiveEnvelope(id) }
 }

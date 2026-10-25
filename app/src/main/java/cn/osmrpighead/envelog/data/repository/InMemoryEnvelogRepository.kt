@@ -26,14 +26,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import java.time.ZonedDateTime
 import java.util.UUID
+import javax.inject.Inject
 import kotlin.collections.filter
 
 class InMemoryEnvelogRepository(
-    envelopes: List<Envelope> = emptyList(),
-    budgets: List<Budget> = emptyList(),
-    transactions: List<Transaction> = emptyList(),
-    allocations: List<ExpenditureEnvelopeAllocation> = emptyList(),
+    envelopes: List<Envelope>,
+    budgets: List<Budget>,
+    transactions: List<Transaction>,
+    allocations: List<ExpenditureEnvelopeAllocation>,
 ) : EnvelogRepository {
+    @Inject constructor() : this(emptyList(), emptyList(), emptyList(), emptyList())
+
     private val envelopes: MutableStateFlow<List<Envelope>> = MutableStateFlow(envelopes)
     private val budgets: MutableStateFlow<List<Budget>> = MutableStateFlow(budgets)
     private val transactions: MutableStateFlow<List<Transaction>> = MutableStateFlow(transactions)
