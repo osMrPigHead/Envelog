@@ -1,16 +1,22 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import cn.osmrpighead.envelog.util.date.DatePeriod
 import cn.osmrpighead.envelog.util.date.untilExclusive
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 internal object EnvelopePreviewData {
 
-    val period: DatePeriod = LocalDate.of(2026, 9, 1) untilExclusive LocalDate.of(2026, 10, 1)
+    val yearMonth: YearMonth = YearMonth.of(2026, 9)
+
+    val today: LocalDate = LocalDate.of(2026, 9, 15)
+
+    val period: DatePeriod = yearMonth.atDay(1) untilExclusive yearMonth.plusMonths(1).atDay(1)
 
     val firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY
 
@@ -21,6 +27,13 @@ internal object EnvelopePreviewData {
     }
 
     private val envelopeId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000101")
+
+    val envelope: Envelope = Envelope(
+        id = envelopeId,
+        name = "Food",
+        isBudgeted = true,
+        archived = false,
+    )
 
     val mixedBudgets: List<Budget> = listOf(
         budgetOf(0, LocalDate.of(2026, 9, 3) untilExclusive LocalDate.of(2026, 9, 9), 30_000),

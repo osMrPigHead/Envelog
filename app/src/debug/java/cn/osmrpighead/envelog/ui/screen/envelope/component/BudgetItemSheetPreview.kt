@@ -17,7 +17,10 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
+import cn.osmrpighead.envelog.ui.model.FieldWithState
+import cn.osmrpighead.envelog.ui.model.ModelTarget
 import cn.osmrpighead.envelog.ui.preview.LangPreview
+import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopePreviewData
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetFields
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetModel
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
@@ -26,14 +29,23 @@ import java.util.UUID
 
 @LangPreview
 @Composable
-private fun BudgetItemSheetPreview() {
+private fun BudgetItemSheetPreview() = BudgetItemSheetSample(
+    target = ModelTarget.Existing(previewBudget),
+    today = EnvelopePreviewData.today,
+)
+
+@LangPreview
+@Composable
+private fun BudgetItemSheetNewPreview() = BudgetItemSheetSample(
+    target = ModelTarget.New(),
+    today = EnvelopePreviewData.today,
+)
+
+@Composable
+private fun BudgetItemSheetSample(target: ModelTarget<Budget>, today: LocalDate) {
     EnvelogTheme(dynamicColor = false) {
-        var budget by remember { mutableStateOf(previewBudget) }
+        var fields by remember { mutableStateOf(BudgetItemSheetFields()) }
         val host = rememberNumKeypadHostState()
-        val uiState = BudgetItemSheetModel(
-            value = budget,
-            fields = BudgetItemSheetFields(),
-        )
 
         Column(
             modifier = Modifier
@@ -44,9 +56,17 @@ private fun BudgetItemSheetPreview() {
             BudgetItemSheet(
                 label = "Budget",
                 numKeypadHost = host,
-                uiState = uiState,
-                onPeriodChange = { budget = budget.copy(startDate = it.start, endDate = it.endExclusive) },
-                onAmountChange = { budget = budget.copy(amount = it) },
+                uiState = BudgetItemSheetModel(
+                    target = target,
+                    fields = fields,
+                    today = today,
+                ),
+                onPeriodChange = { period ->
+                    fields = fields.copy(period = FieldWithState(period))
+                },
+                onAmountChange = { amount ->
+                    fields = fields.copy(amount = FieldWithState(amount))
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.weight(1f))

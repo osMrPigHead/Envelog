@@ -30,4 +30,7 @@
     <string name="name">名称</string>
     <string name="envelope_budgeted">启用预算</string>
     <string name="budget_title">预算</string>
+    <string name="unspecified">未指定</string>
+    <string name="envelope_new_name">新建信封</string>
+    <string name="save">保存</string>
 </resources>

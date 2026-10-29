@@ -129,6 +129,7 @@ fun BudgetCalendar(
                         budget = budget,
                         fill = budget.period.length != 1L,
                         modifier = Modifier
+                            .clickable { onClick(budget.period.start) }
                             .padding(horizontal = dimensionResource(R.dimen.spacingMedium))
                             .weight(budget.period.length.toFloat()),
                     )

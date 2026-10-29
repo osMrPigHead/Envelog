@@ -1,21 +1,18 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.model
 
 import cn.osmrpighead.envelog.data.model.Budget
-import cn.osmrpighead.envelog.ui.model.Field
-import cn.osmrpighead.envelog.ui.model.MutableField
+import cn.osmrpighead.envelog.ui.model.FieldWithState
+import cn.osmrpighead.envelog.ui.model.ModelTarget
 import cn.osmrpighead.envelog.util.date.DatePeriod
-
-data class BudgetItemSheetMutableFields(
-    val period: MutableField<DatePeriod> = MutableField(),
-    val amount: MutableField<Long> = MutableField(),
-)
+import java.time.LocalDate
 
 data class BudgetItemSheetFields(
-    val period: Field<DatePeriod> = Field(),
-    val amount: Field<Long> = Field(),
+    val period: FieldWithState<DatePeriod> = FieldWithState(),
+    val amount: FieldWithState<Long> = FieldWithState(),
 )
 
 data class BudgetItemSheetModel(
-    val value: Budget,
+    val target: ModelTarget<Budget>,
     val fields: BudgetItemSheetFields,
+    val today: LocalDate,
 )

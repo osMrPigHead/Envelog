@@ -5,3 +5,5 @@ fun String.trimAndCheck(throwable: Throwable): String {
     if (trimmed.isBlank()) throw throwable
     return trimmed
 }
+
+fun String.checkTrimmed(): Boolean = trim().isNotBlank()

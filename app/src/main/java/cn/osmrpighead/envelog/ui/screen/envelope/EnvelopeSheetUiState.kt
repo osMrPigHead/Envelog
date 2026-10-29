@@ -1,18 +1,13 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.ui.model.ModelTarget
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetModel
-import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
+import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeSheetModel
 import java.time.YearMonth
 
-sealed interface EnvelopeSheetUiState {
-    data object Loading : EnvelopeSheetUiState
-    data object NoSuchEnvelope: EnvelopeSheetUiState
-    data class Success(
-        val value: EnvelopeResult,
-        val yearMonth: YearMonth,
-        val calendarModel: BudgetCalendarModel,
-        val fields: EnvelopeSheetFields,
-        val budgetItem: BudgetItemSheetModel?,
-    ) : EnvelopeSheetUiState
-}
+data class EnvelopeSheetUiState(
+    val target: ModelTarget<EnvelopeSheetModel>,
+    val yearMonth: YearMonth,
+    val fields: EnvelopeSheetFields,
+    val budgetItemSheetModel: BudgetItemSheetModel?,
+)
