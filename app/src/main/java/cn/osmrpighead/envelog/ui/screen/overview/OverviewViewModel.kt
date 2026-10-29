@@ -10,7 +10,7 @@ import cn.osmrpighead.envelog.data.query.DateRangeRule
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
-import cn.osmrpighead.envelog.ui.model.EnvelopeModel
+import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.model.SummaryItem
 import cn.osmrpighead.envelog.util.date.first
 import cn.osmrpighead.envelog.util.date.next

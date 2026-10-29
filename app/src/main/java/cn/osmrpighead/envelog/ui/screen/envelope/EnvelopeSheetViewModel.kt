@@ -10,6 +10,7 @@ import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.model.MutableField
 import cn.osmrpighead.envelog.navigation.AppRoute
+import cn.osmrpighead.envelog.navigation.NavigationTarget
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -50,7 +51,7 @@ class EnvelopeSheetViewModel @AssistedInject constructor(
         try {
             fields = MutableFields()
             repository.observeEnvelopeWithExtra(
-                envelopeId = route.id,
+                envelopeId = TODO(),
                 range = range,
             ).map { result ->
                 EnvelopeSheetUiState.Success(

@@ -14,7 +14,8 @@ fun AppNavDisplay(backStack: NavBackStack<AppRoute>) {
         onBack = { backStack.removeLastOrNull() },
         entryProvider = entryProvider {
             overviewEntry(
-                onNavigateToEnvelope = { id -> backStack.add(AppRoute.Envelope(id)) },
+                onNavigateToEnvelopeWithId = { id -> backStack.add(AppRoute.Envelope(NavigationTarget.Existing(id))) },
+                onNavigateToEnvelopeWithoutId = { backStack.add(AppRoute.Envelope(NavigationTarget.New())) },
             )
             envelopeSheetEntry()
         },

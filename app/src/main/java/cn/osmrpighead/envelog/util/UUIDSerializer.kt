@@ -21,6 +21,7 @@ object UUIDSerializer : KSerializer<UUID> {
     }
 }
 
+@Suppress("unused")
 val uuidModule = SerializersModule {
     contextual(UUIDSerializer)
 }

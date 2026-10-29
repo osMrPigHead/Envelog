@@ -13,6 +13,7 @@ import cn.osmrpighead.envelog.data.query.AllocationResult
 import cn.osmrpighead.envelog.data.query.DateRange
 import cn.osmrpighead.envelog.data.query.judge
 import cn.osmrpighead.envelog.data.query.contains
+import cn.osmrpighead.envelog.util.UuidGenerator
 import cn.osmrpighead.envelog.util.date.DatePeriod
 import cn.osmrpighead.envelog.util.mapEach
 import cn.osmrpighead.envelog.util.date.untilExclusive
@@ -26,7 +27,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import java.time.ZonedDateTime
 import java.util.UUID
-import javax.inject.Inject
 import kotlin.collections.filter
 
 class InMemoryEnvelogRepository(
@@ -35,8 +35,6 @@ class InMemoryEnvelogRepository(
     transactions: List<Transaction>,
     allocations: List<ExpenditureEnvelopeAllocation>,
 ) : EnvelogRepository {
-    @Inject constructor() : this(emptyList(), emptyList(), emptyList(), emptyList())
-
     private val envelopes: MutableStateFlow<List<Envelope>> = MutableStateFlow(envelopes)
     private val budgets: MutableStateFlow<List<Budget>> = MutableStateFlow(budgets)
     private val transactions: MutableStateFlow<List<Transaction>> = MutableStateFlow(transactions)
@@ -267,8 +265,7 @@ class InMemoryEnvelogRepository(
     }
 
     private fun <T : HasId> MutableStateFlow<List<T>>.create(function: (UUID, MutableList<T>) -> T): UUID {
-        var id = UUID.randomUUID()
-        while (value.any { it.id == id }) id = UUID.randomUUID()
+        val id = UuidGenerator.instance.generate()
         update { it.toMutableList().apply { add(function(id, this)) } }
         return id
     }

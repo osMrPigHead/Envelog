@@ -14,6 +14,7 @@ private fun OverviewScreenPreview() {
             uiState = OverviewPreviewData.uiState,
             onArchiveClick = {},
             onEditClick = {},
+            onNewClick = {},
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -27,6 +28,7 @@ private fun OverviewScreenEmptyPreview() {
             uiState = OverviewPreviewData.emptyUiState,
             onArchiveClick = {},
             onEditClick = {},
+            onNewClick = {},
             modifier = Modifier.fillMaxSize(),
         )
     }

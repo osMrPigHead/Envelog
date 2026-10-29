@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.screen.overview.OverviewPreviewData
-import cn.osmrpighead.envelog.ui.model.EnvelopeModel
+import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.preview.LangPreview
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 

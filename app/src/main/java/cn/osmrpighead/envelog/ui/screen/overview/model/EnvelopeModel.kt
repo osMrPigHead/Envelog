@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.model
+package cn.osmrpighead.envelog.ui.screen.overview.model
 
 import cn.osmrpighead.envelog.data.model.CurrencyType
 import cn.osmrpighead.envelog.util.Ratio

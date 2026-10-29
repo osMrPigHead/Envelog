@@ -1,9 +1,8 @@
 package cn.osmrpighead.envelog.ui.screen.overview
 
 import cn.osmrpighead.envelog.data.model.CurrencyType
-import cn.osmrpighead.envelog.ui.model.EnvelopeModel
+import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.model.SummaryItem
-import cn.osmrpighead.envelog.ui.screen.overview.OverviewUiState
 import cn.osmrpighead.envelog.util.percent
 import java.time.LocalDate
 import java.time.YearMonth

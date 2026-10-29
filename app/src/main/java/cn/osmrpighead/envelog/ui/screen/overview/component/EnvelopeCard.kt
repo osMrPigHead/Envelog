@@ -21,7 +21,7 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.CurrencyType
 import cn.osmrpighead.envelog.ui.component.statitem.*
 import cn.osmrpighead.envelog.ui.icon.Icon
-import cn.osmrpighead.envelog.ui.model.EnvelopeModel
+import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.text.orDefault
 import cn.osmrpighead.envelog.ui.text.relativeDate
 import cn.osmrpighead.envelog.ui.text.Formatter

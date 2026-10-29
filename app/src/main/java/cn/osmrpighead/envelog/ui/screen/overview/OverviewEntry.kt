@@ -8,7 +8,8 @@ import cn.osmrpighead.envelog.navigation.AppRoute
 import java.util.UUID
 
 fun EntryProviderScope<AppRoute>.overviewEntry(
-    onNavigateToEnvelope: (UUID) -> Unit,
+    onNavigateToEnvelopeWithId: (UUID) -> Unit,
+    onNavigateToEnvelopeWithoutId: () -> Unit,
 ) {
     entry<AppRoute.Overview> {
         val viewModel: OverviewViewModel = hiltViewModel()
@@ -16,7 +17,8 @@ fun EntryProviderScope<AppRoute>.overviewEntry(
         OverviewScreen(
             uiState = uiState,
             onArchiveClick = viewModel::archiveEnvelope,
-            onEditClick = onNavigateToEnvelope,
+            onEditClick = onNavigateToEnvelopeWithId,
+            onNewClick = onNavigateToEnvelopeWithoutId,
         )
     }
 }
