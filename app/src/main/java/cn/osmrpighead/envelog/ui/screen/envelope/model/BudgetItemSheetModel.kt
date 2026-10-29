@@ -3,7 +3,7 @@ package cn.osmrpighead.envelog.ui.screen.envelope.model
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.model.MutableField
-import cn.osmrpighead.envelog.util.date.DatePeriod
+import cn.osmrpighead.envelog.core.time.DatePeriod
 
 data class BudgetItemSheetMutableFields(
     val period: MutableField<DatePeriod> = MutableField(),

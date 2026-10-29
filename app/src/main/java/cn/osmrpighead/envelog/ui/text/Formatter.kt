@@ -8,7 +8,7 @@ import android.icu.number.Precision
 import android.icu.number.UnlocalizedNumberFormatter
 import android.icu.util.MeasureUnit
 import android.icu.util.ULocale
-import cn.osmrpighead.envelog.common.locale.AppLocale
+import cn.osmrpighead.envelog.core.locale.AppLocale
 import cn.osmrpighead.envelog.util.Ratio
 import cn.osmrpighead.envelog.util.clamp
 import java.math.BigDecimal

@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.di
+package cn.osmrpighead.envelog.core.di
 
 import dagger.Module
 import dagger.Provides

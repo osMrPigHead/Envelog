@@ -13,10 +13,10 @@ import cn.osmrpighead.envelog.data.query.AllocationResult
 import cn.osmrpighead.envelog.data.query.DateRange
 import cn.osmrpighead.envelog.data.query.judge
 import cn.osmrpighead.envelog.data.query.contains
-import cn.osmrpighead.envelog.util.UuidGenerator
-import cn.osmrpighead.envelog.util.date.DatePeriod
+import cn.osmrpighead.envelog.util.UUIDGenerator
+import cn.osmrpighead.envelog.core.time.DatePeriod
 import cn.osmrpighead.envelog.util.mapEach
-import cn.osmrpighead.envelog.util.date.untilExclusive
+import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.util.trimAndCheck
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -265,7 +265,7 @@ class InMemoryEnvelogRepository(
     }
 
     private fun <T : HasId> MutableStateFlow<List<T>>.create(function: (UUID, MutableList<T>) -> T): UUID {
-        val id = UuidGenerator.instance.generate()
+        val id = UUIDGenerator.instance.generate()
         update { it.toMutableList().apply { add(function(id, this)) } }
         return id
     }

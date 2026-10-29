@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.util
+package cn.osmrpighead.envelog.core.exception
 
 open class EnvelogExceptionCompanion<E : Throwable>(private val type: Class<E>) {
     fun <T> catch(function: () -> T): Result<T> {

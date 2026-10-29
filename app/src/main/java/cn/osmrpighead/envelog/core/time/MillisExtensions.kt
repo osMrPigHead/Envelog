@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.util.date
+package cn.osmrpighead.envelog.core.time
 
 import java.time.Instant
 import java.time.LocalDate

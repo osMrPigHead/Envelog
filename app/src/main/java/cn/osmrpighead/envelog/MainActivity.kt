@@ -6,8 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.rememberNavBackStack
-import cn.osmrpighead.envelog.navigation.AppNavDisplay
-import cn.osmrpighead.envelog.navigation.AppRoute
+import cn.osmrpighead.envelog.core.navigation.AppNavDisplay
+import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import dagger.hilt.android.AndroidEntryPoint
 

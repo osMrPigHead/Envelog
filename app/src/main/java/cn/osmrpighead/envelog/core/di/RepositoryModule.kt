@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.di
+package cn.osmrpighead.envelog.core.di
 
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.data.repository.EnvelogSeedData

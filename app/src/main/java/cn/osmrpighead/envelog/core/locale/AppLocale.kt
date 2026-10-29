@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.common.locale
+package cn.osmrpighead.envelog.core.locale
 
 import java.util.Locale
 

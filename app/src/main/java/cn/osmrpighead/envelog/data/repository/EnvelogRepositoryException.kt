@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.util.EnvelogExceptionCompanion
+import cn.osmrpighead.envelog.core.exception.EnvelogExceptionCompanion
 
 @Suppress("CanSealedSubClassBeObject")
 sealed class EnvelogRepositoryException : RuntimeException() {

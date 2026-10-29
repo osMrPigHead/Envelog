@@ -7,7 +7,7 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.Argumen
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.RuleViolation.AllocationMismatch
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.RuleViolation.BudgetOverlap
-import cn.osmrpighead.envelog.util.date.untilExclusive
+import cn.osmrpighead.envelog.core.time.untilExclusive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

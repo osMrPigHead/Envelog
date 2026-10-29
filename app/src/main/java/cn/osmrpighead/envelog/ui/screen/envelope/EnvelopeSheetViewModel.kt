@@ -9,8 +9,7 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.model.MutableField
-import cn.osmrpighead.envelog.navigation.AppRoute
-import cn.osmrpighead.envelog.navigation.NavigationTarget
+import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory

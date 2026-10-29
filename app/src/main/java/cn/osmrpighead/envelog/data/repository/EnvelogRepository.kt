@@ -7,7 +7,7 @@ import cn.osmrpighead.envelog.data.model.TransactionType
 import cn.osmrpighead.envelog.data.query.AllocationResult
 import cn.osmrpighead.envelog.data.query.DateRange
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
-import cn.osmrpighead.envelog.util.date.DatePeriod
+import cn.osmrpighead.envelog.core.time.DatePeriod
 import kotlinx.coroutines.flow.Flow
 import java.time.ZonedDateTime
 import java.util.UUID

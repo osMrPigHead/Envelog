@@ -16,7 +16,7 @@ import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.preview.LangPreview
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
-import cn.osmrpighead.envelog.util.date.ClosedDatePeriod
+import cn.osmrpighead.envelog.core.time.ClosedDatePeriod
 import java.time.LocalDate
 
 @LangPreview

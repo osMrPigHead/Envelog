@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.navigation
+package cn.osmrpighead.envelog.core.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Contextual
