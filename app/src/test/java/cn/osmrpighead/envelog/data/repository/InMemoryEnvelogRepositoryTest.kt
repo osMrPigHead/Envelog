@@ -1,7 +1,7 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.entity.TransactionType
-import cn.osmrpighead.envelog.data.query.DateRangeRule
+import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.query_old.DateRangeRule
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.EnvelopeReferenced
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NameBlank
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch
@@ -43,7 +43,7 @@ class InMemoryEnvelogRepositoryTest {
         assertEquals(id, envelope.id)
         assertEquals("Food", envelope.name)
         assertTrue(envelope.isBudgeted)
-        assertFalse(envelope.archived)
+        assertFalse(envelope.archivedAt)
     }
 
     @Test
@@ -740,7 +740,7 @@ class InMemoryEnvelogRepositoryTest {
         val repository = TestData.repository(transactions = listOf(transaction))
 
         val result = repository
-            .observeTransactions(TransactionType.Expenditure, TestData.period)
+            .observeTransactions(EntryType.Expenditure, TestData.period)
             .first()
 
         assertEquals(listOf(transaction), result)
@@ -787,7 +787,7 @@ class InMemoryEnvelogRepositoryTest {
         val transaction = repository.observeTransactions(TestData.period).first().single()
         assertEquals(id, transaction.id)
         assertEquals(10_000L, transaction.amount)
-        assertEquals(date, transaction.dateTime.toLocalDate())
+        assertEquals(date, transaction.happenedAt.toLocalDate())
 
         val allocationA = repository.observeExpenditureEnvelopeAllocations(
             TestData.envelopeAId, TestData.period,

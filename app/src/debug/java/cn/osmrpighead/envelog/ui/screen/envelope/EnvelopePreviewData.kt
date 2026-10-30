@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import cn.osmrpighead.envelog.data.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import cn.osmrpighead.envelog.core.time.DatePeriod
 import cn.osmrpighead.envelog.core.time.untilExclusive

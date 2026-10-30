@@ -1,6 +1,6 @@
-package cn.osmrpighead.envelog.data.query
+package cn.osmrpighead.envelog.data.query_old
 
-import cn.osmrpighead.envelog.data.query.DateRangeRule.*
+import cn.osmrpighead.envelog.data.query_old.DateRangeRule.*
 import cn.osmrpighead.envelog.core.time.DatePeriod
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import java.time.LocalDate

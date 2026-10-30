@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.data.entity
+package cn.osmrpighead.envelog.data.db.entity
 
 import androidx.room3.Embedded
 import androidx.room3.Entity
@@ -6,11 +6,13 @@ import androidx.room3.ForeignKey
 import androidx.room3.ForeignKey.Companion.CASCADE
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
-import cn.osmrpighead.envelog.core.time.DatePeriod
-import java.util.UUID
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
+import cn.osmrpighead.envelog.data.model.BudgetId
+import cn.osmrpighead.envelog.data.model.EnvelopeId
+import java.time.Instant
 
 @Entity(
-    tableName = "budgets",
+    tableName = "budget",
     foreignKeys = [
         ForeignKey(
             entity = EnvelopeEntity::class,
@@ -23,8 +25,9 @@ import java.util.UUID
     indices = [Index("envelopeId")]
 )
 data class BudgetEntity(
-    @PrimaryKey override val id: UUID,
-    val envelopeId: UUID,
-    @Embedded val period: DatePeriod,
+    @PrimaryKey val id: BudgetId,
+    val envelopeId: EnvelopeId,
+    @Embedded val dateSpan: HalfOpenDateSpan,
     val amount: Long,
-) : HasId
+    val deletedAt: Instant?,
+)

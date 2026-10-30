@@ -2,8 +2,8 @@ package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.osmrpighead.envelog.data.query.DateRange
-import cn.osmrpighead.envelog.data.query.DateRangeRule
+import cn.osmrpighead.envelog.data.query_old.DateRange
+import cn.osmrpighead.envelog.data.query_old.DateRangeRule
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
@@ -58,7 +58,7 @@ class EnvelopeSheetViewModel @AssistedInject constructor(
                     yearMonth = yearMonth,
                     calendarModel = BudgetCalendarModel(
                         allocations = result.allocations
-                            .associate { it.transaction.dateTime.toLocalDate() to it.allocation.amount },
+                            .associate { it.transaction.happenedAt.toLocalDate() to it.allocation.amount },
                         budgets = result.budgets,
                     ),
                     fields = fields.toFields(),

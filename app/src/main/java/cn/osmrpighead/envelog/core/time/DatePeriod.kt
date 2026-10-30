@@ -6,6 +6,7 @@ import java.time.LocalDate
 import java.time.format.FormatStyle
 import java.util.Locale
 
+@Deprecated("")
 data class DatePeriod(
     val start: LocalDate,
     val endExclusive: LocalDate,

@@ -1,10 +1,10 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.entity.BudgetEntity
-import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.entity.TransactionEntity
-import cn.osmrpighead.envelog.data.entity.TransactionType
+import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryType
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -31,11 +31,11 @@ object DemoSeedData {
         val monthEnd = monthStart.plusMonths(1)
 
         val envelopes = listOf(
-            EnvelopeEntity(foodEnvelopeId, "餐饮", isBudgeted = true, archived = false),
-            EnvelopeEntity(transportEnvelopeId, "交通", isBudgeted = true, archived = false),
-            EnvelopeEntity(shoppingEnvelopeId, "购物", isBudgeted = false, archived = false),
-            EnvelopeEntity(householdEnvelopeId, "居住", isBudgeted = true, archived = false),
-            EnvelopeEntity(archivedEnvelopeId, "旧信封", isBudgeted = true, archived = true),
+            EnvelopeEntity(foodEnvelopeId, "餐饮", isBudgeted = true, archivedAt = false),
+            EnvelopeEntity(transportEnvelopeId, "交通", isBudgeted = true, archivedAt = false),
+            EnvelopeEntity(shoppingEnvelopeId, "购物", isBudgeted = false, archivedAt = false),
+            EnvelopeEntity(householdEnvelopeId, "居住", isBudgeted = true, archivedAt = false),
+            EnvelopeEntity(archivedEnvelopeId, "旧信封", isBudgeted = true, archivedAt = true),
         )
 
         val budgets = buildList {
@@ -55,7 +55,7 @@ object DemoSeedData {
         val foodSecondDate = previousDays.getOrNull(0)
         val splitDate = previousDays.getOrNull(1)
 
-        val transactions = mutableListOf<TransactionEntity>()
+        val transactions = mutableListOf<EntryEntity>()
         val allocations = mutableListOf<ExpenditureAllocationEntity>()
 
         fun record(
@@ -65,15 +65,15 @@ object DemoSeedData {
             shares: List<Pair<UUID, Long>>,
         ) {
             require(shares.sumOf { it.second } == amount) { "Allocation total must equal transaction amount" }
-            transactions += TransactionEntity(
+            transactions += EntryEntity(
                 id = transactionId,
-                type = TransactionType.Expenditure,
-                dateTime = ZonedDateTime.of(date, LocalTime.NOON, zone),
+                type = EntryType.Expenditure,
+                happenedAt = ZonedDateTime.of(date, LocalTime.NOON, zone),
                 amount = amount,
             )
             shares.forEach { (envelopeId, share) ->
                 allocations += ExpenditureAllocationEntity(
-                    transactionId = transactionId,
+                    entryId = transactionId,
                     envelopeId = envelopeId,
                     amount = share,
                 )

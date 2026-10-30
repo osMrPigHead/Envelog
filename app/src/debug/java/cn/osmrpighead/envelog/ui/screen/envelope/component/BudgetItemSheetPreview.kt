@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.data.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.preview.LangPreview

@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.core.navigation
+package cn.osmrpighead.envelog.util
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

@@ -1,18 +1,18 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.entity.BudgetEntity
-import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.entity.TransactionEntity
-import cn.osmrpighead.envelog.data.entity.TransactionType
-import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
-import cn.osmrpighead.envelog.data.entity.HasId
-import cn.osmrpighead.envelog.data.query.AllocationResult
-import cn.osmrpighead.envelog.data.query.DateRange
-import cn.osmrpighead.envelog.data.query.judge
-import cn.osmrpighead.envelog.data.query.contains
+import cn.osmrpighead.envelog.data.db.entity.HasId
+import cn.osmrpighead.envelog.data.query_old.AllocationResult
+import cn.osmrpighead.envelog.data.query_old.DateRange
+import cn.osmrpighead.envelog.data.query_old.judge
+import cn.osmrpighead.envelog.data.query_old.contains
 import cn.osmrpighead.envelog.util.UUIDGenerator
 import cn.osmrpighead.envelog.core.time.DatePeriod
 import cn.osmrpighead.envelog.util.mapEach
@@ -32,16 +32,16 @@ import kotlin.collections.filter
 class InMemoryEnvelogRepository(
     envelopes: List<EnvelopeEntity>,
     budgets: List<BudgetEntity>,
-    transactions: List<TransactionEntity>,
+    transactions: List<EntryEntity>,
     allocations: List<ExpenditureAllocationEntity>,
 ) : EnvelogRepository {
     private val envelopes: MutableStateFlow<List<EnvelopeEntity>> = MutableStateFlow(envelopes)
     private val budgets: MutableStateFlow<List<BudgetEntity>> = MutableStateFlow(budgets)
-    private val transactions: MutableStateFlow<List<TransactionEntity>> = MutableStateFlow(transactions)
+    private val transactions: MutableStateFlow<List<EntryEntity>> = MutableStateFlow(transactions)
     private val allocations: MutableStateFlow<List<ExpenditureAllocationEntity>> = MutableStateFlow(allocations)
 
     override fun observeActiveEnvelopes(): Flow<List<EnvelopeEntity>> =
-        envelopes.map { envelopes -> envelopes.filter { !it.archived } }
+        envelopes.map { envelopes -> envelopes.filter { !it.archivedAt } }
 
     override fun observeActiveEnvelopesWithExtra(range: DateRange): Flow<List<EnvelopeResult>> =
         observeActiveEnvelopes().mapEach {
@@ -62,22 +62,22 @@ class InMemoryEnvelogRepository(
     ): Flow<List<AllocationResult>> =
         allocations.map { allocations ->
             allocations.mapNotNull {
-                val transaction = transactions.value.find { transaction -> it.transactionId == transaction.id }
+                val transaction = transactions.value.find { transaction -> it.entryId == transaction.id }
                 if (transaction != null) AllocationResult(transaction = transaction, allocation = it)
                 else null
             }.filter { (transaction, allocation) ->
-                transaction.dateTime.toLocalDate() in range && allocation.envelopeId == envelopeId
+                transaction.happenedAt.toLocalDate() in range && allocation.envelopeId == envelopeId
             }
         }
 
-    override fun observeTransactions(range: DateRange): Flow<List<TransactionEntity>> =
+    override fun observeTransactions(range: DateRange): Flow<List<EntryEntity>> =
         transactions.map { transactions ->
-            transactions.filter { it.dateTime.toLocalDate() in range }
+            transactions.filter { it.happenedAt.toLocalDate() in range }
         }
 
-    override fun observeTransactions(type: TransactionType, range: DateRange): Flow<List<TransactionEntity>> =
+    override fun observeTransactions(type: EntryType, range: DateRange): Flow<List<EntryEntity>> =
         transactions.map { transactions ->
-            transactions.filter { it.dateTime.toLocalDate() in range && it.type == type }
+            transactions.filter { it.happenedAt.toLocalDate() in range && it.type == type }
         }
 
     override suspend fun getEnvelope(envelopeId: UUID): EnvelopeEntity {
@@ -106,7 +106,7 @@ class InMemoryEnvelogRepository(
                     id = id,
                     name = name.trimAndCheck(ArgumentException.NameBlank()),
                     isBudgeted = isBudgeted,
-                    archived = false,
+                    archivedAt = false,
                 )
             }
         }
@@ -120,7 +120,7 @@ class InMemoryEnvelogRepository(
     }
 
     override suspend fun archiveEnvelope(id: UUID): Result<Unit> = EnvelogRepositoryException.catch {
-        envelopes.findIdAndApply(id, NoSuch.Envelope()) { this[it] = this[it].copy(archived = true) }
+        envelopes.findIdAndApply(id, NoSuch.Envelope()) { this[it] = this[it].copy(archivedAt = true) }
     }
 
     override suspend fun deleteEnvelope(id: UUID): Result<Unit> = EnvelogRepositoryException.catch {
@@ -195,11 +195,11 @@ class InMemoryEnvelogRepository(
     private fun replaceAllocations(transactionId: UUID, allocations: Map<UUID, Long>, removeOld: Boolean = true) {
         this.allocations.update {
             it.toMutableList().apply {
-                if (removeOld) removeAll { allocation -> allocation.transactionId == transactionId }
+                if (removeOld) removeAll { allocation -> allocation.entryId == transactionId }
                 addAll(
                     allocations.map { (id, amount) ->
                         ExpenditureAllocationEntity(
-                            transactionId = transactionId,
+                            entryId = transactionId,
                             envelopeId = id,
                             amount = amount,
                         )
@@ -216,10 +216,10 @@ class InMemoryEnvelogRepository(
     ): Result<UUID> = EnvelogRepositoryException.catch {
         validateAllocations(amount, allocations)
         val id = transactions.create { id, _ ->
-            TransactionEntity(
+            EntryEntity(
                 id = id,
-                type = TransactionType.Expenditure,
-                dateTime = dateTime,
+                type = EntryType.Expenditure,
+                happenedAt = dateTime,
                 amount = amount,
             )
         }

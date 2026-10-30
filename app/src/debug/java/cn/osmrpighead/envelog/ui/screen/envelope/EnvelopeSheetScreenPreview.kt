@@ -7,12 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.entity.TransactionEntity
-import cn.osmrpighead.envelog.data.entity.TransactionType
-import cn.osmrpighead.envelog.data.query.AllocationResult
-import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.query_old.AllocationResult
+import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.preview.LangPreview
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetFields
@@ -75,14 +75,14 @@ private val previewAllocations: List<AllocationResult> =
     EnvelopePreviewData.allocations.entries.mapIndexed { index, (date, amount) ->
         val transactionId = UUID(2L, index.toLong())
         AllocationResult(
-            transaction = TransactionEntity(
+            transaction = EntryEntity(
                 id = transactionId,
-                type = TransactionType.Expenditure,
-                dateTime = date.atTime(12, 0).atZone(ZoneOffset.UTC),
+                type = EntryType.Expenditure,
+                happenedAt = date.atTime(12, 0).atZone(ZoneOffset.UTC),
                 amount = amount,
             ),
             allocation = ExpenditureAllocationEntity(
-                transactionId = transactionId,
+                entryId = transactionId,
                 envelopeId = previewEnvelopeId,
                 amount = amount,
             ),
@@ -95,7 +95,7 @@ private val previewUiState: EnvelopeSheetUiState.Success = EnvelopeSheetUiState.
             id = previewEnvelopeId,
             name = "Food",
             isBudgeted = true,
-            archived = false,
+            archivedAt = false,
         ),
         budgets = EnvelopePreviewData.mixedBudgets,
         allocations = previewAllocations,

@@ -1,12 +1,12 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.entity.BudgetEntity
-import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.entity.TransactionEntity
-import cn.osmrpighead.envelog.data.entity.TransactionType
-import cn.osmrpighead.envelog.data.query.AllocationResult
-import cn.osmrpighead.envelog.data.query.DateRange
-import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.query_old.AllocationResult
+import cn.osmrpighead.envelog.data.query_old.DateRange
+import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.core.time.DatePeriod
 import kotlinx.coroutines.flow.Flow
 import java.time.ZonedDateTime
@@ -18,8 +18,8 @@ interface EnvelogRepository {
     fun observeBudgets(envelopeId: UUID, range: DateRange): Flow<List<BudgetEntity>>
     fun observeExpenditureEnvelopeAllocations(envelopeId: UUID, range: DateRange): Flow<List<AllocationResult>>
 
-    fun observeTransactions(range: DateRange): Flow<List<TransactionEntity>>
-    fun observeTransactions(type: TransactionType, range: DateRange): Flow<List<TransactionEntity>>
+    fun observeTransactions(range: DateRange): Flow<List<EntryEntity>>
+    fun observeTransactions(type: EntryType, range: DateRange): Flow<List<EntryEntity>>
 
     suspend fun getEnvelope(envelopeId: UUID): EnvelopeEntity
     suspend fun observeEnvelopeWithExtra(envelopeId: UUID, range: DateRange): Flow<EnvelopeResult>

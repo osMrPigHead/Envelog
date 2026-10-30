@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import java.time.YearMonth

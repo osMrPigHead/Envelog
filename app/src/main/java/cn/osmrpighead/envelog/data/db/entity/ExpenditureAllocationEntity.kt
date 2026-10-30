@@ -1,20 +1,21 @@
-package cn.osmrpighead.envelog.data.entity
+package cn.osmrpighead.envelog.data.db.entity
 
 import androidx.room3.Entity
 import androidx.room3.ForeignKey
 import androidx.room3.ForeignKey.Companion.CASCADE
 import androidx.room3.ForeignKey.Companion.RESTRICT
 import androidx.room3.Index
-import java.util.UUID
+import cn.osmrpighead.envelog.data.model.EnvelopeId
+import cn.osmrpighead.envelog.data.model.EntryId
 
 @Entity(
-    tableName = "enpenditure_allocations",
-    primaryKeys = ["transactionId", "envelopeId"],
+    tableName = "expenditureAllocation",
+    primaryKeys = ["entryId", "envelopeId"],
     foreignKeys = [
         ForeignKey(
-            entity = TransactionEntity::class,
+            entity = EntryEntity::class,
             parentColumns = ["id"],
-            childColumns = ["transactionId"],
+            childColumns = ["entryId"],
             onDelete = CASCADE,
             onUpdate = CASCADE,
         ),
@@ -22,14 +23,14 @@ import java.util.UUID
             entity = EnvelopeEntity::class,
             parentColumns = ["id"],
             childColumns = ["envelopeId"],
-            onDelete = RESTRICT,
+            onDelete = CASCADE,
             onUpdate = CASCADE,
         ),
     ],
     indices = [Index("envelopeId")]
 )
 data class ExpenditureAllocationEntity(
-    val transactionId: UUID,
-    val envelopeId: UUID,
+    val entryId: EntryId,
+    val envelopeId: EnvelopeId,
     val amount: Long,
 )

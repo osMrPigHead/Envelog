@@ -2,12 +2,12 @@ package cn.osmrpighead.envelog.ui.screen.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.osmrpighead.envelog.data.entity.CurrencyType
-import cn.osmrpighead.envelog.data.entity.TransactionEntity
-import cn.osmrpighead.envelog.data.entity.TransactionType
-import cn.osmrpighead.envelog.data.query.DateRange
-import cn.osmrpighead.envelog.data.query.DateRangeRule
-import cn.osmrpighead.envelog.data.query.EnvelopeResult
+import cn.osmrpighead.envelog.data.db.entity.CurrencyType
+import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.query_old.DateRange
+import cn.osmrpighead.envelog.data.query_old.DateRangeRule
+import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
@@ -28,7 +28,7 @@ import javax.inject.Inject
 private data class PeriodData(
     val start: LocalDate, val end: LocalDate,
     val envelopes: List<EnvelopeResult>,
-    val transactions: List<TransactionEntity>,
+    val transactions: List<EntryEntity>,
 )
 
 private data class EnvelopeSummary(
@@ -45,11 +45,11 @@ private fun EnvelopeSummary.toEnvelopeModel(today: LocalDate): EnvelopeModel {
             if (currentBudget == null) 0L
             else envelope.allocations
                 .filter {
-                    it.transaction.dateTime.toLocalDate() in currentBudget.startDate..<currentBudget.endDate
+                    it.transaction.happenedAt.toLocalDate() in currentBudget.startDate..<currentBudget.endDate
                 }.sumOf { it.allocation.amount }
         val accBudget = envelope.budgets.filter { it.endDate <= today }.sumOf { it.amount }
         val accAllocation = envelope.allocations
-            .filter { it.transaction.dateTime.toLocalDate() <= today }
+            .filter { it.transaction.happenedAt.toLocalDate() <= today }
             .sumOf { it.allocation.amount } - currentAllocation
         budgetRelated = EnvelopeModel.BudgetRelated(
             budgetAmount = budget,
@@ -74,7 +74,7 @@ private fun PeriodData.toUiState(yearMonth: YearMonth, today: LocalDate): Overvi
     var balance = 0L
     for ((_, type, _, amount) in transactions) {
         when (type) {
-            TransactionType.Expenditure -> {
+            EntryType.Expenditure -> {
                 expenditure += amount
                 balance -= amount
             }

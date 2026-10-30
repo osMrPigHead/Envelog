@@ -1,12 +1,12 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.entity.BudgetEntity
-import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.entity.TransactionEntity
-import cn.osmrpighead.envelog.data.entity.TransactionType
-import cn.osmrpighead.envelog.data.query.DateRange
-import cn.osmrpighead.envelog.data.query.DateRangeRule
+import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.query_old.DateRange
+import cn.osmrpighead.envelog.data.query_old.DateRangeRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import java.time.LocalDate
@@ -51,7 +51,7 @@ internal object TestData {
         name: String = "Food",
         isBudgeted: Boolean = true,
         archived: Boolean = false,
-    ): EnvelopeEntity = EnvelopeEntity(id = id, name = name, isBudgeted = isBudgeted, archived = archived)
+    ): EnvelopeEntity = EnvelopeEntity(id = id, name = name, isBudgeted = isBudgeted, archivedAt = archived)
 
     fun budget(
         id: UUID = TestData.budgetAId,
@@ -69,17 +69,17 @@ internal object TestData {
 
     fun transaction(
         id: UUID = TestData.transactionAId,
-        type: TransactionType = TransactionType.Expenditure,
+        type: EntryType = EntryType.Expenditure,
         date: LocalDate = periodStart.plusDays(4),
         amount: Long = 10_000,
-    ): TransactionEntity = TransactionEntity(id = id, type = type, dateTime = at(date), amount = amount)
+    ): EntryEntity = EntryEntity(id = id, type = type, happenedAt = at(date), amount = amount)
 
     fun allocation(
         transactionId: UUID = TestData.transactionAId,
         envelopeId: UUID = TestData.envelopeAId,
         amount: Long = 10_000,
     ): ExpenditureAllocationEntity = ExpenditureAllocationEntity(
-        transactionId = transactionId,
+        entryId = transactionId,
         envelopeId = envelopeId,
         amount = amount,
     )
@@ -87,7 +87,7 @@ internal object TestData {
     fun repository(
         envelopes: List<EnvelopeEntity> = emptyList(),
         budgets: List<BudgetEntity> = emptyList(),
-        transactions: List<TransactionEntity> = emptyList(),
+        transactions: List<EntryEntity> = emptyList(),
         allocations: List<ExpenditureAllocationEntity> = emptyList(),
     ): InMemoryEnvelogRepository = InMemoryEnvelogRepository(
         envelopes = envelopes,

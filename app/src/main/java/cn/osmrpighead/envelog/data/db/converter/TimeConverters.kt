@@ -1,9 +1,9 @@
-package cn.osmrpighead.envelog.data.converter
+package cn.osmrpighead.envelog.data.db.converter
 
 import androidx.room3.ColumnTypeConverter
 import java.time.LocalDate
 
-class DateConverters {
+class TimeConverters {
     @ColumnTypeConverter
     fun fromLocalDate(value: LocalDate): String = value.toString()
 
