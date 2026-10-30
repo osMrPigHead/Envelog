@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.entity.TransactionType
 import cn.osmrpighead.envelog.data.query.DateRangeRule
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.EnvelopeReferenced
 import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NameBlank

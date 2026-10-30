@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.data.model
+package cn.osmrpighead.envelog.data.entity
 
 import java.util.UUID
 

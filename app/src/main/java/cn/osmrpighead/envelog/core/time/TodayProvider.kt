@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.data.time
+package cn.osmrpighead.envelog.core.time
 
 import android.content.BroadcastReceiver
 import android.content.Context

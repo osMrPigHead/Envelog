@@ -1,10 +1,10 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.model.Budget
-import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
-import cn.osmrpighead.envelog.data.model.Transaction
-import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.entity.TransactionEntity
+import cn.osmrpighead.envelog.data.entity.TransactionType
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -31,18 +31,18 @@ object DemoSeedData {
         val monthEnd = monthStart.plusMonths(1)
 
         val envelopes = listOf(
-            Envelope(foodEnvelopeId, "餐饮", isBudgeted = true, archived = false),
-            Envelope(transportEnvelopeId, "交通", isBudgeted = true, archived = false),
-            Envelope(shoppingEnvelopeId, "购物", isBudgeted = false, archived = false),
-            Envelope(householdEnvelopeId, "居住", isBudgeted = true, archived = false),
-            Envelope(archivedEnvelopeId, "旧信封", isBudgeted = true, archived = true),
+            EnvelopeEntity(foodEnvelopeId, "餐饮", isBudgeted = true, archived = false),
+            EnvelopeEntity(transportEnvelopeId, "交通", isBudgeted = true, archived = false),
+            EnvelopeEntity(shoppingEnvelopeId, "购物", isBudgeted = false, archived = false),
+            EnvelopeEntity(householdEnvelopeId, "居住", isBudgeted = true, archived = false),
+            EnvelopeEntity(archivedEnvelopeId, "旧信封", isBudgeted = true, archived = true),
         )
 
         val budgets = buildList {
-            add(Budget(id(0xA101), foodEnvelopeId, monthStart, monthEnd, 300_000))
-            add(Budget(id(0xA102), transportEnvelopeId, monthStart, monthEnd, 20_000))
+            add(BudgetEntity(id(0xA101), foodEnvelopeId, monthStart, monthEnd, 300_000))
+            add(BudgetEntity(id(0xA102), transportEnvelopeId, monthStart, monthEnd, 20_000))
             addAll(weeklyBudgets(householdEnvelopeId, monthStart, monthEnd, 50_000))
-            add(Budget(id(0xA103), archivedEnvelopeId, monthStart, monthEnd, 50_000))
+            add(BudgetEntity(id(0xA103), archivedEnvelopeId, monthStart, monthEnd, 50_000))
         }
 
         val previousDays = buildList {
@@ -55,8 +55,8 @@ object DemoSeedData {
         val foodSecondDate = previousDays.getOrNull(0)
         val splitDate = previousDays.getOrNull(1)
 
-        val transactions = mutableListOf<Transaction>()
-        val allocations = mutableListOf<ExpenditureEnvelopeAllocation>()
+        val transactions = mutableListOf<TransactionEntity>()
+        val allocations = mutableListOf<ExpenditureAllocationEntity>()
 
         fun record(
             transactionId: UUID,
@@ -65,14 +65,14 @@ object DemoSeedData {
             shares: List<Pair<UUID, Long>>,
         ) {
             require(shares.sumOf { it.second } == amount) { "Allocation total must equal transaction amount" }
-            transactions += Transaction(
+            transactions += TransactionEntity(
                 id = transactionId,
                 type = TransactionType.Expenditure,
                 dateTime = ZonedDateTime.of(date, LocalTime.NOON, zone),
                 amount = amount,
             )
             shares.forEach { (envelopeId, share) ->
-                allocations += ExpenditureEnvelopeAllocation(
+                allocations += ExpenditureAllocationEntity(
                     transactionId = transactionId,
                     envelopeId = envelopeId,
                     amount = share,
@@ -109,13 +109,13 @@ object DemoSeedData {
         start: LocalDate,
         endExclusive: LocalDate,
         amount: Long,
-    ): List<Budget> = buildList {
+    ): List<BudgetEntity> = buildList {
         var budgetStart = start
         var index = 0
         while (budgetStart < endExclusive) {
             val budgetEnd = minOf(budgetStart.plusDays(7), endExclusive)
             add(
-                Budget(
+                BudgetEntity(
                     id = id(0xA201L + index),
                     envelopeId = envelopeId,
                     startDate = budgetStart,

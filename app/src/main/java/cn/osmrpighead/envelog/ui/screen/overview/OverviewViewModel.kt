@@ -2,9 +2,9 @@ package cn.osmrpighead.envelog.ui.screen.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.osmrpighead.envelog.data.model.CurrencyType
-import cn.osmrpighead.envelog.data.model.Transaction
-import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.entity.CurrencyType
+import cn.osmrpighead.envelog.data.entity.TransactionEntity
+import cn.osmrpighead.envelog.data.entity.TransactionType
 import cn.osmrpighead.envelog.data.query.DateRange
 import cn.osmrpighead.envelog.data.query.DateRangeRule
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
@@ -28,7 +28,7 @@ import javax.inject.Inject
 private data class PeriodData(
     val start: LocalDate, val end: LocalDate,
     val envelopes: List<EnvelopeResult>,
-    val transactions: List<Transaction>,
+    val transactions: List<TransactionEntity>,
 )
 
 private data class EnvelopeSummary(

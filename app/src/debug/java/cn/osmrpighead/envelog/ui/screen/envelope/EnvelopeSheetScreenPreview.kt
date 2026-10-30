@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
-import cn.osmrpighead.envelog.data.model.Transaction
-import cn.osmrpighead.envelog.data.model.TransactionType
+import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.entity.TransactionEntity
+import cn.osmrpighead.envelog.data.entity.TransactionType
 import cn.osmrpighead.envelog.data.query.AllocationResult
 import cn.osmrpighead.envelog.data.query.EnvelopeResult
 import cn.osmrpighead.envelog.ui.model.Field
@@ -75,13 +75,13 @@ private val previewAllocations: List<AllocationResult> =
     EnvelopePreviewData.allocations.entries.mapIndexed { index, (date, amount) ->
         val transactionId = UUID(2L, index.toLong())
         AllocationResult(
-            transaction = Transaction(
+            transaction = TransactionEntity(
                 id = transactionId,
                 type = TransactionType.Expenditure,
                 dateTime = date.atTime(12, 0).atZone(ZoneOffset.UTC),
                 amount = amount,
             ),
-            allocation = ExpenditureEnvelopeAllocation(
+            allocation = ExpenditureAllocationEntity(
                 transactionId = transactionId,
                 envelopeId = previewEnvelopeId,
                 amount = amount,
@@ -91,7 +91,7 @@ private val previewAllocations: List<AllocationResult> =
 
 private val previewUiState: EnvelopeSheetUiState.Success = EnvelopeSheetUiState.Success(
     value = EnvelopeResult(
-        envelope = Envelope(
+        envelope = EnvelopeEntity(
             id = previewEnvelopeId,
             name = "Food",
             isBudgeted = true,

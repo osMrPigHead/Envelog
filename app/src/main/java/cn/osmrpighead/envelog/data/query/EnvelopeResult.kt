@@ -1,11 +1,10 @@
 package cn.osmrpighead.envelog.data.query
 
-import cn.osmrpighead.envelog.data.model.Budget
-import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
+import cn.osmrpighead.envelog.data.entity.BudgetEntity
+import cn.osmrpighead.envelog.data.entity.EnvelopeEntity
 
 data class EnvelopeResult(
-    val envelope: Envelope,
-    val budgets: List<Budget>,
+    val envelope: EnvelopeEntity,
+    val budgets: List<BudgetEntity>,
     val allocations: List<AllocationResult>,
 )

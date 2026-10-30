@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.data.model.CurrencyType
+import cn.osmrpighead.envelog.data.entity.CurrencyType
 import cn.osmrpighead.envelog.ui.component.statitem.*
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel

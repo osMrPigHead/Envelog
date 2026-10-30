@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.overview.model
 
-import cn.osmrpighead.envelog.data.model.CurrencyType
+import cn.osmrpighead.envelog.data.entity.CurrencyType
 import cn.osmrpighead.envelog.util.Ratio
 import java.time.LocalDate
 import java.util.UUID

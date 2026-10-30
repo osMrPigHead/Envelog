@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.model
 
-import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.data.entity.BudgetEntity
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.model.MutableField
 import cn.osmrpighead.envelog.core.time.DatePeriod
@@ -16,6 +16,6 @@ data class BudgetItemSheetFields(
 )
 
 data class BudgetItemSheetModel(
-    val value: Budget,
+    val value: BudgetEntity,
     val fields: BudgetItemSheetFields,
 )

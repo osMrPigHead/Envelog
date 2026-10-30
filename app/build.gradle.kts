@@ -48,6 +48,10 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:$hiltVersion")
     implementation("androidx.hilt:hilt-lifecycle-viewmodel-compose:1.4.0")
 
+    val room3Version = "3.0.3"
+    implementation("androidx.room3:room3-runtime:$room3Version")
+    ksp("androidx.room3:room3-compiler:$room3Version")
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     implementation("androidx.navigation3:navigation3-runtime:$nav3Version")
     implementation("androidx.navigation3:navigation3-ui:$nav3Version")

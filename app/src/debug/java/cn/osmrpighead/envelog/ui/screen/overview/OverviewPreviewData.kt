@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.overview
 
-import cn.osmrpighead.envelog.data.model.CurrencyType
+import cn.osmrpighead.envelog.data.entity.CurrencyType
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.model.SummaryItem
 import cn.osmrpighead.envelog.util.percent

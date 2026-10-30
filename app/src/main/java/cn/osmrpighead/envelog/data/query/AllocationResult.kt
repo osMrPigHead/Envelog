@@ -1,9 +1,9 @@
 package cn.osmrpighead.envelog.data.query
 
-import cn.osmrpighead.envelog.data.model.ExpenditureEnvelopeAllocation
-import cn.osmrpighead.envelog.data.model.Transaction
+import cn.osmrpighead.envelog.data.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.entity.TransactionEntity
 
 data class AllocationResult(
-    val transaction: Transaction,
-    val allocation: ExpenditureEnvelopeAllocation,
+    val transaction: TransactionEntity,
+    val allocation: ExpenditureAllocationEntity,
 )

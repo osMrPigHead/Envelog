@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.data.entity.BudgetEntity
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.preview.LangPreview
@@ -55,7 +55,7 @@ private fun BudgetItemSheetPreview() {
     }
 }
 
-private val previewBudget: Budget = Budget(
+private val previewBudget: BudgetEntity = BudgetEntity(
     id = UUID(0L, 3L),
     envelopeId = UUID.fromString("00000000-0000-0000-0000-000000000101"),
     startDate = LocalDate.of(2026, 9, 1),
