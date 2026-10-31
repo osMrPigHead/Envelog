@@ -5,6 +5,7 @@ import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
+import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId

@@ -1,8 +1,8 @@
 package cn.osmrpighead.envelog.core.di
 
-import cn.osmrpighead.envelog.data.repository.EnvelogRepository
-import cn.osmrpighead.envelog.data.repository.EnvelogSeedData
-import cn.osmrpighead.envelog.data.repository.InMemoryEnvelogRepository
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
+import cn.osmrpighead.envelog.data.repository_old.InMemoryEnvelogRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

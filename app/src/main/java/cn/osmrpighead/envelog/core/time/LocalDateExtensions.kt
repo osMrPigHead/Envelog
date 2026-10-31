@@ -11,7 +11,8 @@ import java.util.Locale
 
 infix fun LocalDate.countDaysTo(other: LocalDate): Long = other.toEpochDay() - toEpochDay()
 
-infix fun LocalDate.untilExclusive(endExclusive: LocalDate): DatePeriod = DatePeriod(this, endExclusive)
+infix fun LocalDate.untilExclusive(end: LocalDate): HalfOpenDateSpan = HalfOpenDateSpan(this, end)
+infix fun LocalDate.untilInclusive(end: LocalDate): ClosedDateSpan = ClosedDateSpan(this, end)
 
 val LocalDate.yearMonth: YearMonth get() = YearMonth.from(this)
 

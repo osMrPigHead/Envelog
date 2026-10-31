@@ -1,7 +1,7 @@
 package cn.osmrpighead.envelog.di
 
 import cn.osmrpighead.envelog.data.repository.DemoSeedData
-import cn.osmrpighead.envelog.data.repository.EnvelogSeedData
+import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

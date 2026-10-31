@@ -2,12 +2,13 @@ package cn.osmrpighead.envelog.data.repository
 
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.DateRangeRule
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.EnvelopeReferenced
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NameBlank
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.RuleViolation.AllocationMismatch
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.RuleViolation.BudgetOverlap
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.ArgumentException.EnvelopeReferenced
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.ArgumentException.NameBlank
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.ArgumentException.NoSuch
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.RuleViolation.AllocationMismatch
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.RuleViolation.BudgetOverlap
 import cn.osmrpighead.envelog.core.time.untilExclusive
+import cn.osmrpighead.envelog.data.repository_old.InMemoryEnvelogRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.data.query
 
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 
 sealed interface EnvelopeSummary {
@@ -12,10 +13,11 @@ sealed interface EnvelopeSummary {
         override val name: String,
         override val allocated: Long,
         val totalBudget: Long,
-        val currentPeriodBudget: Long,
-        val currentPeriodAllocated: Long,
+        val currentBudget: Long,
+        val currentSpan: HalfOpenDateSpan,
+        val currentSpanAllocated: Long,
     ) : EnvelopeSummary {
-        val currentPeriodAvailable = currentPeriodBudget - currentPeriodAllocated
+        val currentAvailable = currentBudget - currentSpanAllocated
     }
 
     data class NonBudget(

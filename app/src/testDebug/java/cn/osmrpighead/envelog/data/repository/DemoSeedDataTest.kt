@@ -2,6 +2,8 @@ package cn.osmrpighead.envelog.data.repository
 
 import cn.osmrpighead.envelog.data.query_old.DateRange
 import cn.osmrpighead.envelog.data.query_old.DateRangeRule
+import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
+import cn.osmrpighead.envelog.data.repository_old.InMemoryEnvelogRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

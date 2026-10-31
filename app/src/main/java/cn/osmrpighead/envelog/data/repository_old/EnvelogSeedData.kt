@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.data.repository
+package cn.osmrpighead.envelog.data.repository_old
 
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity

@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.data.query_old.DateRange
 import cn.osmrpighead.envelog.data.query_old.DateRangeRule
-import cn.osmrpighead.envelog.data.repository.EnvelogRepository
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.Field
 import cn.osmrpighead.envelog.ui.model.MutableField

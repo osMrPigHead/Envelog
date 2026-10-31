@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.data.repository
+package cn.osmrpighead.envelog.data.repository_old
 
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
@@ -6,8 +6,8 @@ import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.*
-import cn.osmrpighead.envelog.data.repository.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.*
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.ArgumentException.NoSuch as NoSuch
 import cn.osmrpighead.envelog.data.db.entity.HasId
 import cn.osmrpighead.envelog.data.query_old.AllocationResult
 import cn.osmrpighead.envelog.data.query_old.DateRange

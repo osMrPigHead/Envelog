@@ -8,7 +8,7 @@ import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.DateRange
 import cn.osmrpighead.envelog.data.query_old.DateRangeRule
 import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
-import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository_old.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
 import cn.osmrpighead.envelog.ui.model.SummaryItem

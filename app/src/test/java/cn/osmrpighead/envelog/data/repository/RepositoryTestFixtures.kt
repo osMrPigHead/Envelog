@@ -7,6 +7,7 @@ import cn.osmrpighead.envelog.data.db.entity.EntryEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.DateRange
 import cn.osmrpighead.envelog.data.query_old.DateRangeRule
+import cn.osmrpighead.envelog.data.repository_old.InMemoryEnvelogRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import java.time.LocalDate
