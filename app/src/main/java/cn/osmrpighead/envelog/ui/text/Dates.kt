@@ -10,5 +10,5 @@ import java.time.LocalDate
 fun relativeDate(start: LocalDate, end: LocalDate): String {
     val days = start countDaysTo end
     return if (days == 1L) stringResource(R.string.time_today)
-    else stringResource(R.string.time_within_days, days)
+    else stringResource(R.string.time_within_days, days) // TODO: 本周
 }

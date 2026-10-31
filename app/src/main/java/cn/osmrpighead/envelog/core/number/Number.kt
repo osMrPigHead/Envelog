@@ -1,13 +1,21 @@
-package cn.osmrpighead.envelog.util
+package cn.osmrpighead.envelog.core.number
 
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 
 data class Ratio(
     val ratio: BigDecimal,
     val isValid: Boolean,
 ) {
-    constructor(ratio: String, isValid: Boolean) : this(ratio.toBigDecimal(), isValid)
+    companion object {
+        fun of(numerator: BigDecimal, denominator: BigDecimal, mc: MathContext = MathContext.DECIMAL32): Ratio =
+            if (denominator == BigDecimal.ZERO) Ratio(BigDecimal.ZERO, false)
+            else Ratio(numerator.divide(denominator, mc), true)
+
+        fun of(numerator: Long, denominator: Long, mc: MathContext = MathContext.DECIMAL32): Ratio =
+            of(BigDecimal(numerator), BigDecimal(denominator), mc)
+    }
 }
 
 fun BigDecimal.clamp(min: BigDecimal, max: BigDecimal, step: BigDecimal): BigDecimal {
@@ -26,7 +34,4 @@ fun BigDecimal.clamp(min: BigDecimal, max: BigDecimal, step: BigDecimal): BigDec
 fun BigDecimal.asAmount(scale: Int, roundingMode: RoundingMode): Long =
     setScale(scale, roundingMode).movePointRight(2).toLong()
 
-fun Long.percent(denominator: Long): Ratio {
-    return if (denominator == 0L) Ratio("0", false)
-    else Ratio(BigDecimal(this).divide(BigDecimal(denominator), 4, RoundingMode.HALF_EVEN), true)
-}
+fun Long.ratioOf(denominator: Long): Ratio = Ratio.of(this, denominator)

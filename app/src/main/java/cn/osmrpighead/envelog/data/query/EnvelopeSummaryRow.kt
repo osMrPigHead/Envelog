@@ -12,5 +12,7 @@ data class EnvelopeSummaryRow(
     val currentBudget: Long?,
     val currentSpanStartDate: LocalDate?,
     val currentSpanEndDate: LocalDate?,
-    val currentSpanAllocated: Long,
+    val currentSpanAllocated: Long?,
+    val priorBudget: Long?,
+    val priorAllocated: Long?,
 )

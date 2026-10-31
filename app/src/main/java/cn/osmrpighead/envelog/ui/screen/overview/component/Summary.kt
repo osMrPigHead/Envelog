@@ -13,7 +13,7 @@ import cn.osmrpighead.envelog.ui.component.statitem.StatItemContent
 import cn.osmrpighead.envelog.ui.component.statitem.StatItemSlot
 import cn.osmrpighead.envelog.ui.component.statitem.StatItemStyle
 import cn.osmrpighead.envelog.ui.component.statitem.asSlot
-import cn.osmrpighead.envelog.ui.model.SummaryItem
+import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
 import cn.osmrpighead.envelog.ui.text.orDefault
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount

@@ -11,6 +11,7 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import java.time.Instant
+import java.time.YearMonth
 
 @Entity(
     tableName = "budget",
@@ -29,6 +30,7 @@ data class BudgetEntity(
     @PrimaryKey val id: BudgetId,
     val envelopeId: EnvelopeId,
     @Embedded val dateSpan: HalfOpenDateSpan,
+    val attributedMonth: YearMonth,
     val amount: Long,
     val deletedAt: Instant?,
 )

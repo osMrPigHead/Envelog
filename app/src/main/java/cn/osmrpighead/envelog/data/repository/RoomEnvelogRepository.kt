@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.data.repository
 
 import androidx.room3.withWriteTransaction
+import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.core.time.untilExclusive
@@ -19,13 +20,15 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
+// TODO: CurrencyType
 private fun EnvelopeSummaryRow.toDomain() = if (isBudgeted) {
     EnvelopeSummary.Budgeted(
-        id, name, allocated, totalBudget ?: 0, currentBudget,
+        id, name, allocated, CurrencyType.CNY, totalBudget ?: 0, currentBudget,
         currentSpanEndDate?.let { currentSpanStartDate?.untilExclusive(it) },
-        currentSpanAllocated,
+        currentSpanAllocated ?: 0,
+        priorBudget ?: 0, priorAllocated ?: 0,
     )
-} else EnvelopeSummary.NonBudget(id, name, allocated)
+} else EnvelopeSummary.NonBudget(id, name, allocated, CurrencyType.CNY)
 
 class RoomEnvelogRepository @Inject constructor(
     private val db: EnvelogDatabase,

@@ -1,7 +1,7 @@
 package cn.osmrpighead.envelog.ui.screen.overview
 
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
-import cn.osmrpighead.envelog.ui.model.SummaryItem
+import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
 import java.time.YearMonth
 
 data class OverviewUiState(

@@ -1,10 +1,11 @@
 package cn.osmrpighead.envelog.ui.screen.overview.model
 
-import cn.osmrpighead.envelog.data.db.entity.CurrencyType
-import cn.osmrpighead.envelog.util.Ratio
+import cn.osmrpighead.envelog.core.number.CurrencyType
+import cn.osmrpighead.envelog.core.number.Ratio
 import java.time.LocalDate
 import java.util.UUID
 
+@Deprecated("")
 data class EnvelopeModel(
     val id: UUID,
     val name: String,

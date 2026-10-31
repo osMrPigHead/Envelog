@@ -1,9 +1,9 @@
 package cn.osmrpighead.envelog.ui.screen.overview
 
-import cn.osmrpighead.envelog.data.db.entity.CurrencyType
+import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
-import cn.osmrpighead.envelog.ui.model.SummaryItem
-import cn.osmrpighead.envelog.util.percent
+import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
+import cn.osmrpighead.envelog.core.number.ratioOf
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
@@ -14,13 +14,13 @@ internal object OverviewPreviewData {
     val today: LocalDate = LocalDate.of(2026, 10, 19)
 
     val summaryItems: List<SummaryItem> = listOf(
-        SummaryItem.Remaining(cents = 180_000, usedProportion = 320_000L.percent(500_000L)),
+        SummaryItem.Remaining(cents = 180_000, usedProportion = 320_000L.ratioOf(500_000L)),
         SummaryItem.Expenses(cents = 320_000),
         SummaryItem.Balance(cents = -320_000),
     )
 
     val zeroSummaryItems: List<SummaryItem> = listOf(
-        SummaryItem.Remaining(cents = 0, usedProportion = 0L.percent(0L)),
+        SummaryItem.Remaining(cents = 0, usedProportion = 0L.ratioOf(0L)),
         SummaryItem.Expenses(cents = 0),
         SummaryItem.Balance(cents = 0),
     )
@@ -32,7 +32,7 @@ internal object OverviewPreviewData {
         usedAmount = 200_000,
         budgetRelated = EnvelopeModel.BudgetRelated(
             budgetAmount = 300_000,
-            usedProportion = 200_000L.percent(300_000L),
+            usedProportion = 200_000L.ratioOf(300_000L),
             endDate = today.plusDays(10),
             today = today,
             currentAvailable = 40_000,
@@ -47,7 +47,7 @@ internal object OverviewPreviewData {
         usedAmount = 120_000,
         budgetRelated = EnvelopeModel.BudgetRelated(
             budgetAmount = 200_000,
-            usedProportion = 120_000L.percent(200_000L),
+            usedProportion = 120_000L.ratioOf(200_000L),
             endDate = null,
             today = today,
             currentAvailable = -20_000,
@@ -70,7 +70,7 @@ internal object OverviewPreviewData {
         usedAmount = 0,
         budgetRelated = EnvelopeModel.BudgetRelated(
             budgetAmount = 0,
-            usedProportion = 0L.percent(0L),
+            usedProportion = 0L.ratioOf(0L),
             endDate = null,
             today = today,
             currentAvailable = 0,

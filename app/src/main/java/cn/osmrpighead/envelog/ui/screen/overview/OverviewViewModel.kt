@@ -2,7 +2,7 @@ package cn.osmrpighead.envelog.ui.screen.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.osmrpighead.envelog.data.db.entity.CurrencyType
+import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.DateRange
@@ -11,10 +11,10 @@ import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository_old.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
-import cn.osmrpighead.envelog.ui.model.SummaryItem
+import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
 import cn.osmrpighead.envelog.core.time.first
 import cn.osmrpighead.envelog.core.time.next
-import cn.osmrpighead.envelog.util.percent
+import cn.osmrpighead.envelog.core.number.ratioOf
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -53,7 +53,7 @@ private fun EnvelopeSummary.toEnvelopeModel(today: LocalDate): EnvelopeModel {
             .sumOf { it.allocation.amount } - currentAllocation
         budgetRelated = EnvelopeModel.BudgetRelated(
             budgetAmount = budget,
-            usedProportion = allocation.percent(budget),
+            usedProportion = allocation.ratioOf(budget),
             endDate = currentBudget?.endDate,
             today = today,
             currentAvailable = (currentBudget?.amount ?: 0L) - currentAllocation,
@@ -93,7 +93,7 @@ private fun PeriodData.toUiState(yearMonth: YearMonth, today: LocalDate): Overvi
     return OverviewUiState(
         yearMonth = yearMonth,
         summaryItems = listOf(
-            SummaryItem.Remaining(budget - allocation, allocation.percent(budget)),
+            SummaryItem.Remaining(budget - allocation, allocation.ratioOf(budget)),
             SummaryItem.Expenses(expenditure),
             SummaryItem.Balance(balance),
         ),

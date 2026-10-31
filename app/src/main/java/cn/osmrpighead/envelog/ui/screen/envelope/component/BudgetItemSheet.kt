@@ -20,7 +20,7 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetItemSheetModel
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
-import cn.osmrpighead.envelog.util.asAmount
+import cn.osmrpighead.envelog.core.number.asAmount
 import cn.osmrpighead.envelog.core.time.DatePeriod
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import java.math.BigDecimal

@@ -9,65 +9,93 @@ import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 
 @Dao
 interface EnvelopeDao {
     @Query(
         """
-            WITH totalBudget AS (
-                SELECT envelopeId, SUM(amount) AS value
+            WITH budgetAgg AS (
+                SELECT envelopeId,
+                       SUM(amount) AS total,
+                       MIN(startDate) AS minStart,
+                       MAX(endDate) AS maxEnd
                 FROM budget
                 WHERE deletedAt IS NULL
-                  AND startDate < :endDate
-                  AND :startDate < endDate
+                  AND attributedMonth = :yearMonth
                 GROUP BY envelopeId
             ),
-            totalAllocation AS (
-                SELECT a.envelopeId, SUM(a.amount) AS value
-                FROM expenditureAllocation a
-                JOIN entry en ON en.id = a.entryId
-                WHERE en.deletedAt IS NULL
-                  AND :startDate <= en.happenedDate
-                  AND en.happenedDate < :endDate
-                GROUP BY a.envelopeId
-            ),
             currentBudget AS (
-                SELECT envelopeId, amount AS value, startDate, endDate
+                SELECT envelopeId, amount, startDate, endDate
                 FROM budget
                 WHERE deletedAt IS NULL
-                  AND startDate <= :today
+                  AND :today >= startDate
                   AND :today < endDate
             ),
-            currentAllocation AS (
-                SELECT a.envelopeId, SUM(a.amount) AS value
-                FROM expenditureAllocation a
-                JOIN entry en ON en.id = a.entryId
-                JOIN currentBudget cb ON cb.envelopeId = a.envelopeId
-                WHERE en.deletedAt IS NULL
-                  AND cb.startDate <= en.happenedDate
-                  AND en.happenedDate < cb.endDate
-                GROUP BY a.envelopeId
+            priorBudget AS ( -- TODO: 是否与budgetAgg合并 需要验证
+                SELECT envelopeId, SUM(amount) AS total
+                FROM budget
+                WHERE deletedAt IS NULL
+                  AND attributedMonth = :yearMonth
+                  AND endDate <= :today
+                GROUP BY envelopeId
+            ),
+            allocated AS (
+                SELECT ea.envelopeId, SUM(ea.amount) AS total
+                FROM expenditureAllocation ea
+                LEFT JOIN budgetAgg ba ON ea.envelopeId = ba.envelopeId
+                JOIN expenditure ex
+                  ON ex.deletedAt IS NULL
+                 AND ea.expenditureId = ex.id
+                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
+                 AND ex.happenedDate < COALESCE(MAX(ba.maxEnd, :monthEnd), :monthEnd)
+                GROUP BY ea.envelopeId
+            ),
+            currentAllocated AS (
+                SELECT ea.envelopeId, SUM(ea.amount) AS total
+                FROM expenditureAllocation ea
+                JOIN expenditure ex
+                  ON ex.deletedAt IS NULL
+                 AND ea.expenditureId = ex.id
+                 AND ex.happenedDate >= currentBudget.startDate
+                 AND ex.happenedDate < currentBudget.endDate
+                GROUP BY ea.envelopeId
+            ),
+            priorAllocated AS (
+                SELECT ea.envelopeId, SUM(ea.amount) AS total
+                FROM expenditureAllocation ea
+                JOIN expenditure ex
+                  ON ex.deletedAt IS NULL
+                 AND ea.expenditureId = ex.id
+                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
+                 AND ex.happenedDate < COALESCE(currentBudget.startDate, :today)
+                GROUP BY ea.envelopeId
             )
-            
+
             SELECT
-                e.id, e.name, e.isBudgeted,
-                COALESCE(totalAllocation.value, 0) AS allocated,
-                totalBudget.value AS totalBudget,
-                currentBudget.value AS currentBudget,
-                currentBudget.startDate AS currentBudgetStartDate,
-                currentBudget.endDate AS currentBudgetEndDate,
-                COALESCE(currentAllocation.value, 0) AS currentBudgetAllocated
-            FROM envelope e
-            LEFT JOIN totalBudget       ON e.id = totalBudget.envelopeId
-            LEFT JOIN currentBudget     ON e.id = currentBudget.envelopeId
-            LEFT JOIN totalAllocation   ON e.id = totalAllocation.envelopeId
-            LEFT JOIN currentAllocation ON e.id = currentAllocation.envelopeId
+                ev.id, ev.name, ev.isBudgeted,
+                ac.total AS allocated,
+                ba.total AS totalBudget,
+                cb.amount AS currentBudget,
+                cb.startDate AS currentSpanStartDate,
+                cb.endDate AS currentSpanEndDate,
+                ca.total AS currentSpanAllocated,
+                pb.total AS priorBudget,
+                pa.total AS priorAllocated
+            FROM envelope ev
+            LEFT JOIN allocated ac
+            LEFT JOIN budgetAgg ba
+            LEFT JOIN currentBudget cb
+            LEFT JOIN currentAllocated ca
+            LEFT JOIN priorBudget pb
+            LEFT JOIN priorAllocated pa
         """,
     )
     fun observeEnvelopeSummariesOverlaps(
         today: LocalDate,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        yearMonth: YearMonth,
+        monthStart: LocalDate,
+        monthEnd: LocalDate,
     ): Flow<List<EnvelopeSummaryRow>>
 
     @Query("SELECT * FROM envelope WHERE id = :id")

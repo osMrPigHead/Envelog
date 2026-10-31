@@ -9,8 +9,8 @@ import android.icu.number.UnlocalizedNumberFormatter
 import android.icu.util.MeasureUnit
 import android.icu.util.ULocale
 import cn.osmrpighead.envelog.core.locale.AppLocale
-import cn.osmrpighead.envelog.util.Ratio
-import cn.osmrpighead.envelog.util.clamp
+import cn.osmrpighead.envelog.core.number.Ratio
+import cn.osmrpighead.envelog.core.number.clamp
 import java.math.BigDecimal
 import java.util.Locale
 
