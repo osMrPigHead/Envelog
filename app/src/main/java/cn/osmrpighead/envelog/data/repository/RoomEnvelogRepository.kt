@@ -6,7 +6,6 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
-import cn.osmrpighead.envelog.data.db.dao.EnvelopeDao
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.model.EnvelopeId

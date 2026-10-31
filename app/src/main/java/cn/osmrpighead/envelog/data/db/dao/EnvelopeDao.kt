@@ -54,21 +54,24 @@ interface EnvelopeDao {
             currentAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
                 FROM expenditureAllocation ea
+                JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
                 JOIN expenditure ex
                   ON ex.deletedAt IS NULL
                  AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= currentBudget.startDate
-                 AND ex.happenedDate < currentBudget.endDate
+                 AND ex.happenedDate >= cb.startDate
+                 AND ex.happenedDate < cb.endDate
                 GROUP BY ea.envelopeId
             ),
             priorAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
                 FROM expenditureAllocation ea
+                LEFT JOIN budgetAgg ba ON ea.envelopeId = ba.envelopeId
+                LEFT JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
                 JOIN expenditure ex
                   ON ex.deletedAt IS NULL
                  AND ea.expenditureId = ex.id
                  AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
-                 AND ex.happenedDate < COALESCE(currentBudget.startDate, :today)
+                 AND ex.happenedDate < COALESCE(cb.startDate, :today)
                 GROUP BY ea.envelopeId
             )
 
@@ -82,13 +85,13 @@ interface EnvelopeDao {
                 ca.total AS currentSpanAllocated,
                 pb.total AS priorBudget,
                 pa.total AS priorAllocated
-            FROM envelope ev
-            LEFT JOIN allocated ac
-            LEFT JOIN budgetAgg ba
-            LEFT JOIN currentBudget cb
-            LEFT JOIN currentAllocated ca
-            LEFT JOIN priorBudget pb
-            LEFT JOIN priorAllocated pa
+            FROM envelope ev                
+            LEFT JOIN allocated          ac ON ev.id = ac.envelopeId
+            LEFT JOIN budgetAgg          ba ON ev.id = ba.envelopeId
+            LEFT JOIN currentBudget      cb ON ev.id = cb.envelopeId
+            LEFT JOIN currentAllocated   ca ON ev.id = ca.envelopeId
+            LEFT JOIN priorBudget        pb ON ev.id = pb.envelopeId
+            LEFT JOIN priorAllocated     pa ON ev.id = pa.envelopeId
         """,
     )
     fun observeEnvelopeSummariesOverlaps(

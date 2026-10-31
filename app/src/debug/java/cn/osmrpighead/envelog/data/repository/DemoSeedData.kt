@@ -1,49 +1,61 @@
 package cn.osmrpighead.envelog.data.repository
 
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
-import cn.osmrpighead.envelog.data.db.entity.EntryType
-import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
+import cn.osmrpighead.envelog.data.model.BudgetId
+import cn.osmrpighead.envelog.data.model.EnvelopeId
+import cn.osmrpighead.envelog.data.model.ExpenditureId
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.util.UUID
 
 /**
- * 仅 debug 构建使用的演示数据。
+ * 仅 debug 构建使用的数据库演示数据。
  *
- * 数据以启动当月为基准生成，因此任意月份启动都能直接看到 Overview 与信封日历的内容。
- * 进程结束后内存仓库清空，下次启动会按新的日期重新生成。
+ * 数据以启动当月为基准生成，因此任意月份启动都能直接看到 Overview 的内容。
  */
+data class DemoSeed(
+    val envelopes: List<EnvelopeEntity>,
+    val budgets: List<BudgetEntity>,
+    val expenditures: List<ExpenditureEntity>,
+    val allocations: List<ExpenditureAllocationEntity>,
+)
+
 object DemoSeedData {
-    private fun id(value: Long): UUID = UUID(0L, value)
+    private fun envelopeId(value: Long): EnvelopeId = EnvelopeId(UUID(0L, value))
+    private fun budgetId(value: Long): BudgetId = BudgetId(UUID(0L, value))
+    private fun expenditureId(value: Long): ExpenditureId = ExpenditureId(UUID(0L, value))
 
-    private val foodEnvelopeId = id(0xA001)
-    private val transportEnvelopeId = id(0xA002)
-    private val shoppingEnvelopeId = id(0xA003)
-    private val householdEnvelopeId = id(0xA004)
-    private val archivedEnvelopeId = id(0xA005)
+    private val foodEnvelopeId = envelopeId(0xA001)
+    private val transportEnvelopeId = envelopeId(0xA002)
+    private val shoppingEnvelopeId = envelopeId(0xA003)
+    private val householdEnvelopeId = envelopeId(0xA004)
+    private val archivedEnvelopeId = envelopeId(0xA005)
 
-    fun build(today: LocalDate, zone: ZoneId): EnvelogSeedData {
+    fun build(today: LocalDate, zone: ZoneId): DemoSeed {
         val monthStart = today.withDayOfMonth(1)
         val monthEnd = monthStart.plusMonths(1)
+        val month = YearMonth.from(today)
+        val archivedAt = monthStart.atStartOfDay(zone).toInstant()
 
         val envelopes = listOf(
-            EnvelopeEntity(foodEnvelopeId, "餐饮", isBudgeted = true, archivedAt = false),
-            EnvelopeEntity(transportEnvelopeId, "交通", isBudgeted = true, archivedAt = false),
-            EnvelopeEntity(shoppingEnvelopeId, "购物", isBudgeted = false, archivedAt = false),
-            EnvelopeEntity(householdEnvelopeId, "居住", isBudgeted = true, archivedAt = false),
-            EnvelopeEntity(archivedEnvelopeId, "旧信封", isBudgeted = true, archivedAt = true),
+            EnvelopeEntity(foodEnvelopeId, "餐饮", isBudgeted = true, archivedAt = null),
+            EnvelopeEntity(transportEnvelopeId, "交通", isBudgeted = true, archivedAt = null),
+            EnvelopeEntity(shoppingEnvelopeId, "购物", isBudgeted = false, archivedAt = null),
+            EnvelopeEntity(householdEnvelopeId, "居住", isBudgeted = true, archivedAt = null),
+            EnvelopeEntity(archivedEnvelopeId, "旧信封", isBudgeted = true, archivedAt = archivedAt),
         )
 
         val budgets = buildList {
-            add(BudgetEntity(id(0xA101), foodEnvelopeId, monthStart, monthEnd, 300_000))
-            add(BudgetEntity(id(0xA102), transportEnvelopeId, monthStart, monthEnd, 20_000))
-            addAll(weeklyBudgets(householdEnvelopeId, monthStart, monthEnd, 50_000))
-            add(BudgetEntity(id(0xA103), archivedEnvelopeId, monthStart, monthEnd, 50_000))
+            add(monthlyBudget(0xA101, foodEnvelopeId, monthStart, monthEnd, month, 300_000))
+            add(monthlyBudget(0xA102, transportEnvelopeId, monthStart, monthEnd, month, 20_000))
+            addAll(weeklyBudgets(householdEnvelopeId, monthStart, monthEnd, month, 50_000))
+            add(monthlyBudget(0xA103, archivedEnvelopeId, monthStart, monthEnd, month, 50_000))
         }
 
         val previousDays = buildList {
@@ -56,21 +68,21 @@ object DemoSeedData {
         val foodSecondDate = previousDays.getOrNull(0)
         val splitDate = previousDays.getOrNull(1)
 
-        val transactions = mutableListOf<ExpenditureEntity>()
+        val expenditures = mutableListOf<ExpenditureEntity>()
         val allocations = mutableListOf<ExpenditureAllocationEntity>()
 
         fun record(
-            transactionId: UUID,
+            idValue: Long,
             date: LocalDate,
-            amount: Long,
-            shares: List<Pair<UUID, Long>>,
+            shares: List<Pair<EnvelopeId, Long>>,
         ) {
-            require(shares.sumOf { it.second } == amount) { "Allocation total must equal transaction amount" }
-            transactions += ExpenditureEntity(
+            val transactionId = expenditureId(idValue)
+            expenditures += ExpenditureEntity(
                 id = transactionId,
-                type = EntryType.Expenditure,
-                happenedAt = ZonedDateTime.of(date, LocalTime.NOON, zone),
-                amount = amount,
+                happenedAt = date.atTime(LocalTime.NOON).atZone(zone).toInstant(),
+                happenedDate = date,
+                happenedZone = zone,
+                deletedAt = null,
             )
             shares.forEach { (envelopeId, share) ->
                 allocations += ExpenditureAllocationEntity(
@@ -81,34 +93,50 @@ object DemoSeedData {
             }
         }
 
-        record(id(0xB001), today, 12_000, listOf(foodEnvelopeId to 12_000))
-        record(id(0xB002), today, 26_000, listOf(transportEnvelopeId to 26_000))
-        record(id(0xB003), today, 30_000, listOf(shoppingEnvelopeId to 30_000))
-        record(id(0xB004), today, 10_000, listOf(archivedEnvelopeId to 10_000))
+        record(0xB001, today, listOf(foodEnvelopeId to 12_000))
+        record(0xB002, today, listOf(transportEnvelopeId to 26_000))
+        record(0xB003, today, listOf(shoppingEnvelopeId to 30_000))
+        record(0xB004, today, listOf(archivedEnvelopeId to 10_000))
         foodSecondDate?.let {
-            record(id(0xB005), it, 8_000, listOf(foodEnvelopeId to 8_000))
+            record(0xB005, it, listOf(foodEnvelopeId to 8_000))
         }
         splitDate?.let {
             record(
-                id(0xB006),
+                0xB006,
                 it,
-                18_000,
                 listOf(foodEnvelopeId to 13_000, shoppingEnvelopeId to 5_000),
             )
         }
 
-        return EnvelogSeedData(
+        return DemoSeed(
             envelopes = envelopes,
             budgets = budgets,
-            transactions = transactions,
+            expenditures = expenditures,
             allocations = allocations,
         )
     }
 
-    private fun weeklyBudgets(
-        envelopeId: UUID,
+    private fun monthlyBudget(
+        idValue: Long,
+        envelopeId: EnvelopeId,
         start: LocalDate,
         endExclusive: LocalDate,
+        month: YearMonth,
+        amount: Long,
+    ): BudgetEntity = BudgetEntity(
+        id = budgetId(idValue),
+        envelopeId = envelopeId,
+        dateSpan = HalfOpenDateSpan(start, endExclusive),
+        attributedMonth = month,
+        amount = amount,
+        deletedAt = null,
+    )
+
+    private fun weeklyBudgets(
+        envelopeId: EnvelopeId,
+        start: LocalDate,
+        endExclusive: LocalDate,
+        month: YearMonth,
         amount: Long,
     ): List<BudgetEntity> = buildList {
         var budgetStart = start
@@ -116,11 +144,12 @@ object DemoSeedData {
         while (budgetStart < endExclusive) {
             val budgetEnd = minOf(budgetStart.plusDays(7), endExclusive)
             add(
-                BudgetEntity(
-                    id = id(0xA201L + index),
+                monthlyBudget(
+                    idValue = 0xA201L + index,
                     envelopeId = envelopeId,
-                    startDate = budgetStart,
-                    endDate = budgetEnd,
+                    start = budgetStart,
+                    endExclusive = budgetEnd,
+                    month = month,
                     amount = amount,
                 ),
             )

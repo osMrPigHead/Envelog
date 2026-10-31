@@ -27,7 +27,7 @@ import cn.osmrpighead.envelog.ui.screen.overview.component.Summary
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 
 @Composable
-private fun OverviewScreen(
+fun OverviewScreen(
     uiState: OverviewUiState,
     onArchiveClick: (EnvelopeId) -> Unit,
     onEditClick: (EnvelopeId) -> Unit,

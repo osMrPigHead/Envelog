@@ -11,12 +11,12 @@ import cn.osmrpighead.envelog.data.model.ExpenditureId
 
 @Entity(
     tableName = "expenditureAllocation",
-    primaryKeys = ["entryId", "envelopeId"],
+    primaryKeys = ["expenditureId", "envelopeId"],
     foreignKeys = [
         ForeignKey(
             entity = ExpenditureEntity::class,
             parentColumns = ["id"],
-            childColumns = ["entryId"],
+            childColumns = ["expenditureId"],
             onDelete = CASCADE,
             onUpdate = CASCADE,
         ),

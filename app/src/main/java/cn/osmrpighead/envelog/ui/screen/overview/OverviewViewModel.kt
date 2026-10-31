@@ -3,9 +3,7 @@ package cn.osmrpighead.envelog.ui.screen.overview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.number.ratioOf
-import cn.osmrpighead.envelog.core.time.first
-import cn.osmrpighead.envelog.core.time.next
-import cn.osmrpighead.envelog.core.time.untilExclusive
+import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
@@ -13,11 +11,7 @@ import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,7 +40,7 @@ class OverviewViewModel @Inject constructor(
             repository.observeOverview(
                 today = today,
                 yearMonth = yearMonth,
-                dateSpan = yearMonth.first untilExclusive yearMonth.next.first,
+                dateSpan = yearMonth.toHalfOpenDateSpan(),  // TODO: User rule
             )
         }
 

@@ -14,17 +14,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
+import cn.osmrpighead.envelog.core.time.untilInclusive
 import cn.osmrpighead.envelog.ui.preview.LangPreview
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
-import cn.osmrpighead.envelog.core.time.ClosedDatePeriod
 import java.time.LocalDate
 
 @LangPreview
 @Composable
 private fun DateRangePickerFieldPreview() {
     EnvelogTheme(dynamicColor = false) {
-        var period by remember {
-            mutableStateOf(ClosedDatePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 1)))
+        var span by remember {
+            mutableStateOf(LocalDate.of(2026, 9, 1) untilInclusive LocalDate.of(2026, 9, 30))
         }
         Column(
             modifier = Modifier
@@ -34,15 +35,15 @@ private fun DateRangePickerFieldPreview() {
         ) {
             DateRangePickerFieldSample("Default") {
                 DateRangePickerField(
-                    period = period,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { period = it }),
+                    period = span,
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             DateRangePickerFieldSample("Label + supporting text") {
                 DateRangePickerField(
-                    period = period,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { period = it }),
+                    period = span,
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Period") },
                     supportingText = { Text("Tap to pick a date range") },
@@ -56,9 +57,6 @@ private fun DateRangePickerFieldPreview() {
 @Composable
 private fun DateRangePickerFieldStatePreview() {
     EnvelogTheme(dynamicColor = false) {
-        var period by remember {
-            mutableStateOf(ClosedDatePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)))
-        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -66,9 +64,17 @@ private fun DateRangePickerFieldStatePreview() {
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
         ) {
             DateRangePickerFieldSample("Error") {
+                var span by remember {
+                    mutableStateOf(
+                        ClosedDateSpan(
+                            startDate = LocalDate.of(2026, 10, 1),
+                            endDate = LocalDate.of(2026, 9, 1),
+                        ),
+                    )
+                }
                 DateRangePickerField(
-                    period = period,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { period = it }),
+                    period = span,
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                     supportingText = { Text("End date must be after the start date") },
                     isError = true,
@@ -76,8 +82,8 @@ private fun DateRangePickerFieldStatePreview() {
             }
             DateRangePickerFieldSample("Disabled") {
                 DateRangePickerField(
-                    period = period,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { period = it }),
+                    period = LocalDate.of(2026, 9, 1) untilInclusive LocalDate.of(2026, 9, 30),
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default {}),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false,
                 )

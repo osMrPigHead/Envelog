@@ -1,8 +1,8 @@
 package cn.osmrpighead.envelog.core.di
 
-import cn.osmrpighead.envelog.data.repository_old.EnvelogRepository
-import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
-import cn.osmrpighead.envelog.data.repository_old.InMemoryEnvelogRepository
+import cn.osmrpighead.envelog.data.db.DatabaseSeeder
+import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository.RoomEnvelogRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -13,8 +13,8 @@ import dagger.multibindings.Multibinds
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
     @Binds
-    abstract fun bindEnvelogRepository(impl: InMemoryEnvelogRepository): EnvelogRepository
+    abstract fun bindEnvelogRepository(impl: RoomEnvelogRepository): EnvelogRepository
 
     @Multibinds
-    abstract fun envelogSeedData(): Set<EnvelogSeedData>
+    abstract fun databaseSeeders(): Set<DatabaseSeeder>
 }

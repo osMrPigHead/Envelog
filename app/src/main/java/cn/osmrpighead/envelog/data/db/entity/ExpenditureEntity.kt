@@ -8,7 +8,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-@Entity(tableName = "entry")
+@Entity(tableName = "expenditure")
 data class ExpenditureEntity(
     @PrimaryKey val id: ExpenditureId,
     val happenedAt: Instant,

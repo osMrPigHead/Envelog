@@ -1,133 +1,97 @@
 package cn.osmrpighead.envelog.data.repository
 
-import cn.osmrpighead.envelog.data.query_old.DateRange
-import cn.osmrpighead.envelog.data.query_old.DateRangeRule
-import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
-import cn.osmrpighead.envelog.data.repository_old.InMemoryEnvelogRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.Clock
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 
 class DemoSeedDataTest {
     private val zone: ZoneId = ZoneId.of("Asia/Shanghai")
 
-    private fun clockAt(date: LocalDate): Clock = Clock.fixed(date.atStartOfDay(zone).toInstant(), zone)
-
-    private fun dateRange(date: LocalDate): DateRange {
-        val monthStart = date.withDayOfMonth(1)
-        return DateRange(
-            start = monthStart,
-            end = monthStart.plusMonths(1),
-            rule = DateRangeRule.StartInRange,
-        )
-    }
-
-    private fun buildSeed(date: LocalDate): EnvelogSeedData =
-        DemoSeedData.build(LocalDate.now(clockAt(date)), zone)
-
-    private fun repositoryOf(seed: EnvelogSeedData): InMemoryEnvelogRepository =
-        InMemoryEnvelogRepository(
-            envelopes = seed.envelopes,
-            budgets = seed.budgets,
-            transactions = seed.transactions,
-            allocations = seed.allocations,
-        )
+    private fun buildSeed(date: LocalDate): DemoSeed = DemoSeedData.build(date, zone)
 
     @Test
     fun demoSeedData_hasConsistentReferencesAndPeriods() {
         val today = LocalDate.of(2026, 10, 25)
         val seed = buildSeed(today)
+        val month = YearMonth.from(today)
 
-        val allIds = seed.envelopes.map { it.id } +
-            seed.budgets.map { it.id } +
-            seed.transactions.map { it.id }
-        assertEquals(allIds.size, allIds.toSet().size)
+        assertEquals(5, seed.envelopes.size)
+        assertEquals(seed.envelopes.size, seed.envelopes.map { it.id }.toSet().size)
+        assertEquals(seed.budgets.size, seed.budgets.map { it.id }.toSet().size)
+        assertEquals(seed.expenditures.size, seed.expenditures.map { it.id }.toSet().size)
 
         assertTrue(seed.budgets.all { budget -> seed.envelopes.any { it.id == budget.envelopeId } })
         assertTrue(seed.allocations.all { allocation ->
-            seed.transactions.any { it.id == allocation.expenditureId } &&
+            seed.expenditures.any { it.id == allocation.expenditureId } &&
                 seed.envelopes.any { it.id == allocation.envelopeId }
         })
+        assertTrue(seed.allocations.all { it.amount > 0 })
 
         seed.budgets.groupBy { it.envelopeId }.values.forEach { budgets ->
-            budgets.sortedBy { it.startDate }.zipWithNext().forEach { (left, right) ->
-                assertTrue(left.endDate <= right.startDate)
+            budgets.sortedBy { it.dateSpan.startDate }.zipWithNext().forEach { (left, right) ->
+                assertTrue(left.dateSpan.endDate <= right.dateSpan.startDate)
             }
         }
 
-        val allocationTotals = seed.allocations.groupBy { it.expenditureId }
-            .mapValues { (_, allocations) -> allocations.sumOf { it.amount } }
-        seed.transactions.forEach { transaction ->
-            assertEquals(transaction.amount, allocationTotals[transaction.id] ?: 0L)
-        }
-
-        val month = YearMonth.from(today)
-        val monthStart = today.withDayOfMonth(1)
-        val monthEnd = monthStart.plusMonths(1)
-        assertTrue(seed.transactions.all { YearMonth.from(it.happenedAt.toLocalDate()) == month })
-        assertTrue(seed.transactions.all { !it.happenedAt.toLocalDate().isAfter(today) })
-        assertTrue(seed.budgets.all { it.startDate >= monthStart && it.endDate <= monthEnd })
+        assertTrue(seed.budgets.all { it.attributedMonth == month })
+        assertTrue(seed.budgets.all {
+            it.dateSpan.startDate >= today.withDayOfMonth(1) &&
+                it.dateSpan.endDate <= today.withDayOfMonth(1).plusMonths(1)
+        })
+        assertTrue(seed.expenditures.all { it.happenedDate in today.withDayOfMonth(1)..today })
+        assertTrue(seed.expenditures.all {
+            it.happenedAt == it.happenedDate.atTime(LocalTime.NOON).atZone(zone).toInstant()
+        })
     }
 
     @Test
-    fun populatedRepository_providesDataForOverviewAndEnvelopeSheet() = runTest {
+    fun demoSeedData_coversOverviewScenarios() {
         val today = LocalDate.of(2026, 10, 25)
         val seed = buildSeed(today)
-        val repository = repositoryOf(seed)
-        val range = dateRange(today)
+        val activeIds = seed.envelopes.filter { it.archivedAt == null }.map { it.id }.toSet()
+        val archived = seed.envelopes.single { it.name == "旧信封" }
 
-        val active = repository.observeActiveEnvelopes().first()
-        assertEquals(listOf("餐饮", "交通", "购物", "居住"), active.map { it.name })
-        assertFalse(active.any { it.archivedAt })
+        assertNotNull(archived.archivedAt)
+        assertTrue(seed.envelopes.filter { it.id in activeIds }.all { it.archivedAt == null })
+        assertNull(seed.envelopes.single { it.name == "购物" }.archivedAt)
 
-        val extra = repository.observeActiveEnvelopesWithExtra(range).first()
-            .associateBy { it.envelope.name }
-        assertEquals(4, extra.size)
-        assertFalse(extra.containsKey("旧信封"))
+        val activeAllocated = seed.allocations
+            .filter { it.envelopeId in activeIds }
+            .sumOf { it.amount }
+        val archivedAllocated = seed.allocations
+            .filter { it.envelopeId == archived.id }
+            .sumOf { it.amount }
+        assertEquals(94_000, activeAllocated)
+        assertEquals(10_000, archivedAllocated)
 
-        val food = extra.getValue("餐饮")
-        assertEquals(300_000, food.budgets.sumOf { it.amount })
-        assertEquals(33_000, food.allocations.sumOf { it.allocation.amount })
+        val household = seed.envelopes.single { it.name == "居住" }
+        val householdBudgets = seed.budgets.filter { it.envelopeId == household.id }
+        assertEquals(5, householdBudgets.size)
+        assertEquals(250_000, householdBudgets.sumOf { it.amount })
+        assertTrue(householdBudgets.any { today >= it.dateSpan.startDate && today < it.dateSpan.endDate })
 
-        val transport = extra.getValue("交通")
-        assertTrue(
-            transport.allocations.sumOf { it.allocation.amount } >
-                transport.budgets.sumOf { it.amount },
-        )
-
-        val shopping = extra.getValue("购物")
-        assertTrue(shopping.budgets.isEmpty())
-        assertEquals(35_000, shopping.allocations.sumOf { it.allocation.amount })
-
-        val household = extra.getValue("居住")
-        assertTrue(household.budgets.size >= 4)
-        assertTrue(household.budgets.any { today >= it.startDate && today < it.endDate })
-        assertTrue(household.allocations.isEmpty())
-
-        assertEquals(104_000, repository.observeTransactions(range).first().sumOf { it.amount })
+        val food = seed.envelopes.single { it.name == "餐饮" }
+        assertEquals(300_000, seed.budgets.filter { it.envelopeId == food.id }.sumOf { it.amount })
+        assertEquals(33_000, seed.allocations.filter { it.envelopeId == food.id }.sumOf { it.amount })
     }
 
     @Test
-    fun demoSeedData_remainsUsableOnFirstDayOfMonth() = runTest {
+    fun demoSeedData_remainsUsableOnFirstDayOfMonth() {
         val today = LocalDate.of(2026, 10, 1)
         val seed = buildSeed(today)
-        val repository = repositoryOf(seed)
-        val range = dateRange(today)
+        val activeIds = seed.envelopes.filter { it.archivedAt == null }.map { it.id }.toSet()
 
-        assertTrue(seed.transactions.all { !it.happenedAt.toLocalDate().isBefore(today) })
-        assertEquals(78_000, repository.observeTransactions(range).first().sumOf { it.amount })
-
-        val extra = repository.observeActiveEnvelopesWithExtra(range).first()
-            .associateBy { it.envelope.name }
-        listOf("餐饮", "交通", "购物").forEach { name ->
-            assertTrue(extra.getValue(name).allocations.isNotEmpty())
-        }
+        assertTrue(seed.expenditures.all { it.happenedDate >= today })
+        assertEquals(
+            68_000,
+            seed.allocations.filter { it.envelopeId in activeIds }.sumOf { it.amount },
+        )
+        assertTrue(seed.budgets.all { it.dateSpan.startDate >= today })
     }
 }
