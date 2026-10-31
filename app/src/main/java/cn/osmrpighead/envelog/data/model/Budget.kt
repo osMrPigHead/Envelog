@@ -6,8 +6,6 @@ import java.util.UUID
 
 @JvmInline
 @Serializable
-value class BudgetId(
-    val value: @Serializable(with = UUIDSerializer::class) UUID
-) {
+value class BudgetId(val value: @Serializable(with = UUIDSerializer::class) UUID) {
     override fun toString(): String = value.toString()
 }

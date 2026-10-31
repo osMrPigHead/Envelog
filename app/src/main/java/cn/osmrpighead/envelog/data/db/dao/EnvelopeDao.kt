@@ -2,8 +2,12 @@ package cn.osmrpighead.envelog.data.db.dao
 
 import androidx.room3.Dao
 import androidx.room3.Query
+import androidx.room3.Update
+import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
+import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.time.LocalDate
 
 @Dao
@@ -58,7 +62,6 @@ interface EnvelopeDao {
             LEFT JOIN currentBudget     ON e.id = currentBudget.envelopeId
             LEFT JOIN totalAllocation   ON e.id = totalAllocation.envelopeId
             LEFT JOIN currentAllocation ON e.id = currentAllocation.envelopeId
-            WHERE e.archivedAt IS NULL
         """,
     )
     fun observeEnvelopeSummariesOverlaps(
@@ -66,4 +69,16 @@ interface EnvelopeDao {
         startDate: LocalDate,
         endDate: LocalDate,
     ): Flow<List<EnvelopeSummaryRow>>
+
+    @Query("SELECT * FROM envelope WHERE id = :id")
+    suspend fun getById(id: EnvelopeId): EnvelopeEntity?
+
+    @Query("SELECT * FROM envelope WHERE id IN (:ids)")
+    suspend fun getByIds(ids: Set<EnvelopeId>): List<EnvelopeEntity>
+
+    @Query("UPDATE envelope SET archivedAt = :now WHERE id = :id AND archivedAt IS NULL")
+    suspend fun archiveEnvelopeById(id: EnvelopeId, now: Instant): Int
+
+    @Update
+    suspend fun updateEnvelope(entity: EnvelopeEntity)
 }

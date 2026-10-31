@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.AllocationResult
 import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
@@ -75,14 +75,14 @@ private val previewAllocations: List<AllocationResult> =
     EnvelopePreviewData.allocations.entries.mapIndexed { index, (date, amount) ->
         val transactionId = UUID(2L, index.toLong())
         AllocationResult(
-            transaction = EntryEntity(
+            transaction = ExpenditureEntity(
                 id = transactionId,
                 type = EntryType.Expenditure,
                 happenedAt = date.atTime(12, 0).atZone(ZoneOffset.UTC),
                 amount = amount,
             ),
             allocation = ExpenditureAllocationEntity(
-                entryId = transactionId,
+                expenditureId = transactionId,
                 envelopeId = previewEnvelopeId,
                 amount = amount,
             ),

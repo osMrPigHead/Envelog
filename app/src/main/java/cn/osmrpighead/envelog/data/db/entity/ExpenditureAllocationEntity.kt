@@ -6,14 +6,15 @@ import androidx.room3.ForeignKey.Companion.CASCADE
 import androidx.room3.ForeignKey.Companion.RESTRICT
 import androidx.room3.Index
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.EntryId
+import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
+import cn.osmrpighead.envelog.data.model.ExpenditureId
 
 @Entity(
     tableName = "expenditureAllocation",
     primaryKeys = ["entryId", "envelopeId"],
     foreignKeys = [
         ForeignKey(
-            entity = EntryEntity::class,
+            entity = ExpenditureEntity::class,
             parentColumns = ["id"],
             childColumns = ["entryId"],
             onDelete = CASCADE,
@@ -23,14 +24,22 @@ import cn.osmrpighead.envelog.data.model.EntryId
             entity = EnvelopeEntity::class,
             parentColumns = ["id"],
             childColumns = ["envelopeId"],
-            onDelete = CASCADE,
+            onDelete = RESTRICT,
             onUpdate = CASCADE,
         ),
     ],
     indices = [Index("envelopeId")]
 )
 data class ExpenditureAllocationEntity(
-    val entryId: EntryId,
+    val expenditureId: ExpenditureId,
     val envelopeId: EnvelopeId,
     val amount: Long,
-)
+) {
+    companion object {
+        fun fromDomain(domain: ExpenditureAllocation): ExpenditureAllocationEntity = ExpenditureAllocationEntity(
+            expenditureId = domain.expenditureId,
+            envelopeId = domain.envelopeId,
+            amount = domain.amount,
+        )
+    }
+}

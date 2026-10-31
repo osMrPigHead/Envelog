@@ -3,7 +3,7 @@ package cn.osmrpighead.envelog.data.repository_old
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.EnvelopeResult
 import cn.osmrpighead.envelog.data.repository_old.EnvelogRepositoryException.*
@@ -29,15 +29,16 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.collections.filter
 
+@Deprecated("")
 class InMemoryEnvelogRepository(
     envelopes: List<EnvelopeEntity>,
     budgets: List<BudgetEntity>,
-    transactions: List<EntryEntity>,
+    transactions: List<ExpenditureEntity>,
     allocations: List<ExpenditureAllocationEntity>,
 ) : EnvelogRepository {
     private val envelopes: MutableStateFlow<List<EnvelopeEntity>> = MutableStateFlow(envelopes)
     private val budgets: MutableStateFlow<List<BudgetEntity>> = MutableStateFlow(budgets)
-    private val transactions: MutableStateFlow<List<EntryEntity>> = MutableStateFlow(transactions)
+    private val transactions: MutableStateFlow<List<ExpenditureEntity>> = MutableStateFlow(transactions)
     private val allocations: MutableStateFlow<List<ExpenditureAllocationEntity>> = MutableStateFlow(allocations)
 
     override fun observeActiveEnvelopes(): Flow<List<EnvelopeEntity>> =
@@ -62,7 +63,7 @@ class InMemoryEnvelogRepository(
     ): Flow<List<AllocationResult>> =
         allocations.map { allocations ->
             allocations.mapNotNull {
-                val transaction = transactions.value.find { transaction -> it.entryId == transaction.id }
+                val transaction = transactions.value.find { transaction -> it.expenditureId == transaction.id }
                 if (transaction != null) AllocationResult(transaction = transaction, allocation = it)
                 else null
             }.filter { (transaction, allocation) ->
@@ -70,12 +71,12 @@ class InMemoryEnvelogRepository(
             }
         }
 
-    override fun observeTransactions(range: DateRange): Flow<List<EntryEntity>> =
+    override fun observeTransactions(range: DateRange): Flow<List<ExpenditureEntity>> =
         transactions.map { transactions ->
             transactions.filter { it.happenedAt.toLocalDate() in range }
         }
 
-    override fun observeTransactions(type: EntryType, range: DateRange): Flow<List<EntryEntity>> =
+    override fun observeTransactions(type: EntryType, range: DateRange): Flow<List<ExpenditureEntity>> =
         transactions.map { transactions ->
             transactions.filter { it.happenedAt.toLocalDate() in range && it.type == type }
         }
@@ -195,11 +196,11 @@ class InMemoryEnvelogRepository(
     private fun replaceAllocations(transactionId: UUID, allocations: Map<UUID, Long>, removeOld: Boolean = true) {
         this.allocations.update {
             it.toMutableList().apply {
-                if (removeOld) removeAll { allocation -> allocation.entryId == transactionId }
+                if (removeOld) removeAll { allocation -> allocation.expenditureId == transactionId }
                 addAll(
                     allocations.map { (id, amount) ->
                         ExpenditureAllocationEntity(
-                            entryId = transactionId,
+                            expenditureId = transactionId,
                             envelopeId = id,
                             amount = amount,
                         )
@@ -216,7 +217,7 @@ class InMemoryEnvelogRepository(
     ): Result<UUID> = EnvelogRepositoryException.catch {
         validateAllocations(amount, allocations)
         val id = transactions.create { id, _ ->
-            EntryEntity(
+            ExpenditureEntity(
                 id = id,
                 type = EntryType.Expenditure,
                 happenedAt = dateTime,

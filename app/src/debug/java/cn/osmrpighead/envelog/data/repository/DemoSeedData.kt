@@ -3,7 +3,7 @@ package cn.osmrpighead.envelog.data.repository
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.repository_old.EnvelogSeedData
 import java.time.LocalDate
@@ -56,7 +56,7 @@ object DemoSeedData {
         val foodSecondDate = previousDays.getOrNull(0)
         val splitDate = previousDays.getOrNull(1)
 
-        val transactions = mutableListOf<EntryEntity>()
+        val transactions = mutableListOf<ExpenditureEntity>()
         val allocations = mutableListOf<ExpenditureAllocationEntity>()
 
         fun record(
@@ -66,7 +66,7 @@ object DemoSeedData {
             shares: List<Pair<UUID, Long>>,
         ) {
             require(shares.sumOf { it.second } == amount) { "Allocation total must equal transaction amount" }
-            transactions += EntryEntity(
+            transactions += ExpenditureEntity(
                 id = transactionId,
                 type = EntryType.Expenditure,
                 happenedAt = ZonedDateTime.of(date, LocalTime.NOON, zone),
@@ -74,7 +74,7 @@ object DemoSeedData {
             )
             shares.forEach { (envelopeId, share) ->
                 allocations += ExpenditureAllocationEntity(
-                    entryId = transactionId,
+                    expenditureId = transactionId,
                     envelopeId = envelopeId,
                     amount = share,
                 )

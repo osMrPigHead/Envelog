@@ -3,7 +3,7 @@ package cn.osmrpighead.envelog.data.repository
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.EntryEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.db.entity.EntryType
 import cn.osmrpighead.envelog.data.query_old.DateRange
 import cn.osmrpighead.envelog.data.query_old.DateRangeRule
@@ -73,14 +73,14 @@ internal object TestData {
         type: EntryType = EntryType.Expenditure,
         date: LocalDate = periodStart.plusDays(4),
         amount: Long = 10_000,
-    ): EntryEntity = EntryEntity(id = id, type = type, happenedAt = at(date), amount = amount)
+    ): ExpenditureEntity = ExpenditureEntity(id = id, type = type, happenedAt = at(date), amount = amount)
 
     fun allocation(
         transactionId: UUID = TestData.transactionAId,
         envelopeId: UUID = TestData.envelopeAId,
         amount: Long = 10_000,
     ): ExpenditureAllocationEntity = ExpenditureAllocationEntity(
-        entryId = transactionId,
+        expenditureId = transactionId,
         envelopeId = envelopeId,
         amount = amount,
     )
@@ -88,7 +88,7 @@ internal object TestData {
     fun repository(
         envelopes: List<EnvelopeEntity> = emptyList(),
         budgets: List<BudgetEntity> = emptyList(),
-        transactions: List<EntryEntity> = emptyList(),
+        transactions: List<ExpenditureEntity> = emptyList(),
         allocations: List<ExpenditureAllocationEntity> = emptyList(),
     ): InMemoryEnvelogRepository = InMemoryEnvelogRepository(
         envelopes = envelopes,

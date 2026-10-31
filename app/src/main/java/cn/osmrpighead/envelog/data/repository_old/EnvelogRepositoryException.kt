@@ -2,6 +2,7 @@ package cn.osmrpighead.envelog.data.repository_old
 
 import cn.osmrpighead.envelog.core.exception.EnvelogExceptionCompanion
 
+@Deprecated("")
 @Suppress("CanSealedSubClassBeObject")
 sealed class EnvelogRepositoryException : RuntimeException() {
     sealed class ArgumentException : EnvelogRepositoryException() {

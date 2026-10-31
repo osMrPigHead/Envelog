@@ -52,7 +52,7 @@ class DemoSeedDataTest {
 
         assertTrue(seed.budgets.all { budget -> seed.envelopes.any { it.id == budget.envelopeId } })
         assertTrue(seed.allocations.all { allocation ->
-            seed.transactions.any { it.id == allocation.entryId } &&
+            seed.transactions.any { it.id == allocation.expenditureId } &&
                 seed.envelopes.any { it.id == allocation.envelopeId }
         })
 
@@ -62,7 +62,7 @@ class DemoSeedDataTest {
             }
         }
 
-        val allocationTotals = seed.allocations.groupBy { it.entryId }
+        val allocationTotals = seed.allocations.groupBy { it.expenditureId }
             .mapValues { (_, allocations) -> allocations.sumOf { it.amount } }
         seed.transactions.forEach { transaction ->
             assertEquals(transaction.amount, allocationTotals[transaction.id] ?: 0L)

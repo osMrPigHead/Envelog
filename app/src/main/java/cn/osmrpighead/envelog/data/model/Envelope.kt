@@ -6,8 +6,6 @@ import java.util.UUID
 
 @JvmInline
 @Serializable
-value class EnvelopeId(
-    val value: @Serializable(with = UUIDSerializer::class) UUID
-) {
+value class EnvelopeId(val value: @Serializable(with = UUIDSerializer::class) UUID) {
     override fun toString(): String = value.toString()
 }

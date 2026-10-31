@@ -13,11 +13,11 @@ sealed interface EnvelopeSummary {
         override val name: String,
         override val allocated: Long,
         val totalBudget: Long,
-        val currentBudget: Long,
-        val currentSpan: HalfOpenDateSpan,
+        val currentBudget: Long?,
+        val currentSpan: HalfOpenDateSpan?,
         val currentSpanAllocated: Long,
     ) : EnvelopeSummary {
-        val currentAvailable = currentBudget - currentSpanAllocated
+        val currentAvailable = currentBudget?.minus(currentSpanAllocated)
     }
 
     data class NonBudget(
