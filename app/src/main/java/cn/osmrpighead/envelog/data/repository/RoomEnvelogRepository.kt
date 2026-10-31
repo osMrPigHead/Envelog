@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.Clock
 import java.time.LocalDate
+import java.time.YearMonth
 import javax.inject.Inject
 
 // TODO: CurrencyType
@@ -38,8 +39,12 @@ class RoomEnvelogRepository @Inject constructor(
     private val expenditureDao = db.expenditureDao()
     private val expenditureAllocationDao = db.expenditureAllocationDao()
 
-    override fun observeOverview(today: LocalDate, dateSpan: HalfOpenDateSpan): Flow<List<EnvelopeSummary>> =
-        envelopeDao.observeEnvelopeSummariesOverlaps(today, dateSpan.startDate, dateSpan.endDate)
+    override fun observeOverview(
+        today: LocalDate,
+        yearMonth: YearMonth,
+        dateSpan: HalfOpenDateSpan,
+    ): Flow<List<EnvelopeSummary>> =
+        envelopeDao.observeEnvelopeSummariesOverlaps(today, yearMonth, dateSpan.startDate, dateSpan.endDate)
             .map { rows -> rows.map { it.toDomain() } }
 
     override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =

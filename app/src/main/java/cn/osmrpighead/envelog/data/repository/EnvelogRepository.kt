@@ -6,9 +6,10 @@ import cn.osmrpighead.envelog.data.model.Expenditure
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.time.YearMonth
 
 interface EnvelogRepository {
-    fun observeOverview(today: LocalDate, dateSpan: HalfOpenDateSpan): Flow<List<EnvelopeSummary>>
+    fun observeOverview(today: LocalDate, yearMonth: YearMonth, dateSpan: HalfOpenDateSpan): Flow<List<EnvelopeSummary>>
 
     suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult
 
