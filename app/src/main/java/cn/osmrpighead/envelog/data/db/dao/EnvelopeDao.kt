@@ -76,7 +76,7 @@ interface EnvelopeDao {
             )
 
             SELECT
-                ev.id, ev.name, ev.isBudgeted,
+                ev.id, ev.name, ev.isBudgeted, (ev.archivedAt IS NOT NULL) AS archived,
                 ac.total AS allocated,
                 ba.total AS totalBudget,
                 cb.amount AS currentBudget,

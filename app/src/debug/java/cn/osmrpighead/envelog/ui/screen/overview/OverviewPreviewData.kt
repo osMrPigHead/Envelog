@@ -40,6 +40,7 @@ internal object OverviewPreviewData {
         name = "餐饮",
         allocated = 200_000,
         currency = CurrencyType.CNY,
+        archived = false,
         totalBudget = 300_000,
         currentBudget = 180_000,
         currentSpan = budgetSpan,
@@ -53,6 +54,7 @@ internal object OverviewPreviewData {
         name = "交通",
         allocated = 120_000,
         currency = CurrencyType.CNY,
+        archived = false,
         totalBudget = 200_000,
         currentBudget = 100_000,
         currentSpan = budgetSpan,
@@ -66,6 +68,7 @@ internal object OverviewPreviewData {
         name = "购物",
         allocated = 30_000,
         currency = CurrencyType.CNY,
+        archived = false,
     )
 
     val zeroBudgetEnvelope: EnvelopeSummary = EnvelopeSummary.Budgeted(
@@ -73,6 +76,7 @@ internal object OverviewPreviewData {
         name = "娱乐",
         allocated = 0,
         currency = CurrencyType.CNY,
+        archived = false,
         totalBudget = 0,
         currentBudget = 0,
         currentSpan = budgetSpan,

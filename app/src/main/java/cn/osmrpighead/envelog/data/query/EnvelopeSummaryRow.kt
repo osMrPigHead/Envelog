@@ -7,6 +7,7 @@ data class EnvelopeSummaryRow(
     val id: EnvelopeId,
     val name: String,
     val isBudgeted: Boolean,
+    val archived: Boolean,
     val allocated: Long,
     val totalBudget: Long?,
     val currentBudget: Long?,

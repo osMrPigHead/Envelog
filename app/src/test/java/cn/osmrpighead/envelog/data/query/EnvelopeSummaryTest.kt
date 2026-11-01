@@ -19,11 +19,13 @@ class EnvelopeSummaryTest {
         currentSpanAllocated: Long = 10_000,
         priorBudget: Long = 50_000,
         priorAllocated: Long = 20_000,
+        archived: Boolean = false,
     ): EnvelopeSummary.Budgeted = EnvelopeSummary.Budgeted(
         id = envelopeId,
         name = "餐饮",
         allocated = allocated,
         currency = CurrencyType.CNY,
+        archived = archived,
         totalBudget = totalBudget,
         currentBudget = currentBudget,
         currentSpan = null,

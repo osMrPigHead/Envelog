@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -235,5 +236,77 @@ class EnvelopeDaoTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertNull(dao.getById(RoomTestData.envelopeId(0xEE)))
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_returnsIndependentRowsPerEnvelope() = runTest {
+        val (aExpenditure, aShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (bExpenditure, bShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 25), RoomTestData.envelopeB to 4_000)
+
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+            budgets = listOf(RoomTestData.budget(envelopeId = RoomTestData.envelopeA, amount = 100_000)),
+            expenditures = listOf(aExpenditure, bExpenditure),
+            allocations = aShares + bShares,
+        )
+
+        val rows = summaries().associateBy { it.id }
+
+        assertEquals(setOf(RoomTestData.envelopeA, RoomTestData.envelopeB), rows.keys)
+        val budgeted = rows.getValue(RoomTestData.envelopeA)
+        assertEquals(6_000L, budgeted.allocated)
+        assertEquals(100_000L, budgeted.totalBudget)
+        assertEquals(100_000L, budgeted.currentBudget)
+        assertEquals(6_000L, budgeted.currentSpanAllocated)
+        assertNull(budgeted.priorAllocated)
+
+        val nonBudgeted = rows.getValue(RoomTestData.envelopeB)
+        assertEquals(4_000L, nonBudgeted.allocated)
+        assertNull(nonBudgeted.totalBudget)
+        assertNull(nonBudgeted.currentBudget)
+        assertNull(nonBudgeted.priorAllocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_returnsEmptyListWhenDatabaseIsEmpty() = runTest {
+        assertTrue(summaries().isEmpty())
+    }
+
+    @Test
+    fun getByIds_returnsEmptyListWhenDatabaseIsEmpty() = runTest {
+        assertTrue(dao.getByIds(setOf(RoomTestData.envelopeA)).isEmpty())
+    }
+
+    @Test
+    fun archiveEnvelopeById_returnsZeroWhenEnvelopeIsMissing() = runTest {
+        assertEquals(0, dao.archiveEnvelopeById(RoomTestData.envelopeA, Instant.parse("2026-10-20T04:00:00Z")))
+    }
+
+    @Test
+    fun getById_returnsArchivedEnvelope() = runTest {
+        val archivedAt = Instant.parse("2026-10-01T04:00:00Z")
+        database.seed(envelopes = listOf(RoomTestData.envelope(archivedAt = archivedAt)))
+
+        assertEquals(archivedAt, dao.getById(RoomTestData.envelopeA)?.archivedAt)
+    }
+
+    @Test
+    fun getByIds_includesArchivedEnvelopes() = runTest {
+        val archivedAt = Instant.parse("2026-10-01T04:00:00Z")
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "旧信封", isBudgeted = false, archivedAt = archivedAt),
+            ),
+        )
+
+        val found = dao.getByIds(setOf(RoomTestData.envelopeA, RoomTestData.envelopeB))
+
+        assertEquals(2, found.size)
+        assertNull(found.single { it.id == RoomTestData.envelopeA }.archivedAt)
+        assertEquals(archivedAt, found.single { it.id == RoomTestData.envelopeB }.archivedAt)
     }
 }

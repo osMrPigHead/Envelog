@@ -49,7 +49,7 @@ class OverviewViewModel @Inject constructor(
             yearMonth = yearMonth,
             today = today,
             summaryItems = overview.toSummaryItems(),
-            envelopes = overview,
+            envelopes = overview.filter { !it.archived },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), OverviewUiState.Loading)
 

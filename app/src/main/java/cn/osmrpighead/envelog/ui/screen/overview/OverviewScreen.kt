@@ -71,7 +71,7 @@ private fun Success(
                 vertical = dimensionResource(R.dimen.spacingSmall),
             )
             LazyColumn {
-                items(uiState.envelopes, key = { it.id }) {
+                items(uiState.envelopes, key = { it.id.toString() }) {
                     EnvelopeCard(
                         model = it,
                         today = uiState.today,

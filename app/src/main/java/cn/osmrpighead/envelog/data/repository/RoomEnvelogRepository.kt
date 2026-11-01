@@ -23,12 +23,12 @@ import javax.inject.Inject
 // TODO: CurrencyType
 private fun EnvelopeSummaryRow.toDomain() = if (isBudgeted) {
     EnvelopeSummary.Budgeted(
-        id, name, allocated, CurrencyType.CNY, totalBudget ?: 0, currentBudget,
+        id, name, allocated, CurrencyType.CNY, archived, totalBudget ?: 0, currentBudget,
         currentSpanEndDate?.let { currentSpanStartDate?.untilExclusive(it) },
         currentSpanAllocated ?: 0,
         priorBudget ?: 0, priorAllocated ?: 0,
     )
-} else EnvelopeSummary.NonBudget(id, name, allocated, CurrencyType.CNY)
+} else EnvelopeSummary.NonBudget(id, name, allocated, CurrencyType.CNY, archived)
 
 class RoomEnvelogRepository @Inject constructor(
     private val db: EnvelogDatabase,

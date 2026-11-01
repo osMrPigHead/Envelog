@@ -139,7 +139,8 @@ class EnvelopeSummaryQueryInstrumentedTest {
         assertNull(row.currentBudget)
         assertNull(row.currentSpanAllocated)
         assertNull(row.priorBudget)
-        assertNull(row.priorAllocated)
+        // 没有当前预算时，历史窗口的终点回退到 today，因此今天之前的支出都算历史支出
+        assertEquals(10_000L, row.priorAllocated)
     }
 
     @Test
