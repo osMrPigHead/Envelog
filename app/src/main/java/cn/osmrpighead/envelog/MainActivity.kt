@@ -18,7 +18,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val backStack = rememberNavBackStack(AppRoute.Overview) as NavBackStack<AppRoute>
-
             EnvelogTheme {
                 AppNavDisplay(backStack)
             }
