@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.YearMonth
 import javax.inject.Inject
 
 // TODO: User rule
@@ -33,6 +34,20 @@ class OverviewViewModel @Inject constructor(
 ) : ViewModel() {
     private val yearMonth = appState.yearMonth
     private val today = appState.today
+
+    init {
+        appState.updateMonthIfFollowing()
+        viewModelScope.launch {
+            var lastMonth = YearMonth.from(appState.today.value)
+            appState.today.collect { today ->
+                val currentMonth = YearMonth.from(today)
+                if (lastMonth != currentMonth) {
+                    lastMonth = currentMonth
+                    appState.updateMonthIfFollowing()
+                }
+            }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val overview = combine(today, yearMonth) { today, yearMonth -> today to yearMonth }

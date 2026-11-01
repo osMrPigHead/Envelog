@@ -49,8 +49,8 @@ private fun Success(
     modifier: Modifier = Modifier,
 ) {
     var managing by rememberSaveable { mutableStateOf(false) }
-    Scaffold { innerPadding ->
-        Column(modifier = modifier.padding(innerPadding)) {
+    Scaffold(modifier = modifier) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)) {
             Summary(
                 yearMonth = uiState.yearMonth,
                 items = uiState.summaryItems,
