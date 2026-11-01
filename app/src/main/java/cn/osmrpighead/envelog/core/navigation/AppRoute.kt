@@ -8,5 +8,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface AppRoute : NavKey {
     @Serializable data object Overview : AppRoute
+    @Serializable data class Record(val id: EnvelopeId): AppRoute
     @Serializable data class Envelope(val id: NavigationTarget<@Contextual EnvelopeId>): AppRoute
 }

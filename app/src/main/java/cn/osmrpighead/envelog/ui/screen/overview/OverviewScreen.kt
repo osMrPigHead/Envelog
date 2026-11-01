@@ -32,11 +32,12 @@ fun OverviewScreen(
     onArchiveClick: (EnvelopeId) -> Unit,
     onEditClick: (EnvelopeId) -> Unit,
     onNewClick: () -> Unit,
+    onEnvelopeClick: (EnvelopeId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
         OverviewUiState.Loading -> {}  // TODO: Loading page
-        is OverviewUiState.Success -> Success(uiState, onArchiveClick, onEditClick, onNewClick, modifier)
+        is OverviewUiState.Success -> Success(uiState, onArchiveClick, onEditClick, onNewClick, onEnvelopeClick, modifier)
     }
 }
 
@@ -46,6 +47,7 @@ private fun Success(
     onArchiveClick: (EnvelopeId) -> Unit,
     onEditClick: (EnvelopeId) -> Unit,
     onNewClick: () -> Unit,
+    onEnvelopeClick: (EnvelopeId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var managing by rememberSaveable { mutableStateOf(false) }
@@ -82,7 +84,7 @@ private fun Success(
                         },  // TODO: User rule
                         onArchiveClick = { onArchiveClick(it.id) },
                         onEditClick = { onEditClick(it.id) },
-                        modifier = cardModifier,
+                        modifier = cardModifier.clickable(onClick = { onEnvelopeClick(it.id) }),
                     )
                 }
                 item {

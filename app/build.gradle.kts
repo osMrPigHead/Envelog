@@ -48,7 +48,10 @@ room3 {
 }
 
 dependencies {
-    implementation("androidx.lifecycle:lifecycle-process:2.11.0")
+    val lifecycleVersion = "2.11.0"
+    implementation("androidx.lifecycle:lifecycle-process:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:$lifecycleVersion")
+
     val nav3Version = "1.2.0"
     val hiltVersion = "2.60.1"
 

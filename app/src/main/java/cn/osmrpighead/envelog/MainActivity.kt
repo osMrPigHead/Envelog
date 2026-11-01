@@ -16,7 +16,6 @@ class MainActivity : ComponentActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             val backStack = rememberNavBackStack(AppRoute.Overview) as NavBackStack<AppRoute>
 

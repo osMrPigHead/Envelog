@@ -15,6 +15,7 @@ private fun OverviewScreenPreview() {
             onArchiveClick = {},
             onEditClick = {},
             onNewClick = {},
+            onEnvelopeClick = {},
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -29,6 +30,7 @@ private fun OverviewScreenEmptyPreview() {
             onArchiveClick = {},
             onEditClick = {},
             onNewClick = {},
+            onEnvelopeClick = {},
             modifier = Modifier.fillMaxSize(),
         )
     }
