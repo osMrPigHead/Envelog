@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.AnnotatedString
 import cn.osmrpighead.envelog.ui.text.AutoSizedTextStyle
 import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
 

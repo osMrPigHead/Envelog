@@ -1,12 +1,11 @@
 package cn.osmrpighead.envelog.data.model
 
-import java.time.LocalDate
+import cn.osmrpighead.envelog.util.UUIDSerializer
+import kotlinx.serialization.Serializable
 import java.util.UUID
 
-data class Budget(
-    override val id: UUID,
-    val envelopeId: UUID,
-    val startDate: LocalDate,
-    val endDate: LocalDate,
-    val amount: Long,
-) : HasId
+@JvmInline
+@Serializable
+value class BudgetId(val value: @Serializable(with = UUIDSerializer::class) UUID) {
+    override fun toString(): String = value.toString()
+}

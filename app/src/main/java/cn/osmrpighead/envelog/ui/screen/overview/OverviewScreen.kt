@@ -1,25 +1,12 @@
 package cn.osmrpighead.envelog.ui.screen.overview
 
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,18 +19,32 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.overview.component.EnvelopeCard
 import cn.osmrpighead.envelog.ui.screen.overview.component.PromptBar
 import cn.osmrpighead.envelog.ui.screen.overview.component.Summary
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
-import java.util.*
 
 @Composable
 fun OverviewScreen(
     uiState: OverviewUiState,
-    onArchiveClick: (UUID) -> Unit,
-    onEditClick: (UUID) -> Unit,
+    onArchiveClick: (EnvelopeId) -> Unit,
+    onEditClick: (EnvelopeId) -> Unit,
+    onNewClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (uiState) {
+        OverviewUiState.Loading -> {}  // TODO: Loading page
+        is OverviewUiState.Success -> Success(uiState, onArchiveClick, onEditClick, onNewClick, modifier)
+    }
+}
+
+@Composable
+private fun Success(
+    uiState: OverviewUiState.Success,
+    onArchiveClick: (EnvelopeId) -> Unit,
+    onEditClick: (EnvelopeId) -> Unit,
     onNewClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -70,9 +71,10 @@ fun OverviewScreen(
                 vertical = dimensionResource(R.dimen.spacingSmall),
             )
             LazyColumn {
-                items(uiState.envelopes, key = { it.id }) {
+                items(uiState.envelopes, key = { it.id.toString() }) {
                     EnvelopeCard(
                         model = it,
+                        today = uiState.today,
                         managing = managing,
                         diffColor = { diffAmount ->
                             if (diffAmount < 0) MaterialTheme.colorScheme.error

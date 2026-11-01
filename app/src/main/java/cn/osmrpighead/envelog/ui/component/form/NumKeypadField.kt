@@ -6,12 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TextFieldColors
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
@@ -19,7 +14,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadConsumer
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
-import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadState
 
 @Composable
 fun NumKeypadField(

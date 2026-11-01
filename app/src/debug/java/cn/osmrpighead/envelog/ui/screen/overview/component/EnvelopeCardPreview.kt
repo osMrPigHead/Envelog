@@ -7,9 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.screen.overview.OverviewPreviewData
-import cn.osmrpighead.envelog.ui.screen.overview.model.EnvelopeModel
+import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.ui.preview.LangPreview
+import cn.osmrpighead.envelog.ui.screen.overview.OverviewPreviewData
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 
 @LangPreview
@@ -38,6 +38,14 @@ private fun EnvelopeCardNonBudgetPreview() {
 
 @LangPreview
 @Composable
+private fun EnvelopeCardZeroBudgetPreview() {
+    EnvelogTheme(dynamicColor = false) {
+        EnvelopeCardSample(model = OverviewPreviewData.zeroBudgetEnvelope, managing = false)
+    }
+}
+
+@LangPreview
+@Composable
 private fun EnvelopeCardManagingPreview() {
     EnvelogTheme(dynamicColor = false) {
         EnvelopeCardSample(model = OverviewPreviewData.budgetedEnvelope, managing = true)
@@ -46,11 +54,12 @@ private fun EnvelopeCardManagingPreview() {
 
 @Composable
 private fun EnvelopeCardSample(
-    model: EnvelopeModel,
+    model: EnvelopeSummary,
     managing: Boolean,
 ) {
     EnvelopeCard(
         model = model,
+        today = OverviewPreviewData.today,
         managing = managing,
         diffColor = { diffAmount ->
             if (diffAmount < 0) MaterialTheme.colorScheme.error

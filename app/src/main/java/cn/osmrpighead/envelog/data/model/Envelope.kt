@@ -1,10 +1,11 @@
 package cn.osmrpighead.envelog.data.model
 
+import cn.osmrpighead.envelog.util.UUIDSerializer
+import kotlinx.serialization.Serializable
 import java.util.UUID
 
-data class Envelope(
-    override val id: UUID,
-    val name: String,
-    val isBudgeted: Boolean,
-    val archived: Boolean,
-) : HasId
+@JvmInline
+@Serializable
+value class EnvelopeId(val value: @Serializable(with = UUIDSerializer::class) UUID) {
+    override fun toString(): String = value.toString()
+}
