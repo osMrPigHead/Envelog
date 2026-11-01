@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">信封记</string>
+    <string name="year">%1$04d年</string>
+    <string name="month">%1$02d月</string>
+    <string name="summary_remaining_title">可用预算</string>
+    <string name="summary_remaining_caption">已用 %1$s</string>
+    <string name="summary_expenses_title">支出</string>
+    <string name="summary_balance_title">结余</string>
+    <string name="envelope_used">(已用 %1$s)</string>
+    <string name="envelope_available">%1$s可用</string>
+    <string name="time_today">今日</string>
+    <string name="currency_cny_suffix">\u200a元</string>
+    <string name="currency_cny_prefix">\u200b</string>
+    <string name="prompt_main">点击信封记账</string>
+    <string name="prompt_main_manage">信封管理</string>
+    <string name="envelope_manage_edit">编辑</string>
+    <string name="envelope_manage_archive">归档</string>
+    <string name="prompt_main_manage_finish">完成管理</string>
+    <string name="envelope_caption_non_budget">已用 %2$s%1$s%3$s</string>
+    <string name="time_within_days">%1$d\u200a日内</string>
+    <string name="ok">确认</string>
+    <string name="numkeypad_divided_by_zero">错误：零不能作除数</string>
+    <string name="numkeypad_backspace">退格</string>
+    <string name="envelope_manage_new">新建信封</string>
+    <string name="cancel">取消</string>
+    <string name="budget_range">日期范围</string>
+    <string name="budget_amount">限额</string>
+    <string name="budget_should_be_positive">预算必须为正数</string>
+    <string name="name">名称</string>
+    <string name="envelope_budgeted">启用预算</string>
+    <string name="budget_title">预算</string>
+</resources>
