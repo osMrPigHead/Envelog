@@ -65,6 +65,7 @@ private fun EnvelopeCardSample(
             if (diffAmount < 0) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.primary
         },
+        onClick = {},
         onArchiveClick = {},
         onEditClick = {},
         modifier = Modifier

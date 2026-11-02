@@ -2,7 +2,6 @@ package cn.osmrpighead.envelog.ui.screen.overview
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -82,9 +81,10 @@ private fun Success(
                             if (diffAmount < 0) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary
                         },  // TODO: User rule
+                        onClick = { onEnvelopeClick(it.id) },
                         onArchiveClick = { onArchiveClick(it.id) },
                         onEditClick = { onEditClick(it.id) },
-                        modifier = cardModifier.clickable(onClick = { onEnvelopeClick(it.id) }),
+                        modifier = cardModifier,
                     )
                 }
                 item {
@@ -104,7 +104,7 @@ private fun Success(
                             (enter togetherWith exit).using(null)
                         },
                     ) {
-                        if (it) Card(modifier = cardModifier.clickable(onClick = onNewClick)) {
+                        if (it) Card(onClick = onNewClick, modifier = cardModifier) {
                             Row(
                                 modifier = Modifier
                                     .padding(dimensionResource(R.dimen.spacingBold))

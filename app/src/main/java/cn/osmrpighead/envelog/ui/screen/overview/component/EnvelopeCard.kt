@@ -35,10 +35,11 @@ import java.time.LocalDate
 @Composable
 private fun EnvelopeCardShell(
     model: EnvelopeSummary,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     rightSlot: @Composable RowScope.() -> Unit,
 ) {
-    Card(modifier = modifier) {
+    Card(onClick = onClick, modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -168,12 +169,14 @@ fun EnvelopeCard(
     today: LocalDate,
     managing: Boolean,
     diffColor: @Composable (diffAmount: Long) -> Color,
+    onClick: () -> Unit,
     onArchiveClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     EnvelopeCardShell(
         model = model,
+        onClick = onClick,
         modifier = modifier,
     ) {
         AnimatedContent(
