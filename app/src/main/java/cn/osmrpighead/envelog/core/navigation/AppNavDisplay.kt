@@ -1,5 +1,8 @@
 package cn.osmrpighead.envelog.core.navigation
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -20,11 +23,23 @@ fun AppNavDisplay(backStack: NavBackStack<AppRoute>) {
         ),
         entryProvider = entryProvider {
             overviewEntry(
-                onNavigateToEnvelopeWithId = {},
+                onNavigateToEnvelopeWithId = { _, _ -> },
                 onNavigateToEnvelopeWithoutId = {},
-                onNavigateToRecord = { backStack.navigate(AppRoute.Overview, AppRoute.Record(it)) },
+                onNavigateToRecord = { key, id -> backStack.navigate(key, AppRoute.Record(id)) },
             )
             recordEntry(cancel = { backStack.pop(it) })
+        },
+        transitionSpec = {
+            slideInHorizontally(initialOffsetX = { it }) togetherWith
+                    slideOutHorizontally(targetOffsetX = { -it })
+        },
+        popTransitionSpec = {
+            slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                    slideOutHorizontally(targetOffsetX = { it })
+        },
+        predictivePopTransitionSpec = {
+            slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                    slideOutHorizontally(targetOffsetX = { it })
         },
     )
 }

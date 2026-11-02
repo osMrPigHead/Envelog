@@ -8,19 +8,19 @@ import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 
 fun EntryProviderScope<AppRoute>.overviewEntry(
-    onNavigateToEnvelopeWithId: (EnvelopeId) -> Unit,
-    onNavigateToEnvelopeWithoutId: () -> Unit,
-    onNavigateToRecord: (EnvelopeId) -> Unit,
+    onNavigateToEnvelopeWithId: (AppRoute.Overview, EnvelopeId) -> Unit,
+    onNavigateToEnvelopeWithoutId: (AppRoute.Overview) -> Unit,
+    onNavigateToRecord: (AppRoute.Overview, EnvelopeId) -> Unit,
 ) {
-    entry<AppRoute.Overview> {
+    entry<AppRoute.Overview> { key ->
         val viewModel: OverviewViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         OverviewScreen(
             uiState = uiState,
             onArchiveClick = viewModel::archiveEnvelope,
-            onEditClick = onNavigateToEnvelopeWithId,
-            onNewClick = onNavigateToEnvelopeWithoutId,
-            onEnvelopeClick = onNavigateToRecord,
+            onEditClick = { onNavigateToEnvelopeWithId(key, it) },
+            onNewClick = { onNavigateToEnvelopeWithoutId(key) },
+            onEnvelopeClick = { onNavigateToRecord(key, it) },
         )
     }
 }
