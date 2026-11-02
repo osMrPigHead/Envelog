@@ -4,6 +4,5 @@ enum class SpanMatchMode {
     Overlaps,
     StartWithin,
     EndWithin,
-    MajorityOverlapsFallbackStart,
-    MajorityOverlapsFallbackEnd,
+    AttributedMonth,
 }

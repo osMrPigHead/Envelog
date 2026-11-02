@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.data.query
+package cn.osmrpighead.envelog.data.db.row
 
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import java.time.LocalDate

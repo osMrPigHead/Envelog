@@ -5,6 +5,7 @@ import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import cn.osmrpighead.envelog.data.db.converter.IdConverters
 import cn.osmrpighead.envelog.data.db.converter.TimeConverters
+import cn.osmrpighead.envelog.data.db.dao.BudgetDao
 import cn.osmrpighead.envelog.data.db.dao.EnvelopeDao
 import cn.osmrpighead.envelog.data.db.dao.ExpenditureAllocationDao
 import cn.osmrpighead.envelog.data.db.dao.ExpenditureDao
@@ -27,6 +28,7 @@ import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 @ColumnTypeConverters(TimeConverters::class, IdConverters::class)
 abstract class EnvelogDatabase : RoomDatabase() {
     abstract fun envelopeDao(): EnvelopeDao
+    abstract fun budgetDao(): BudgetDao
     abstract fun expenditureDao(): ExpenditureDao
     abstract fun expenditureAllocationDao(): ExpenditureAllocationDao
     abstract fun seedDao(): SeedDao

@@ -9,3 +9,10 @@ import java.util.UUID
 value class EnvelopeId(val value: @Serializable(with = UUIDSerializer::class) UUID) {
     override fun toString(): String = value.toString()
 }
+
+data class Envelope(
+    val id: EnvelopeId,
+    val name: String,
+    val isBudgeted: Boolean,
+    val archived: Boolean,
+)

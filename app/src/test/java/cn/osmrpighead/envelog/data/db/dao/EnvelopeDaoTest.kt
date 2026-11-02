@@ -2,7 +2,7 @@ package cn.osmrpighead.envelog.data.db.dao
 
 import android.app.Application
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
-import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
+import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import cn.osmrpighead.envelog.testing.RoomTestData
 import cn.osmrpighead.envelog.testing.seed
 import kotlinx.coroutines.flow.first
@@ -37,11 +37,11 @@ class EnvelopeDaoTest {
     }
 
     private suspend fun summaries(): List<EnvelopeSummaryRow> =
-        dao.observeEnvelopeSummariesOverlaps(
+        dao.observeEnvelopeSummaries(
             today = RoomTestData.today,
             yearMonth = RoomTestData.month,
-            monthStart = RoomTestData.monthStart,
-            monthEnd = RoomTestData.monthEnd,
+            spanStart = RoomTestData.monthStart,
+            spanEnd = RoomTestData.monthEnd,
         ).first()
 
     @Test
@@ -308,5 +308,34 @@ class EnvelopeDaoTest {
         assertEquals(2, found.size)
         assertNull(found.single { it.id == RoomTestData.envelopeA }.archivedAt)
         assertEquals(archivedAt, found.single { it.id == RoomTestData.envelopeB }.archivedAt)
+    }
+
+    @Test
+    fun updateEnvelope_replacesStoredFields() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+        )
+        val archivedAt = Instant.parse("2026-10-20T04:00:00Z")
+        val updated = RoomTestData.envelope(
+            id = RoomTestData.envelopeA,
+            name = "外食",
+            isBudgeted = false,
+            archivedAt = archivedAt,
+        )
+
+        dao.updateEnvelope(updated)
+
+        assertEquals(updated, dao.getById(RoomTestData.envelopeA))
+        assertEquals("购物", dao.getById(RoomTestData.envelopeB)?.name)
+    }
+
+    @Test
+    fun updateEnvelope_missingEnvelope_isNoOp() = runTest {
+        dao.updateEnvelope(RoomTestData.envelope(name = "新名字"))
+
+        assertNull(dao.getById(RoomTestData.envelopeA))
     }
 }

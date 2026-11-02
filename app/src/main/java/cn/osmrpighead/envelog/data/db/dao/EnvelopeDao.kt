@@ -5,7 +5,7 @@ import androidx.room3.Query
 import androidx.room3.Update
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
+import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
@@ -47,8 +47,8 @@ interface EnvelopeDao {
                 JOIN expenditure ex
                   ON ex.deletedAt IS NULL
                  AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
-                 AND ex.happenedDate < COALESCE(MAX(ba.maxEnd, :monthEnd), :monthEnd)
+                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :spanStart), :spanStart)
+                 AND ex.happenedDate < COALESCE(MAX(ba.maxEnd, :spanEnd), :spanEnd)
                 GROUP BY ea.envelopeId
             ),
             currentAllocated AS (
@@ -70,7 +70,7 @@ interface EnvelopeDao {
                 JOIN expenditure ex
                   ON ex.deletedAt IS NULL
                  AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
+                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :spanStart), :spanStart)
                  AND ex.happenedDate < COALESCE(cb.startDate, :today)
                 GROUP BY ea.envelopeId
             )
@@ -94,11 +94,11 @@ interface EnvelopeDao {
             LEFT JOIN priorAllocated     pa ON ev.id = pa.envelopeId
         """,
     )
-    fun observeEnvelopeSummariesOverlaps(
+    fun observeEnvelopeSummaries(
         today: LocalDate,
         yearMonth: YearMonth,
-        monthStart: LocalDate,
-        monthEnd: LocalDate,
+        spanStart: LocalDate,
+        spanEnd: LocalDate,
     ): Flow<List<EnvelopeSummaryRow>>
 
     @Query("SELECT * FROM envelope WHERE id = :id")

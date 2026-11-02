@@ -12,7 +12,7 @@ import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
+import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -113,11 +113,11 @@ class EnvelopeSummaryQueryInstrumentedTest {
         }
     }
 
-    private suspend fun summaries(): List<EnvelopeSummaryRow> = dao.observeEnvelopeSummariesOverlaps(
+    private suspend fun summaries(): List<EnvelopeSummaryRow> = dao.observeEnvelopeSummaries(
         today = today,
         yearMonth = month,
-        monthStart = monthStart,
-        monthEnd = monthEnd,
+        spanStart = monthStart,
+        spanEnd = monthEnd,
     ).first()
 
     @Test

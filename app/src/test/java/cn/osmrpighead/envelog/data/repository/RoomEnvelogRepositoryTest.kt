@@ -6,10 +6,11 @@ import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.Expenditure
+import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
 import cn.osmrpighead.envelog.data.model.ExpenditureId
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
+import cn.osmrpighead.envelog.data.repository.room.RoomEnvelogRepository
 import cn.osmrpighead.envelog.testing.RoomTestData
 import cn.osmrpighead.envelog.testing.seed
 import kotlinx.coroutines.flow.first
@@ -65,7 +66,7 @@ class RoomEnvelogRepositoryTest {
         id: ExpenditureId = expenditureId,
         happenedAt: Instant = RoomTestData.at(date),
         happenedDate: LocalDate = date,
-    ): Expenditure = Expenditure(
+    ): ExpenditureSubmission = ExpenditureSubmission(
         id = id,
         happenedAt = happenedAt,
         happenedDate = happenedDate,

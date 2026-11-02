@@ -1,13 +1,12 @@
 package cn.osmrpighead.envelog.ui.screen.record
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.core.number.asAmount
-import cn.osmrpighead.envelog.data.model.Expenditure
+import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
 import cn.osmrpighead.envelog.data.model.ExpenditureId
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
@@ -86,7 +85,7 @@ class RecordViewModel @AssistedInject constructor(
         if (submission?.isActive == true || submission?.isCompleted == true) return
         submission = viewModelScope.launch {
             repository.recordExpenditure(
-                Expenditure(
+                ExpenditureSubmission(
                     id = expenditureId,
                     happenedAt = instant,
                     happenedDate = today,

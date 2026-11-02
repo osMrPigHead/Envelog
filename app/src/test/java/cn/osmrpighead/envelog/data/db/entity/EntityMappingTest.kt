@@ -1,9 +1,10 @@
 package cn.osmrpighead.envelog.data.db.entity
 
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.Expenditure
+import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
 import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.repository.room.mapper.toEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -17,7 +18,7 @@ class EntityMappingTest {
     private val expenditureId = ExpenditureId(UUID(0L, 1L))
     private val envelopeId = EnvelopeId(UUID(0L, 2L))
 
-    private val expenditure = Expenditure(
+    private val expenditure = ExpenditureSubmission(
         id = expenditureId,
         happenedAt = Instant.parse("2026-10-20T04:00:00Z"),
         happenedDate = LocalDate.of(2026, 10, 20),
@@ -29,7 +30,7 @@ class EntityMappingTest {
 
     @Test
     fun expenditureFromDomain_copiesEntryFields() {
-        val entity = ExpenditureEntity.fromDomain(expenditure)
+        val entity = expenditure.toEntity()
 
         assertEquals(expenditureId, entity.id)
         assertEquals(expenditure.happenedAt, entity.happenedAt)
@@ -39,14 +40,14 @@ class EntityMappingTest {
 
     @Test
     fun expenditureFromDomain_startsNotDeleted() {
-        assertNull(ExpenditureEntity.fromDomain(expenditure).deletedAt)
+        assertNull(expenditure.toEntity().deletedAt)
     }
 
     @Test
     fun allocationFromDomain_copiesReferencesAndAmount() {
         val allocation = expenditure.allocations.single()
 
-        val entity = ExpenditureAllocationEntity.fromDomain(allocation)
+        val entity = allocation.toEntity()
 
         assertEquals(expenditureId, entity.expenditureId)
         assertEquals(envelopeId, entity.envelopeId)
@@ -57,7 +58,7 @@ class EntityMappingTest {
     fun allocationFromDomain_keepsAmountIndependentOfOtherAllocations() {
         val other = ExpenditureAllocation(expenditureId, EnvelopeId(UUID(0L, 3L)), 1)
 
-        assertEquals(12_345L, ExpenditureAllocationEntity.fromDomain(expenditure.allocations.single()).amount)
-        assertEquals(1L, ExpenditureAllocationEntity.fromDomain(other).amount)
+        assertEquals(12_345L, expenditure.allocations.single().toEntity().amount)
+        assertEquals(1L, other.toEntity().amount)
     }
 }

@@ -34,12 +34,4 @@ data class ExpenditureAllocationEntity(
     val expenditureId: ExpenditureId,
     val envelopeId: EnvelopeId,
     val amount: Long,
-) {
-    companion object {
-        fun fromDomain(domain: ExpenditureAllocation): ExpenditureAllocationEntity = ExpenditureAllocationEntity(
-            expenditureId = domain.expenditureId,
-            envelopeId = domain.envelopeId,
-            amount = domain.amount,
-        )
-    }
-}
+)

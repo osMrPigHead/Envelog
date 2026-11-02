@@ -25,10 +25,17 @@ sealed interface Entry {
     val happenedZone: ZoneId
 }
 
-data class Expenditure(
+data class ExpenditureSubmission(
     override val id: ExpenditureId,
     override val happenedAt: Instant,
     override val happenedDate: LocalDate,
     override val happenedZone: ZoneId,
     val allocations: List<ExpenditureAllocation>,
+) : Entry
+
+data class ExpenditureMetaInfo(
+    override val id: ExpenditureId,
+    override val happenedAt: Instant,
+    override val happenedDate: LocalDate,
+    override val happenedZone: ZoneId,
 ) : Entry
