@@ -16,11 +16,14 @@ interface EnvelogRepository {
     fun observeOverview(today: LocalDate, yearMonth: YearMonth, dateSpan: HalfOpenDateSpan): Flow<List<EnvelopeSummary>>
     fun observeAllocations(envelopeId: EnvelopeId, dateSpan: HalfOpenDateSpan): Flow<List<AllocationWithInfo>>
     fun observeBudgets(envelopeId: EnvelopeId, dateSpan: HalfOpenDateSpan, mode: SpanMatchMode): Flow<List<Budget>>
-    fun observeDailyAllocationOverview(
+    fun observeDailyAllocationOverviewAsList(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<DailyAllocationSummary>>
-
+    fun observeDailyAllocationOverviewAsMap(
+        envelopeId: EnvelopeId,
+        dateSpan: HalfOpenDateSpan,
+    ): Flow<Map<LocalDate, DailyAllocationSummary>>
 
     suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult
 

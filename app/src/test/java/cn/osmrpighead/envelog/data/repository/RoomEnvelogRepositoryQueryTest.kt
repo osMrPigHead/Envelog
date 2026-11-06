@@ -162,7 +162,7 @@ class RoomEnvelogRepositoryQueryTest {
                 DailyAllocationSummary(RoomTestData.envelopeA, LocalDate.of(2026, 10, 5), 7_000),
                 DailyAllocationSummary(RoomTestData.envelopeA, LocalDate.of(2026, 10, 31), 5_000),
             ),
-            repository.observeDailyAllocationOverview(
+            repository.observeDailyAllocationOverviewAsList(
                 RoomTestData.envelopeA,
                 RoomTestData.month.toHalfOpenDateSpan(),
             ).first().toSet(),

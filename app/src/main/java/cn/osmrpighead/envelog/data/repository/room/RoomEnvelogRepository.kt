@@ -61,11 +61,18 @@ class RoomEnvelogRepository @Inject constructor(
         AttributedMonth -> TODO()
     }
 
-    override fun observeDailyAllocationOverview(
+    override fun observeDailyAllocationOverviewAsList(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<DailyAllocationSummary>> =
         expenditureAllocationDao.observeDailyAllocationSummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
+
+    override fun observeDailyAllocationOverviewAsMap(
+        envelopeId: EnvelopeId,
+        dateSpan: HalfOpenDateSpan,
+    ): Flow<Map<LocalDate, DailyAllocationSummary>> =
+        expenditureAllocationDao.observeDailyAllocationSummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
+            .map { it.associateBy { it.happenedDate } }
 
     override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =
         when (envelopeDao.archiveEnvelopeById(id, clock.instant())) {
