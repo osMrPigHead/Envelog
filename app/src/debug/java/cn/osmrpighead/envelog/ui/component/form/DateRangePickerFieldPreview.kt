@@ -35,14 +35,14 @@ private fun DateRangePickerFieldPreview() {
         ) {
             DateRangePickerFieldSample("Default") {
                 DateRangePickerField(
-                    period = span,
+                    span = span,
                     dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             DateRangePickerFieldSample("Label + supporting text") {
                 DateRangePickerField(
-                    period = span,
+                    span = span,
                     dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Period") },
@@ -73,7 +73,7 @@ private fun DateRangePickerFieldStatePreview() {
                     )
                 }
                 DateRangePickerField(
-                    period = span,
+                    span = span,
                     dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                     supportingText = { Text("End date must be after the start date") },
@@ -82,7 +82,7 @@ private fun DateRangePickerFieldStatePreview() {
             }
             DateRangePickerFieldSample("Disabled") {
                 DateRangePickerField(
-                    period = LocalDate.of(2026, 9, 1) untilInclusive LocalDate.of(2026, 9, 30),
+                    span = LocalDate.of(2026, 9, 1) untilInclusive LocalDate.of(2026, 9, 30),
                     dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default {}),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false,

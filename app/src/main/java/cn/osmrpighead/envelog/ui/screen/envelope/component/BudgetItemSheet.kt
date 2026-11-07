@@ -1,0 +1,67 @@
+package cn.osmrpighead.envelog.ui.screen.envelope.component
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
+import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.ui.component.LabeledBox
+import cn.osmrpighead.envelog.ui.component.form.ConfirmEventHandler
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
+import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
+import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
+import cn.osmrpighead.envelog.ui.model.AmountConsumer
+import cn.osmrpighead.envelog.ui.model.AmountValidationError
+import cn.osmrpighead.envelog.ui.text.Formatter
+import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+
+@Composable
+fun BudgetItemSheet(
+    budget: Budget,
+    onSpanChange: (HalfOpenDateSpan) -> Unit,
+    numKeypadHost: NumKeypadHostState,
+    amountConsumer: AmountConsumer,
+    fieldId: Any,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LabeledBox(
+        label = stringResource(R.string.budget_title),
+        modifier = modifier,
+    ) {
+        DateRangePickerField(
+            span = budget.dateSpan.toClosed(),
+            dialogBuilder = DateRangePickerDialogBuilder.Default(
+                ConfirmEventHandler.Default { onSpanChange(it.toHalfOpen()) }
+            ),
+            label = { Text(stringResource(R.string.budget_range)) },
+        )
+        NumKeypadField(
+            value = budget.amount.formatAsAmount(Formatter.AmountStandard),
+            host = numKeypadHost,
+            consumer = amountConsumer,
+            fieldId = fieldId,
+            isError = amountConsumer.validationError != null,
+            supportingText = when (amountConsumer.validationError) {
+                null -> null
+                is AmountValidationError.MathError -> null
+                AmountValidationError.NonPositive -> {
+                    { Text(text = stringResource(R.string.amount_should_be_positive)) }
+                }
+            },
+            label = { Text(stringResource(R.string.budget_amount)) },
+        )
+        Row {
+            Spacer(modifier = Modifier.weight(1f))
+            Button(onClick = onSave) {
+                Text(text = stringResource(R.string.ok))
+            }
+        }
+    }
+}
