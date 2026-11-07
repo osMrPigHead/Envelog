@@ -100,7 +100,7 @@ sealed interface DateRangePickerDialogBuilder {
 
 @Composable
 fun DateRangePickerField(
-    period: ClosedDateSpan,
+    span: ClosedDateSpan,
     dialogBuilder: DateRangePickerDialogBuilder,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -130,7 +130,7 @@ fun DateRangePickerField(
     var showPicker by remember { mutableStateOf(false) }
 
     PickerField(
-        value = period.format(),
+        value = span.format(),
         onClick = { showPicker = true },
         modifier = modifier,
         enabled = enabled,

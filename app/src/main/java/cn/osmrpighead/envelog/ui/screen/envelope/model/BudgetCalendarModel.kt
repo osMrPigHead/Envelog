@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.model
 
-import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.countDaysTo
 import cn.osmrpighead.envelog.core.time.nextOrSame

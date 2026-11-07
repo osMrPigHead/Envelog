@@ -21,7 +21,9 @@ val Operator.text: String
     }
 
 sealed interface EvaluatedResult {
-    data object DividedByZero : EvaluatedResult
+    sealed interface Error : EvaluatedResult
+
+    data object DividedByZero : Error
     data class Success(val value: BigDecimal) : EvaluatedResult
 }
 

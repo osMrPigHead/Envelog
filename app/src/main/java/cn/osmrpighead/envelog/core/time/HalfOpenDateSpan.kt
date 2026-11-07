@@ -7,7 +7,7 @@ data class HalfOpenDateSpan(
     val startDate: LocalDate,
     val endDate: LocalDate,
 ) {
-    val length = startDate countDaysTo endDate
+    val length get() = startDate countDaysTo endDate
 
     fun splitIntoWeeks(firstDayOfWeek: DayOfWeek): List<HalfOpenDateSpan> = buildList {
         var weekStart = startDate
