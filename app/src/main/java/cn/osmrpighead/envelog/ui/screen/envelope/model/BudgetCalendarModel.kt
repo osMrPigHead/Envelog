@@ -26,30 +26,35 @@ sealed interface BudgetDisplay {
 }
 
 data class BudgetCalendarWeekModel(
-    val before: Long?,
-    val after: Long?,
+    val before: Long,
+    val after: Long,
     val span: HalfOpenDateSpan,
     val budgets: List<BudgetDisplay>,
 )
 
+data class BudgetCalendarDateModel(
+    val allocationSummary: DailyAllocationSummary?,
+    val budgetId: BudgetId?,
+)
+
 data class BudgetCalendarModel(
     val weeks: List<BudgetCalendarWeekModel>,
-    val allocations: Map<LocalDate, DailyAllocationSummary>,
+    val dates: Map<LocalDate, BudgetCalendarDateModel>,
 ) {
     companion object {
         fun of(
             span: HalfOpenDateSpan,
             firstDayOfWeek: DayOfWeek,
-            budgets: List<Budget>,
+            budgets: Collection<Budget>,
             allocations: Map<LocalDate, DailyAllocationSummary>,
         ): BudgetCalendarModel {
-            return BudgetCalendarModel(
+            val x = BudgetCalendarModel(
                 span.splitIntoWeeks(firstDayOfWeek).map { week ->
                     val firstDayOfThisWeek = week.startDate.previousOrSame(firstDayOfWeek)
                     val firstDayOfNextWeek = week.endDate.nextOrSame(firstDayOfWeek)
                     BudgetCalendarWeekModel(
-                        (firstDayOfThisWeek countDaysTo week.startDate).takeIf { it != 0L },
-                        (week.endDate countDaysTo firstDayOfNextWeek).takeIf { it != 0L },
+                        (firstDayOfThisWeek countDaysTo week.startDate),
+                        (week.endDate countDaysTo firstDayOfNextWeek),
                         week,
                         buildList {
                             var date = firstDayOfThisWeek
@@ -68,8 +73,14 @@ data class BudgetCalendarModel(
                         },
                     )
                 },
-                allocations,
+                buildMap {
+                    for (date in span) put(date, BudgetCalendarDateModel(
+                        allocationSummary = allocations[date],
+                        budgetId = budgets.find { date in it.dateSpan }?.id,
+                    ))
+                },
             )
+            return x
         }
     }
 }

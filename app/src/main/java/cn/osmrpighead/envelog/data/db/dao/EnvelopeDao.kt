@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.data.db.dao
 
 import androidx.room3.Dao
+import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Update
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
@@ -26,11 +27,12 @@ interface EnvelopeDao {
                 GROUP BY envelopeId
             ),
             currentBudget AS (
-                SELECT envelopeId, amount, startDate, endDate
+                SELECT envelopeId, SUM(amount) as amount, startDate, endDate
                 FROM budget
                 WHERE deletedAt IS NULL
                   AND :today >= startDate
                   AND :today < endDate
+                GROUP BY envelopeId
             ),
             priorBudget AS ( -- TODO: 是否与budgetAgg合并 需要验证
                 SELECT envelopeId, SUM(amount) AS total
@@ -111,5 +113,8 @@ interface EnvelopeDao {
     suspend fun archiveEnvelopeById(id: EnvelopeId, now: Instant): Int
 
     @Update
-    suspend fun updateEnvelope(entity: EnvelopeEntity)
+    suspend fun update(entity: EnvelopeEntity)
+
+    @Insert
+    suspend fun insert(entity: EnvelopeEntity)
 }

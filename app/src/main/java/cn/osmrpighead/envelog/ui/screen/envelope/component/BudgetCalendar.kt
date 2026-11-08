@@ -84,15 +84,22 @@ fun BudgetCalendar(
     Column(modifier = modifier) {
         for ((before, after, week, budgets) in model.weeks) {
             Row {
-                if (before != null) Spacer(modifier = Modifier.weight(before.toFloat()))
-                for (date in week) DayCell(
-                    style,
-                    date,
-                    model.allocations[date]?.amount,
-                    { onDateClick(date) },
-                    Modifier.weight(1f),
-                )
-                if (after != null) Spacer(modifier = Modifier.weight(after.toFloat()))
+                if (before > 0) Spacer(modifier = Modifier.weight(before.toFloat()))
+                for (date in week) {
+                    val budgetId = model.dates[date]?.budgetId
+                    DayCell(
+                        style,
+                        date,
+                        model.dates[date]?.allocationSummary?.amount,
+                        if (budgetId == null) {
+                            { onDateClick(date) }
+                        } else {
+                            { onBudgetClick(budgetId) }
+                        },
+                        Modifier.weight(1f),
+                    )
+                }
+                if (after > 0) Spacer(modifier = Modifier.weight(after.toFloat()))
             }
             Row {
                 for (budget in budgets) when (budget) {

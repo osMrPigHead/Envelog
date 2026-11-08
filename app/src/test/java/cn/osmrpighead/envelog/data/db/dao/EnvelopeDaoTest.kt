@@ -326,7 +326,7 @@ class EnvelopeDaoTest {
             archivedAt = archivedAt,
         )
 
-        dao.updateEnvelope(updated)
+        dao.update(updated)
 
         assertEquals(updated, dao.getById(RoomTestData.envelopeA))
         assertEquals("购物", dao.getById(RoomTestData.envelopeB)?.name)
@@ -334,7 +334,7 @@ class EnvelopeDaoTest {
 
     @Test
     fun updateEnvelope_missingEnvelope_isNoOp() = runTest {
-        dao.updateEnvelope(RoomTestData.envelope(name = "新名字"))
+        dao.update(RoomTestData.envelope(name = "新名字"))
 
         assertNull(dao.getById(RoomTestData.envelopeA))
     }

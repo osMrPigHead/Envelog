@@ -7,6 +7,7 @@ import cn.osmrpighead.envelog.core.time.SpanMatchMode.*
 import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
@@ -58,27 +59,49 @@ class RoomEnvelogRepository @Inject constructor(
 
         StartWithin -> TODO()
         EndWithin -> TODO()
-        AttributedMonth -> TODO()
+        AttributedMonth -> throw IllegalArgumentException()
     }
 
-    override fun observeDailyAllocationOverviewAsList(
+    override fun observeBudgets(
+        envelopeId: EnvelopeId,
+        attributedMonth: YearMonth,
+    ): Flow<List<Budget>> = budgetDao.observeBudgetAttributedMonth(envelopeId, attributedMonth)
+        .map { rows -> rows.map { it.toDomain() } }
+
+    override fun observeDailyAllocationOverview(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<DailyAllocationSummary>> =
         expenditureAllocationDao.observeDailyAllocationSummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
 
-    override fun observeDailyAllocationOverviewAsMap(
-        envelopeId: EnvelopeId,
-        dateSpan: HalfOpenDateSpan,
-    ): Flow<Map<LocalDate, DailyAllocationSummary>> =
-        expenditureAllocationDao.observeDailyAllocationSummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
-            .map { it.associateBy { it.happenedDate } }
+    override suspend fun getEnvelopeById(id: EnvelopeId): Envelope =
+        envelopeDao.getById(id)?.toDomain() ?: throw NoSuchElementException()
+
+    override suspend fun updateEnvelope(envelope: Envelope) {
+        envelopeDao.update(envelope.toEntity())
+    }
+
+    override suspend fun insertEnvelope(envelope: Envelope) {
+        envelopeDao.insert(envelope.toEntity())
+    }
 
     override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =
         when (envelopeDao.archiveEnvelopeById(id, clock.instant())) {
             0 -> ArchiveResult.NotFound
             else -> ArchiveResult.Archived
         }
+
+    override suspend fun updateBudget(budget: Budget) {
+        budgetDao.update(budget.normalize().toEntity())
+    }
+
+    override suspend fun insertBudget(budget: Budget) {
+        budgetDao.insert(budget.normalize().toEntity())
+    }
+
+    override suspend fun insertBudgets(budgets: List<Budget>) {
+        budgetDao.insert(budgets.map { it.normalize().toEntity() })
+    }
 
     override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) {
         db.withWriteTransaction {
@@ -91,7 +114,7 @@ class RoomEnvelogRepository @Inject constructor(
             require(envelopes.all { it.archivedAt == null })
 
             expenditureDao.insert(expenditure.toEntity())
-            expenditureAllocationDao.insertAll(expenditure.allocations.map { it.toEntity() })
+            expenditureAllocationDao.insert(expenditure.allocations.map { it.toEntity() })
         }
     }
 }

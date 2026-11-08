@@ -13,7 +13,7 @@ import java.time.LocalDate
 @Dao
 interface ExpenditureAllocationDao {
     @Insert
-    suspend fun insertAll(entities: List<ExpenditureAllocationEntity>)
+    suspend fun insert(entities: List<ExpenditureAllocationEntity>)
 
     @Query(
         """
