@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.text.style.TextOverflow
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.ui.component.statitem.*
@@ -23,6 +25,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetDisplay
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
 import cn.osmrpighead.envelog.ui.theme.CapsuleEnd
 import cn.osmrpighead.envelog.ui.theme.CapsuleStart
 import java.time.LocalDate
@@ -55,6 +58,10 @@ private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier
     ) {
         Text(
             text = budget.amount.formatAsAmount(Formatter.AmountConcise),
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier
                 .background(
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -67,8 +74,6 @@ private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier
                 )
                 .padding(horizontal = dimensionResource(R.dimen.spacingSmall))
                 .then(if (fill) Modifier.fillMaxWidth() else Modifier),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 }
@@ -81,10 +86,11 @@ fun BudgetCalendar(
     modifier: Modifier = Modifier,
 ) {
     val style = StatItemStyle.SmallCenter
+    val spacerModifier = Modifier.height(MaterialTheme.typography.labelSmall.lineHeightAsDp)
     Column(modifier = modifier) {
         for ((before, after, week, budgets) in model.weeks) {
-            Row {
-                if (before > 0) Spacer(modifier = Modifier.weight(before.toFloat()))
+            Row(modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall))) {
+                if (before > 0) Spacer(modifier = spacerModifier.weight(before.toFloat()))
                 for (date in week) {
                     val budgetId = model.dates[date]?.budgetId
                     DayCell(
@@ -99,7 +105,7 @@ fun BudgetCalendar(
                         Modifier.weight(1f),
                     )
                 }
-                if (after > 0) Spacer(modifier = Modifier.weight(after.toFloat()))
+                if (after > 0) Spacer(modifier = spacerModifier.weight(after.toFloat()))
             }
             Row {
                 for (budget in budgets) when (budget) {
@@ -112,7 +118,7 @@ fun BudgetCalendar(
                             .weight(budget.length.toFloat()),
                     )
 
-                    is BudgetDisplay.Spacer -> Spacer(modifier = Modifier.weight(budget.length.toFloat()))
+                    is BudgetDisplay.Spacer -> Spacer(modifier = spacerModifier.weight(budget.length.toFloat()))
                 }
             }
         }

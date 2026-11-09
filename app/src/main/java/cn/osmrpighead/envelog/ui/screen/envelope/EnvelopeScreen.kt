@@ -1,22 +1,16 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue.*
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.*
+import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.Budget
@@ -39,7 +33,7 @@ import java.time.LocalDate
 private fun Success(
     uiState: EnvelopeUiState.Success,
     updateEnvelope: (Envelope) -> Unit,
-    openActiveBudget: (BudgetId, suspend () -> Unit) -> Unit,
+    openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
     closeActiveBudget: () -> Unit,
@@ -53,43 +47,51 @@ private fun Success(
         cancel()
     }
 
-    val numKeypadHost = rememberNumKeypadHostState()
-    val sheetState = rememberModalBottomSheetState()
     val uiContext = rememberCoroutineScope().coroutineContext
 
-    LaunchedEffect(numKeypadHost.isOpen) {
-        if (!sheetState.isVisible) return@LaunchedEffect
-        if (numKeypadHost.isOpen) sheetState.expand()
-        else sheetState.partialExpand()
-    }
-
-    LaunchedEffect(sheetState.currentValue) {
-        when (sheetState.currentValue) {
-            PartiallyExpanded -> numKeypadHost.cancel()
-            else -> {}
-        }
-    }
-
     Scaffold(modifier = modifier) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+        ) {
 
             OutlinedTextField(
                 value = uiState.envelope.name,
                 onValueChange = { updateEnvelope(uiState.envelope.copy(name = it)) },
+                label = { Text(text = stringResource(R.string.name)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
             )
 
             LabeledSwitch(
                 checked = uiState.envelope.isBudgeted,
                 onCheckedChange = { updateEnvelope(uiState.envelope.copy(isBudgeted = it)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
             ) { Text(text = stringResource(R.string.envelope_budgeted), style = MaterialTheme.typography.bodyLarge) }
 
             if (uiState.envelope.isBudgeted) BudgetCalendar(
                 model = uiState.calendar,
                 onDateClick = newActiveBudget,
-                onBudgetClick = { openActiveBudget(it, uiContext.wrapSuspending(sheetState::show)) },
+                onBudgetClick = openActiveBudget,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
             )
 
-            if (uiState.activeBudget != null)
+            if (uiState.activeBudget != null) {
+                val numKeypadHost = rememberNumKeypadHostState()
+                val sheetState = rememberModalBottomSheetState()
+
+                LaunchedEffect(sheetState.currentValue) {
+                    when (sheetState.currentValue) {
+                        PartiallyExpanded -> numKeypadHost.cancel()
+                        else -> {}
+                    }
+                }
+
                 ModalBottomSheet(
                     onDismissRequest = {
                         numKeypadHost.cancel()
@@ -97,6 +99,15 @@ private fun Success(
                     },
                     sheetState = sheetState,
                 ) {
+                    LaunchedEffect(sheetState) {
+                        sheetState.show()
+                    }
+
+                    LaunchedEffect(numKeypadHost.isOpen) {
+                        if (numKeypadHost.isOpen) sheetState.expand()
+                        else sheetState.partialExpand()
+                    }
+
                     Scaffold(
                         bottomBar = {
                             NumKeypadHost(
@@ -117,10 +128,13 @@ private fun Success(
                             ),
                             fieldId = uiState.fieldId,
                             onSave = { saveActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier
+                                .padding(innerPadding)
+                                .padding(dimensionResource(R.dimen.spacingLarge)),
                         )
                     }
                 }
+            }
         }
     }
 }
@@ -130,7 +144,7 @@ fun EnvelopeScreen(
     uiState: EnvelopeUiState,
     initializeForNew: (Envelope) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
-    openActiveBudget: (BudgetId, suspend () -> Unit) -> Unit,
+    openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
     closeActiveBudget: () -> Unit,
