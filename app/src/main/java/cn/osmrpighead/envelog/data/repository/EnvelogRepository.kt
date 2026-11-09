@@ -25,12 +25,11 @@ interface EnvelogRepository {
 
     suspend fun getEnvelopeById(id: EnvelopeId): Envelope
     suspend fun updateEnvelope(envelope: Envelope)
-    suspend fun insertEnvelope(envelope: Envelope)
+    suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>)
     suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult
 
     suspend fun updateBudget(budget: Budget)
     suspend fun insertBudget(budget: Budget)
-    suspend fun insertBudgets(budgets: List<Budget>)
 
     suspend fun recordExpenditure(expenditure: ExpenditureSubmission)
 }

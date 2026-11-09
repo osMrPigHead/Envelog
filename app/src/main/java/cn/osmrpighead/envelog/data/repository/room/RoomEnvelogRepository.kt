@@ -81,8 +81,11 @@ class RoomEnvelogRepository @Inject constructor(
         envelopeDao.update(envelope.toEntity())
     }
 
-    override suspend fun insertEnvelope(envelope: Envelope) {
-        envelopeDao.insert(envelope.toEntity())
+    override suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>) {
+        db.withWriteTransaction {
+            envelopeDao.insert(envelope.toEntity())
+            budgetDao.insert(budgets.map { it.toEntity() })
+        }
     }
 
     override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =
@@ -97,10 +100,6 @@ class RoomEnvelogRepository @Inject constructor(
 
     override suspend fun insertBudget(budget: Budget) {
         budgetDao.insert(budget.normalize().toEntity())
-    }
-
-    override suspend fun insertBudgets(budgets: List<Budget>) {
-        budgetDao.insert(budgets.map { it.normalize().toEntity() })
     }
 
     override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) {

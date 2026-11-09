@@ -15,7 +15,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -133,16 +132,18 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     fun saveActiveBudget() {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            if (it.activeBudget == null) it
-            else {
-                if (!isNew) viewModelScope.launch(Dispatchers.IO) {
-                    if (it.activeIsNew) repository.insertBudget(it.activeBudget)
-                    else repository.updateBudget(it.activeBudget)
-                }
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        val budget = uiState.activeBudget ?: return
+        viewModelScope.launch {
+            if (!isNew) {
+                if (uiState.activeIsNew) repository.insertBudget(budget)
+                else repository.updateBudget(budget)
+            }
+            _uiState.update {
+                if (it !is EnvelopeUiState.Success || it.activeBudget?.id != budget.id) return@update it
                 it.copy(
-                    budgets = it.budgets.toMutableMap().apply { this[it.activeBudget.id] = it.activeBudget },
+                    budgets = it.budgets + (budget.id to budget),
                     activeBudget = null,
                 )
             }
@@ -158,9 +159,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 repository.updateEnvelope(uiState.envelope)
                 return@launch
             }
-            repository.insertEnvelope(uiState.envelope)
-            for (budget in uiState.budgets.values)
-                repository.updateBudget(budget)
+            repository.insertEnvelope(uiState.envelope, uiState.budgets.values.toList())
         }
     }
 

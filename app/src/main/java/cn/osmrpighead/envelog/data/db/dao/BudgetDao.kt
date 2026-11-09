@@ -43,11 +43,11 @@ interface BudgetDao {
     ): Flow<List<BudgetEntity>>
 
     @Update
-    fun update(entity: BudgetEntity)
+    suspend fun update(entity: BudgetEntity)
 
     @Insert
-    fun insert(entity: BudgetEntity)
+    suspend fun insert(entity: BudgetEntity)
 
     @Insert
-    fun insert(entities: List<BudgetEntity>)
+    suspend fun insert(entities: List<BudgetEntity>)
 }
