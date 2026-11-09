@@ -43,7 +43,7 @@ fun BudgetItemSheet(
             label = { Text(stringResource(R.string.budget_range)) },
         )
         NumKeypadField(
-            value = budget.amount.formatAsAmount(Formatter.AmountStandard),
+            value = budget.amount.formatAsAmount(Formatter.AmountInteger),
             host = numKeypadHost,
             consumer = amountConsumer,
             fieldId = fieldId,

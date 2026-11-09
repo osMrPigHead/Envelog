@@ -56,6 +56,7 @@ fun NumKeypadField(
         },
         modifier = modifier.onFocusChanged {
             if (isFocused && !it.isFocused) host.safeClose()
+            if (!isFocused && it.isFocused) host.request(fieldId, consumer, value)
             isFocused = it.isFocused
         },
         enabled = enabled,

@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -8,11 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue.*
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.Budget
@@ -25,6 +29,8 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetItemSheet
+import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
+import cn.osmrpighead.envelog.util.wrapSuspending
 import java.math.RoundingMode
 import java.time.LocalDate
 
@@ -33,11 +39,11 @@ import java.time.LocalDate
 private fun Success(
     uiState: EnvelopeUiState.Success,
     updateEnvelope: (Envelope) -> Unit,
-    openActiveBudget: (BudgetId) -> Unit,
+    openActiveBudget: (BudgetId, suspend () -> Unit) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
     closeActiveBudget: () -> Unit,
-    saveActiveBudget: () -> Unit,
+    saveActiveBudget: (suspend () -> Unit) -> Unit,
     save: () -> Unit,
     cancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -45,6 +51,23 @@ private fun Success(
     BackHandler {
         save()
         cancel()
+    }
+
+    val numKeypadHost = rememberNumKeypadHostState()
+    val sheetState = rememberModalBottomSheetState()
+    val uiContext = rememberCoroutineScope().coroutineContext
+
+    LaunchedEffect(numKeypadHost.isOpen) {
+        if (!sheetState.isVisible) return@LaunchedEffect
+        if (numKeypadHost.isOpen) sheetState.expand()
+        else sheetState.partialExpand()
+    }
+
+    LaunchedEffect(sheetState.currentValue) {
+        when (sheetState.currentValue) {
+            PartiallyExpanded -> numKeypadHost.cancel()
+            else -> {}
+        }
     }
 
     Scaffold(modifier = modifier) { innerPadding ->
@@ -63,27 +86,25 @@ private fun Success(
             if (uiState.envelope.isBudgeted) BudgetCalendar(
                 model = uiState.calendar,
                 onDateClick = newActiveBudget,
-                onBudgetClick = openActiveBudget,
+                onBudgetClick = { openActiveBudget(it, uiContext.wrapSuspending(sheetState::show)) },
             )
 
-            if (uiState.activeBudget != null) {
-                val numKeypadHost = rememberNumKeypadHostState()
-                val sheetState = rememberModalBottomSheetState()
-
-                LaunchedEffect(numKeypadHost.isOpen) {
-                    if (!sheetState.isVisible) return@LaunchedEffect
-                    if (numKeypadHost.isOpen) sheetState.expand()
-                    else sheetState.partialExpand()
-                }
-
+            if (uiState.activeBudget != null)
                 ModalBottomSheet(
                     onDismissRequest = {
                         numKeypadHost.cancel()
-                        closeActiveBudget();
+                        closeActiveBudget()
                     },
                     sheetState = sheetState,
                 ) {
-                    Scaffold(bottomBar = { NumKeypadHost(numKeypadHost) }) { innerPadding ->
+                    Scaffold(
+                        bottomBar = {
+                            NumKeypadHost(
+                                numKeypadHost,
+                                modifier = Modifier.disableVerticalDrag(),
+                            )
+                        },
+                    ) { innerPadding ->
                         BudgetItemSheet(
                             budget = uiState.activeBudget,
                             onSpanChange = { updateActiveBudget(uiState.activeBudget.copy(dateSpan = it)) },
@@ -95,12 +116,11 @@ private fun Success(
                                 cancel = {},
                             ),
                             fieldId = uiState.fieldId,
-                            onSave = saveActiveBudget,
+                            onSave = { saveActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
                             modifier = Modifier.padding(innerPadding),
                         )
                     }
                 }
-            }
         }
     }
 }
@@ -110,11 +130,11 @@ fun EnvelopeScreen(
     uiState: EnvelopeUiState,
     initializeForNew: (Envelope) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
-    openActiveBudget: (BudgetId) -> Unit,
+    openActiveBudget: (BudgetId, suspend () -> Unit) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
     closeActiveBudget: () -> Unit,
-    saveActiveBudget: () -> Unit,
+    saveActiveBudget: (suspend () -> Unit) -> Unit,
     save: () -> Unit,
     cancel: () -> Unit,
     modifier: Modifier = Modifier,

@@ -94,11 +94,12 @@ class EnvelopeViewModel @AssistedInject constructor(
         }
     }
 
-    fun openActiveBudget(id: BudgetId) {
+    fun openActiveBudget(id: BudgetId, callback: suspend () -> Unit) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
             it.copy(activeBudget = it.budgets[id], activeIsNew = false)
         }
+        viewModelScope.launch { callback() }
     }
 
     fun newActiveBudget(date: LocalDate) {
@@ -131,7 +132,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         }
     }
 
-    fun saveActiveBudget() {
+    fun saveActiveBudget(callback: suspend () -> Unit) {
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeBudget ?: return
@@ -140,18 +141,15 @@ class EnvelopeViewModel @AssistedInject constructor(
                 if (uiState.activeIsNew) repository.insertBudget(budget)
                 else repository.updateBudget(budget)
             }
+            callback()
             _uiState.update {
-                if (it !is EnvelopeUiState.Success || it.activeBudget?.id != budget.id) return@update it
-                it.copy(
-                    budgets = it.budgets + (budget.id to budget),
-                    activeBudget = null,
-                )
+                if (it !is EnvelopeUiState.Success) return@update it
+                it.copy(budgets = it.budgets + (budget.id to budget))
             }
         }
     }
 
     fun save() {
-        saveActiveBudget()
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         viewModelScope.launch {
