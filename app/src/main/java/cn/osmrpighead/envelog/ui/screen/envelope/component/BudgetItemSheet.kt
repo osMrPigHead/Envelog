@@ -42,7 +42,7 @@ fun BudgetItemSheet(
     modifier: Modifier = Modifier,
 ) {
     LabeledBox(
-        label = stringResource(R.string.budget_title),
+        label = stringResource(R.string.envelope_edit_budget_title),
         modifier = modifier,
     ) {
         DateRangePickerField(
@@ -50,7 +50,7 @@ fun BudgetItemSheet(
             dialogBuilder = DateRangePickerDialogBuilder.Default(
                 ConfirmEventHandler.Default { onSpanChange(it.toHalfOpen()) },
             ),
-            label = { Text(stringResource(R.string.budget_range)) },
+            label = { Text(stringResource(R.string.envelope_edit_budget_range_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
         NumKeypadField(
@@ -63,18 +63,18 @@ fun BudgetItemSheet(
                 null -> null
                 is AmountValidationError.MathError -> null
                 AmountValidationError.NonPositive -> {
-                    { Text(text = stringResource(R.string.amount_should_be_positive)) }
+                    { Text(text = stringResource(R.string.common_msg_amount_positive)) }
                 }
             },
-            label = { Text(stringResource(R.string.budget_amount)) },
+            label = { Text(stringResource(R.string.envelope_edit_budget_amount_label)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = dimensionResource(R.dimen.spacingMedium)),
         )
         if (error != null) Text(
             text = when (error) {
-                EnvelopeArchived -> stringResource(R.string.envelope_archived)
-                BudgetOverlaps -> stringResource(R.string.budget_overlaps)
+                EnvelopeArchived -> stringResource(R.string.envelope_edit_msg_archived)
+                BudgetOverlaps -> stringResource(R.string.envelope_edit_msg_budget_overlaps)
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
@@ -85,11 +85,11 @@ fun BudgetItemSheet(
                 .padding(top = dimensionResource(R.dimen.spacingMedium)),
         ) {
             TextButton(onClick = onDelete) {
-                Text(text = stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+                Text(text = stringResource(R.string.common_action_delete), color = MaterialTheme.colorScheme.error)
             }
             Spacer(modifier = Modifier.weight(1f))
             TextButton(onClick = onCancel) {
-                Text(text = stringResource(R.string.cancel))
+                Text(text = stringResource(R.string.common_action_cancel))
             }
             Button(
                 onClick = {
@@ -98,7 +98,7 @@ fun BudgetItemSheet(
                 },
                 enabled = error == null,
             ) {
-                Text(text = stringResource(R.string.ok))
+                Text(text = stringResource(R.string.common_action_ok))
             }
         }
     }

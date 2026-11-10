@@ -128,8 +128,8 @@ fun ClearButton(
 ) {
     Text(
         text = stringResource(
-            if (state.operator == null || state.rightOperand.trimZero() == "0") R.string.numkeypad_allclear
-            else R.string.numkeypad_clear,
+            if (state.operator == null || state.rightOperand.trimZero() == "0") R.string.numkeypad_action_all_clear
+            else R.string.numkeypad_action_clear,
         ),
         style = MaterialTheme.typography.titleLarge,
     )
@@ -144,7 +144,7 @@ fun DeleteButton(
     onClick = { onStateChange(delete(state)) },
     enabled = !state.fatal,
     modifier = modifier,
-) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_backspace)) }
+) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_action_backspace)) }
 
 @Composable
 fun NumKeypad(
@@ -160,7 +160,7 @@ fun NumKeypad(
         Text(
             text = when (result) {
                 is EvaluatedResult.Success -> "= ${result.value.toPlainString()}"
-                EvaluatedResult.DividedByZero -> stringResource(R.string.numkeypad_divided_by_zero)
+                EvaluatedResult.DividedByZero -> stringResource(R.string.numkeypad_msg_divided_by_zero)
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.outline,
@@ -205,7 +205,7 @@ fun NumKeypad(
                         modifier = localModifier.radialFilledWeight(1f),
                         colors = ButtonColor.danger,
                         shape = MaterialTheme.shapes.large,
-                    ) { Icon(imageVector = Icon.Close, contentDescription = stringResource(R.string.cancel)) }
+                    ) { Icon(imageVector = Icon.Close, contentDescription = stringResource(R.string.common_action_cancel)) }
                     NumberButton("0", state, onStateChange, Modifier.weight(1f))
                     DecimalPointButton(state, onStateChange, Modifier.weight(1f))
                 }
@@ -217,7 +217,7 @@ fun NumKeypad(
                 shape = MaterialTheme.shapes.large,
             ) {
                 Text(
-                    text = stringResource(R.string.ok),
+                    text = stringResource(R.string.common_action_ok),
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),

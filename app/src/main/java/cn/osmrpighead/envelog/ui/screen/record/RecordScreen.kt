@@ -43,12 +43,12 @@ fun RecordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.record_expenditure)) },
+                title = { Text(text = stringResource(R.string.record_expense_title)) },
                 navigationIcon = {
                     IconButton(onClick = back) {
                         Icon(
                             imageVector = Icon.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
+                            contentDescription = stringResource(R.string.common_action_back),
                         )
                     }
                 },
@@ -74,7 +74,7 @@ fun RecordScreen(
                     null -> null
                     is AmountValidationError.MathError -> null
                     AmountValidationError.NonPositive -> {
-                        { Text(text = stringResource(R.string.amount_should_be_positive)) }
+                        { Text(text = stringResource(R.string.common_msg_amount_positive)) }
                     }
                 },
                 modifier = Modifier

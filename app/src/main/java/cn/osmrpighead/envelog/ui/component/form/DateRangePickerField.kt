@@ -59,7 +59,7 @@ sealed interface DateRangePickerDialogBuilder {
         private val confirmEventHandler: ConfirmEventHandler,
         private val onDismiss: (hideDialog: () -> Unit) -> Unit = { it() },
         private val dismissButton: (@Composable (hideDialog: () -> Unit) -> Unit)? = {
-            TextButton(onClick = it) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) }
         },
         private val dateFormatter: DatePickerFormatter? = null,
         private val colors: DatePickerColors? = null,
@@ -80,7 +80,7 @@ sealed interface DateRangePickerDialogBuilder {
                                 hideDialog,
                             )
                         },
-                    ) { Text(stringResource(R.string.ok)) }
+                    ) { Text(stringResource(R.string.common_action_ok)) }
                 },
                 modifier = modifier,
                 dismissButton = dismissButton?.let { { it(hideDialog) } },

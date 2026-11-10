@@ -54,7 +54,7 @@ class EnvelopeScreenInstrumentedTest {
     private var saveCalls = 0
     private var cancelCalls = 0
 
-    private val okText: String get() = context.getString(R.string.ok)
+    private val okText: String get() = context.getString(R.string.common_action_ok)
 
     @Test
     fun envelope_editingNameReportsUpdate() {
@@ -103,11 +103,11 @@ class EnvelopeScreenInstrumentedTest {
         setScreen()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText(context.getString(R.string.budget_title)).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title)).fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText(context.getString(R.string.budget_title)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.budget_range)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.budget_amount)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_title)).assertExists()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_range_label)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_amount_label)).assertIsDisplayed()
 
         composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).performClick()
 

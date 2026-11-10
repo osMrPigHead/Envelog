@@ -54,7 +54,7 @@ private fun Success(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.edit_envelope)) },
+                title = { Text(text = stringResource(R.string.envelope_edit_title)) },
                 navigationIcon = {
                     IconButton(
                         onClick = {
@@ -64,7 +64,7 @@ private fun Success(
                     ) {
                         Icon(
                             imageVector = Icon.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
+                            contentDescription = stringResource(R.string.common_action_back),
                         )
                     }
                 },
@@ -81,7 +81,7 @@ private fun Success(
             OutlinedTextField(
                 value = uiState.envelope.name,
                 onValueChange = { updateEnvelope(uiState.envelope.copy(name = it)) },
-                label = { Text(text = stringResource(R.string.name)) },
+                label = { Text(text = stringResource(R.string.common_label_name)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -92,7 +92,7 @@ private fun Success(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = dimensionResource(R.dimen.spacingMedium)),
-            ) { Text(text = stringResource(R.string.envelope_budgeted), style = MaterialTheme.typography.bodyLarge) }
+            ) { Text(text = stringResource(R.string.envelope_edit_label_budgeted), style = MaterialTheme.typography.bodyLarge) }
 
             if (uiState.envelope.isBudgeted) BudgetCalendar(
                 model = uiState.calendar,
@@ -190,7 +190,7 @@ fun EnvelopeScreen(
             initializeForNew(
                 Envelope(
                     id = EnvelopeId.generate(),
-                    name = stringResource(R.string.envelope_manage_new),
+                    name = stringResource(R.string.envelope_edit_default_name),
                     isBudgeted = true,
                     archived = false,
                 ),

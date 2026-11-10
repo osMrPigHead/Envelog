@@ -52,7 +52,7 @@ private fun EnvelopeCardShell(
                     title = StatItemSlot.Empty,
                     value = buildAnnotatedString {
                         append(model.name)
-                        append(stringResource(R.string.separator_word))
+                        append(stringResource(R.string.symbol_space))
                         if (model is EnvelopeSummary.Budgeted)
                             withStyle(
                                 MaterialTheme.typography.bodyMedium.copy(
@@ -61,22 +61,22 @@ private fun EnvelopeCardShell(
                             ) {
                                 append(
                                     stringResource(
-                                        R.string.envelope_used,
+                                        R.string.overview_envelope_card_used_percent,
                                         model.usedProportion
                                             .formatAsPercent(Formatter.PercentInteger)
-                                            .orDefault(R.string.text_percent_nan),
+                                            .orDefault(R.string.symbol_percent_nan),
                                     ),
                                 )
                             }
                     }.asSlot(),
                     caption = (if (model is EnvelopeSummary.Budgeted) stringResource(
-                        R.string.envelope_caption,
+                        R.string.overview_envelope_card_budget_caption,
                         model.allocated.formatAsAmount(Formatter.AmountConcise),
                         model.totalBudget.formatAsAmount(Formatter.AmountConcise),
                         model.currency.prefix,
                         model.currency.suffix,
                     ) else stringResource(
-                        R.string.envelope_caption_non_budget,
+                        R.string.overview_envelope_card_non_budget_caption,
                         model.allocated.formatAsAmount(Formatter.AmountConcise),
                         model.currency.prefix, model.currency.suffix,
                     )).asSlot(),
@@ -117,14 +117,14 @@ private fun EnvelopeCardViewContent(
         style = StatItemStyle.MediumCenterEnd,
         content = StatItemContent(
             title = stringResource(
-                R.string.envelope_available,
+                R.string.overview_envelope_card_available_title,
                 model.relativeDate(today),
             ).asSlot(),
             value = buildAnnotatedString {
                 append(model.currentAvailable.formatAsAmount(Formatter.AmountInteger))
                 val formattedDiff = model.priorDifference.formattedAmount(Formatter.AmountSignedInteger)
                 if (formattedDiff.toBigDecimal().compareTo(BigDecimal.ZERO) != 0) {
-                    append(stringResource(R.string.separator_thin))
+                    append(stringResource(R.string.symbol_hair_space))
                     withStyle(
                         MaterialTheme.typography.bodyMedium.copy(
                             color = diffColor(model.priorDifference),
@@ -151,13 +151,13 @@ private fun EnvelopeCardManageContent(
         IconButton(onClick = onArchiveClick) {
             Icon(
                 imageVector = Icon.Inventory2,
-                contentDescription = stringResource(R.string.envelope_manage_archive),
+                contentDescription = stringResource(R.string.overview_envelope_action_archive),
             )
         }
         IconButton(onClick = onEditClick) {
             Icon(
                 imageVector = Icon.Edit,
-                contentDescription = stringResource(R.string.envelope_manage_edit),
+                contentDescription = stringResource(R.string.overview_envelope_action_edit),
             )
         }
     }

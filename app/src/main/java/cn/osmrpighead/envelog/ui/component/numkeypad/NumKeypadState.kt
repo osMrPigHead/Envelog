@@ -14,10 +14,10 @@ enum class Operator {
 
 val Operator.text: String
     @Composable get() = when (this) {
-        Plus -> stringResource(R.string.numkeypad_plus)
-        Minus -> stringResource(R.string.numkeypad_minus)
-        Times -> stringResource(R.string.numkeypad_times)
-        Divides -> stringResource(R.string.numkeypad_divides)
+        Plus -> stringResource(R.string.numkeypad_symbol_plus)
+        Minus -> stringResource(R.string.numkeypad_symbol_minus)
+        Times -> stringResource(R.string.numkeypad_symbol_times)
+        Divides -> stringResource(R.string.numkeypad_symbol_divides)
     }
 
 sealed interface EvaluatedResult {

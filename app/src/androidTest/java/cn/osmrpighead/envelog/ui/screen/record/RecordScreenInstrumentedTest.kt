@@ -38,8 +38,8 @@ class RecordScreenInstrumentedTest {
     private var submitted: Long? = null
     private var cancelled = 0
 
-    private val okText: String get() = context.getString(R.string.ok)
-    private val cancelText: String get() = context.getString(R.string.cancel)
+    private val okText: String get() = context.getString(R.string.common_action_ok)
+    private val cancelText: String get() = context.getString(R.string.common_action_cancel)
 
     @Before
     fun setUp() {

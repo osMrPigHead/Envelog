@@ -29,7 +29,7 @@ private fun LabeledSwitchPreview() {
                     onCheckedChange = { budgeted = it },
                 ) {
                     Text(
-                        text = stringResource(R.string.envelope_budgeted),
+                        text = stringResource(R.string.envelope_edit_label_budgeted),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
@@ -91,7 +91,7 @@ private fun LabeledSwitchStatePreview() {
                     enabled = false,
                 ) {
                     Text(
-                        text = stringResource(R.string.envelope_budgeted),
+                        text = stringResource(R.string.envelope_edit_label_budgeted),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }

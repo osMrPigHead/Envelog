@@ -123,7 +123,7 @@ private fun Success(
                                         .padding(end = dimensionResource(R.dimen.spacingThin)),
                                 )
                                 Text(
-                                    text = stringResource(R.string.envelope_manage_new),
+                                    text = stringResource(R.string.overview_action_new_envelope),
                                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal),
                                 )
                             }

@@ -37,9 +37,9 @@ class OverviewScreenInstrumentedTest {
     fun overview_rendersSummaryAndEnvelopes() {
         setScreen(successState())
 
-        composeRule.onNodeWithText(context.getString(R.string.summary_remaining_title)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.summary_expenses_title)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.summary_balance_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overview_summary_remaining_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overview_summary_expense_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overview_summary_balance_title)).assertIsDisplayed()
         composeRule.onNodeWithText("餐饮", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("购物", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText(150_000L.formatAsAmount(Formatter.AmountStandard)).assertIsDisplayed()
@@ -49,20 +49,20 @@ class OverviewScreenInstrumentedTest {
     fun overview_manageModeRevealsActionsAndNewCard() {
         setScreen(successState())
 
-        composeRule.onNodeWithContentDescription(context.getString(R.string.prompt_main_manage)).performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.overview_action_manage)).performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithContentDescription(context.getString(R.string.prompt_main_manage_finish)).assertIsDisplayed()
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.envelope_manage_archive))
+        composeRule.onNodeWithContentDescription(context.getString(R.string.overview_action_manage_finish)).assertIsDisplayed()
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.overview_envelope_action_archive))
             .onFirst()
             .assertIsDisplayed()
 
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.envelope_manage_archive))
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.overview_envelope_action_archive))
             .onFirst()
             .performClick()
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.envelope_manage_edit))
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.overview_envelope_action_edit))
             .onFirst()
             .performClick()
-        composeRule.onNodeWithText(context.getString(R.string.envelope_manage_new))
+        composeRule.onNodeWithText(context.getString(R.string.overview_action_new_envelope))
             .performScrollTo()
             .performClick()
 
@@ -91,7 +91,7 @@ class OverviewScreenInstrumentedTest {
             ),
         )
 
-        composeRule.onNodeWithText(context.getString(R.string.envelope_manage_new))
+        composeRule.onNodeWithText(context.getString(R.string.overview_action_new_envelope))
             .performScrollTo()
             .performClick()
 

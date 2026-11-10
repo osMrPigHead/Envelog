@@ -62,10 +62,10 @@ class AppNavigationInstrumentedTest {
     private lateinit var span: HalfOpenDateSpan
     private var envelopeId: EnvelopeId = EnvelopeId(UUID.randomUUID())
 
-    private val okText: String get() = context.getString(R.string.ok)
-    private val manageText: String get() = context.getString(R.string.prompt_main_manage)
-    private val editText: String get() = context.getString(R.string.envelope_manage_edit)
-    private val newText: String get() = context.getString(R.string.envelope_manage_new)
+    private val okText: String get() = context.getString(R.string.common_action_ok)
+    private val manageText: String get() = context.getString(R.string.overview_action_manage)
+    private val editText: String get() = context.getString(R.string.overview_envelope_action_edit)
+    private val newText: String get() = context.getString(R.string.overview_action_new_envelope)
 
     @Before
     fun setUp() {
