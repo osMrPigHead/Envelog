@@ -219,6 +219,35 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
+    fun observeOverview_countsTodayAllocationsWhenNoBudgetCoversToday() = runTest {
+        val (past, pastShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 10), RoomTestData.envelopeA to 20_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 7_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    start = LocalDate.of(2026, 10, 1),
+                    end = LocalDate.of(2026, 10, 15),
+                    amount = 40_000,
+                ),
+            ),
+            expenditures = listOf(past, today),
+            allocations = pastShares + todayShares,
+        )
+
+        val summary = overview().single() as EnvelopeSummary.Budgeted
+
+        assertNull(summary.currentBudget)
+        assertNull(summary.currentSpan)
+        assertEquals(7_000L, summary.currentSpanAllocated)
+        assertEquals(40_000L, summary.priorBudget)
+        assertEquals(20_000L, summary.priorAllocated)
+        assertEquals(0L, summary.currentAvailable)
+        assertEquals(13_000L, summary.priorDifference)
+    }
+
+    @Test
     fun archiveEnvelope_archivesOnceThenReportsNotFoundOrAlreadyArchived() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 

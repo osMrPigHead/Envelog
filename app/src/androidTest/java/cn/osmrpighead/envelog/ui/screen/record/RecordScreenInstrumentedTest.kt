@@ -54,7 +54,6 @@ class RecordScreenInstrumentedTest {
             },
             cancel = { cancelled++ },
         )
-        host.request(fieldId, consumer)
         composeRule.setContent {
             EnvelogTheme(dynamicColor = false) {
                 RecordScreen(
@@ -69,6 +68,19 @@ class RecordScreenInstrumentedTest {
                 )
             }
         }
+        composeRule.waitForIdle()
+        openKeypad()
+    }
+
+    /**
+     * 通过点击输入框打开键盘，而不是提前调用 [NumKeypadHostState.request]。
+     *
+     * `NumKeypadField` 在“未获得焦点”时会关闭会话，而输入框第一次挂载时会收到一次 `Inactive`
+     * 焦点事件；若在组合前就打开会话，这次事件会把会话关掉，键盘随即播放退出动画消失。
+     */
+    private fun openKeypad() {
+        // 金额为零时输入框显示的就是 Formatter.AmountStandard 的结果（定点两位小数）
+        composeRule.onNode(hasText("0.00") and hasClickAction()).performClick()
         composeRule.waitForIdle()
     }
 

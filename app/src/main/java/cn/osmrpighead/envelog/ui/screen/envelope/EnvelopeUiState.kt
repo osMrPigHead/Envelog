@@ -14,7 +14,7 @@ enum class EnvelopeSubmissionError {
 }
 
 enum class ActiveError {
-    EnvelopeArchived, BudgetOverlaps,
+    EnvelopeArchived, BudgetOverlaps, AmountNonPositive,
 }
 
 data class ActiveBudget(

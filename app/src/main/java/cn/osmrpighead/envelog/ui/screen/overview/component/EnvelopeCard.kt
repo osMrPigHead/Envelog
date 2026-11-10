@@ -19,6 +19,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.number.CurrencyType
+import cn.osmrpighead.envelog.core.time.next
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.ui.component.statitem.*
 import cn.osmrpighead.envelog.ui.icon.Icon
@@ -30,6 +31,7 @@ import cn.osmrpighead.envelog.ui.text.orDefault
 import cn.osmrpighead.envelog.ui.text.relativeDate
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.math.BigDecimal
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Composable
@@ -104,7 +106,7 @@ private val CurrencyType.suffix: String
 @Composable
 private fun EnvelopeSummary.Budgeted.relativeDate(today: LocalDate): String =
     if (currentSpan?.endDate == null) stringResource(R.string.time_today)
-    else relativeDate(today, currentSpan.endDate)
+    else relativeDate(today, currentSpan.endDate, today.next(DayOfWeek.MONDAY))
 
 @Composable
 private fun EnvelopeCardViewContent(

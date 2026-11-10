@@ -87,6 +87,7 @@ fun BudgetItemSheet(
             text = when (error) {
                 EnvelopeArchived -> stringResource(R.string.envelope_edit_msg_archived)
                 BudgetOverlaps -> stringResource(R.string.envelope_edit_msg_budget_overlaps)
+                AmountNonPositive -> stringResource(R.string.common_msg_amount_positive)
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
@@ -158,7 +159,7 @@ fun BudgetItemModalSheet(
 
         ModalBottomSheet(
             onDismissRequest = {
-                numKeypadHost.cancel()
+                numKeypadHost.confirm()
                 save()
             },
             sheetState = sheetState,

@@ -90,23 +90,22 @@ private fun Success(
                     .fillMaxWidth()
                     .padding(top = dimensionResource(R.dimen.spacingMedium)),
             )
-
-            BudgetItemModalSheet(
-                activeBudget = uiState.activeBudget,
-                amountFieldId = uiState.amountFieldId,
-                update = updateActiveBudget,
-                close = closeActiveBudget,
-                save = saveActiveBudget,
-                delete = deleteActiveBudget,
-                clear = clearActiveBudget,
-            )
-
-            if (uiState.envelopeSubmissionError != null)
-                EnvelopeSubmissionErrorDialog(
-                    error = uiState.envelopeSubmissionError,
-                    onDismiss = clearSubmissionError,
-                )
         }
+
+        BudgetItemModalSheet(
+            activeBudget = uiState.activeBudget,
+            amountFieldId = uiState.amountFieldId,
+            update = updateActiveBudget,
+            close = closeActiveBudget,
+            save = saveActiveBudget,
+            delete = deleteActiveBudget,
+            clear = clearActiveBudget,
+        )
+
+        if (uiState.envelopeSubmissionError != null) EnvelopeSubmissionErrorDialog(
+            error = uiState.envelopeSubmissionError,
+            onDismiss = clearSubmissionError,
+        )
     }
 }
 

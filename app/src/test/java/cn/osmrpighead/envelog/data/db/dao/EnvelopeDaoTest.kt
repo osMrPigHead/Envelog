@@ -146,6 +146,116 @@ class EnvelopeDaoTest {
     }
 
     @Test
+    fun observeEnvelopeSummaries_countsTodayAllocationsWhenNoBudgetCoversToday() = runTest {
+        val (past, pastShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 19), RoomTestData.envelopeA to 3_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 7_000)
+        val (anotherToday, anotherTodayShares) = RoomTestData.record(0xB3, RoomTestData.today, RoomTestData.envelopeA to 2_000)
+        val (deletedToday, deletedTodayShares) = RoomTestData.record(0xB4, RoomTestData.today, RoomTestData.envelopeA to 5_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    start = LocalDate.of(2026, 10, 1),
+                    end = LocalDate.of(2026, 10, 15),
+                    amount = 40_000,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetB,
+                    start = LocalDate.of(2026, 10, 22),
+                    end = RoomTestData.monthEnd,
+                    amount = 80_000,
+                ),
+            ),
+            expenditures = listOf(
+                past,
+                today,
+                anotherToday,
+                deletedToday.copy(deletedAt = Instant.parse("2026-10-20T05:00:00Z")),
+            ),
+            allocations = pastShares + todayShares + anotherTodayShares + deletedTodayShares,
+        )
+
+        val row = summaries().single()
+
+        assertNull(row.currentBudget)
+        assertNull(row.currentSpanStartDate)
+        assertNull(row.currentSpanEndDate)
+        assertEquals(9_000L, row.currentSpanAllocated)
+        assertEquals(40_000L, row.priorBudget)
+        assertEquals(3_000L, row.priorAllocated)
+        assertEquals(12_000L, row.allocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_countsTodayAllocationsWhenEnvelopeHasNoBudget() = runTest {
+        val (past, pastShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 5_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 7_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenditures = listOf(past, today),
+            allocations = pastShares + todayShares,
+        )
+
+        val row = summaries().single()
+
+        assertNull(row.totalBudget)
+        assertNull(row.currentBudget)
+        assertNull(row.currentSpanStartDate)
+        assertNull(row.currentSpanEndDate)
+        assertEquals(7_000L, row.currentSpanAllocated)
+        assertNull(row.priorBudget)
+        assertEquals(5_000L, row.priorAllocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_keepsCurrentSpanAllocatedWhenTodayIsInsideBudget() = runTest {
+        val (earlier, earlierShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 18), RoomTestData.envelopeA to 20_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 4_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    start = LocalDate.of(2026, 10, 15),
+                    end = LocalDate.of(2026, 10, 22),
+                    amount = 60_000,
+                ),
+            ),
+            expenditures = listOf(earlier, today),
+            allocations = earlierShares + todayShares,
+        )
+
+        val row = summaries().single()
+
+        assertEquals(60_000L, row.currentBudget)
+        assertEquals(LocalDate.of(2026, 10, 15), row.currentSpanStartDate)
+        assertEquals(LocalDate.of(2026, 10, 22), row.currentSpanEndDate)
+        assertEquals(24_000L, row.currentSpanAllocated)
+        assertNull(row.priorBudget)
+        assertNull(row.priorAllocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_ignoresTodayAllocationsWhenEnvelopeIsNotBudgeted() = runTest {
+        val (today, todayShares) = RoomTestData.record(0xB1, RoomTestData.today, RoomTestData.envelopeB to 7_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false)),
+            expenditures = listOf(today),
+            allocations = todayShares,
+        )
+
+        val row = summaries().single()
+
+        assertEquals(7_000L, row.allocated)
+        assertNull(row.currentSpanAllocated)
+        assertNull(row.priorAllocated)
+    }
+
+    @Test
     fun observeEnvelopeSummaries_ignoresSoftDeletedBudgetsAndExpenditures() = runTest {
         val (live, liveShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 10), RoomTestData.envelopeA to 10_000)
         val (deleted, deletedShares) = RoomTestData.record(

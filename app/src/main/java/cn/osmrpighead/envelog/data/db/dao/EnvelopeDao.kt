@@ -56,12 +56,17 @@ interface EnvelopeDao {
             currentAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
                 FROM expenditureAllocation ea
-                JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
+                LEFT JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
+                JOIN envelope ev ON ev.id = ea.envelopeId
                 JOIN expenditure ex
                   ON ex.deletedAt IS NULL
                  AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= cb.startDate
-                 AND ex.happenedDate < cb.endDate
+                 AND (
+                        -- today 落在某个预算区间内：统计该区间内的全部分摊
+                        (ex.happenedDate >= cb.startDate AND ex.happenedDate < cb.endDate)
+                        -- today 不在任何预算区间内：预算型信封只统计今天的开销
+                        OR (cb.envelopeId IS NULL AND ev.isBudgeted = 1 AND ex.happenedDate = :today)
+                 )
                 GROUP BY ea.envelopeId
             ),
             priorAllocated AS (

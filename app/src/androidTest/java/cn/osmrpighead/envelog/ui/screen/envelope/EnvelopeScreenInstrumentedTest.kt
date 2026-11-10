@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -24,7 +25,6 @@ import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.testing.InstrumentedTestData
 import cn.osmrpighead.envelog.testing.hasButtonRole
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -52,8 +52,9 @@ class EnvelopeScreenInstrumentedTest {
     private var newBudgetDate: LocalDate? = null
     private var saveBudgetCalls = 0
     private var deleteBudgetCalls = 0
-    private var saveCalls = 0
-    private var cancelCalls = 0
+    private var closeBudgetCalls = 0
+    private var saveAndBackCalls = 0
+    private var clearSubmissionErrorCalls = 0
 
     private val okText: String get() = context.getString(R.string.common_action_ok)
 
@@ -100,7 +101,7 @@ class EnvelopeScreenInstrumentedTest {
     @Test
     fun envelope_budgetSheetSaveReportsCallback() {
         val budget = InstrumentedTestData.budget(0xD2)
-        state.value = successState(activeBudget = budget)
+        state.value = successState(activeBudget = ActiveBudget(budget = budget, error = null, complete = false))
         setScreen()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -118,7 +119,7 @@ class EnvelopeScreenInstrumentedTest {
     @Test
     fun envelope_budgetSheetDeleteReportsCallback() {
         val budget = InstrumentedTestData.budget(0xD3)
-        state.value = successState(activeBudget = budget)
+        state.value = successState(activeBudget = ActiveBudget(budget = budget, error = null, complete = false))
         setScreen()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -132,7 +133,48 @@ class EnvelopeScreenInstrumentedTest {
     }
 
     @Test
-    fun envelope_backPressSavesAndCancels() {
+    fun envelope_budgetSheetCancelReportsClose() {
+        val budget = InstrumentedTestData.budget(0xD4)
+        state.value = successState(activeBudget = ActiveBudget(budget = budget, error = null, complete = false))
+        setScreen()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNode(
+            hasText(context.getString(R.string.common_action_cancel)) and hasClickAction() and hasButtonRole(),
+        ).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, closeBudgetCalls) }
+    }
+
+    @Test
+    fun envelope_submissionErrorDialogReportsDismiss() {
+        state.value = successState(envelopeSubmissionError = EnvelopeSubmissionError.BudgetOverlaps)
+        setScreen()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.common_label_error)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_budget_overlaps)).assertIsDisplayed()
+
+        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, clearSubmissionErrorCalls) }
+        composeRule.onNodeWithText(context.getString(R.string.common_label_error)).assertDoesNotExist()
+    }
+
+    @Test
+    fun envelope_topBarBackReportsSaveAndBack() {
+        setScreen()
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.common_action_back)).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, saveAndBackCalls) }
+    }
+
+    @Test
+    fun envelope_backPressReportsSaveAndBack() {
         setScreen()
         composeRule.onNode(hasSetTextAction()).assertExists()
         composeRule.waitUntil(timeoutMillis = 5_000) { hasEnabledBackCallback() }
@@ -142,7 +184,7 @@ class EnvelopeScreenInstrumentedTest {
             composeRule.activity.onBackPressedDispatcher.onBackPressed()
         }
 
-        composeRule.waitUntil(timeoutMillis = 5_000) { saveCalls == 1 && cancelCalls == 1 }
+        composeRule.waitUntil(timeoutMillis = 5_000) { saveAndBackCalls == 1 }
     }
 
     private fun hasEnabledBackCallback(): Boolean {
@@ -165,17 +207,20 @@ class EnvelopeScreenInstrumentedTest {
                     },
                     openActiveBudget = { openedBudgetId = it },
                     newActiveBudget = { newBudgetDate = it },
-                    updateActiveBudget = {
-                        state.value = (state.value as EnvelopeUiState.Success).copy(activeBudget = it)
+                    updateActiveBudget = { budget ->
+                        val current = state.value as EnvelopeUiState.Success
+                        state.value = current.copy(activeBudget = current.activeBudget.copy(budget = budget))
                     },
-                    closeActiveBudget = { callback ->
-                        state.value = (state.value as EnvelopeUiState.Success).copy(activeBudget = null)
-                        runBlocking { callback() }
-                    },
+                    closeActiveBudget = { closeBudgetCalls++ },
                     saveActiveBudget = { saveBudgetCalls++ },
                     deleteActiveBudget = { deleteBudgetCalls++ },
-                    saveAndBack = { saveCalls++ },
-                    back = { cancelCalls++ },
+                    clearActiveBudget = {},
+                    saveAndBack = { saveAndBackCalls++ },
+                    clearSubmissionError = {
+                        clearSubmissionErrorCalls++
+                        val current = state.value as EnvelopeUiState.Success
+                        state.value = current.copy(envelopeSubmissionError = null)
+                    },
                 )
             }
         }
@@ -185,7 +230,8 @@ class EnvelopeScreenInstrumentedTest {
     private fun successState(
         envelope: Envelope = this.envelope,
         budgets: Map<BudgetId, Budget> = emptyMap(),
-        activeBudget: Budget? = null,
+        activeBudget: ActiveBudget = ActiveBudget(budget = null, error = null, complete = true),
+        envelopeSubmissionError: EnvelopeSubmissionError? = null,
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
         envelope = envelope,
         yearMonth = InstrumentedTestData.month,
@@ -193,6 +239,6 @@ class EnvelopeScreenInstrumentedTest {
         amountFieldId = fieldId,
         allocations = emptyList(),
         activeBudget = activeBudget,
-        activeIsNew = false,
+        envelopeSubmissionError = envelopeSubmissionError,
     )
 }

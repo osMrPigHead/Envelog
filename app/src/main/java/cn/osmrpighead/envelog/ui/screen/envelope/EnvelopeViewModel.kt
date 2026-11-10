@@ -18,6 +18,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -40,6 +41,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val _uiState = MutableStateFlow(if (isNew) EnvelopeUiState.IsNew else EnvelopeUiState.Loading)
     val uiState = _uiState.asStateFlow()
     private val fieldId = Any()
+    private var job: Job? = null
 
     private val savedEnvelope = flow {
         if (route.id is NavigationTarget.Existing) emit(repository.getEnvelope(route.id.value))
@@ -133,7 +135,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                         attributedMonth = yearMonth.value,
                         amount = 0,
                     ),
-                    error = null,
+                    error = ActiveError.AmountNonPositive,
                     complete = false,
                 ),
             )
@@ -147,9 +149,13 @@ class EnvelopeViewModel @AssistedInject constructor(
                 activeBudget = it.activeBudget.copy(
                     budget = budget,
                     error =
-                        if ((it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap())
-                            ActiveError.BudgetOverlaps
-                        else null,
+                        when {
+                            budget.amount <= 0 -> ActiveError.AmountNonPositive
+                            (it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap() ->
+                                ActiveError.BudgetOverlaps
+
+                            else -> null
+                        },
                 ),
             )
         }
@@ -163,10 +169,21 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     fun saveActiveBudget() {
+        if (job?.isActive == true) return
+
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeBudget.budget ?: return
-        viewModelScope.launch {
+
+        if (budget.amount <= 0) {
+            _uiState.update {
+                if (it !is EnvelopeUiState.Success) return@update it
+                it.copy(activeBudget = it.activeBudget.copy(error = ActiveError.AmountNonPositive))
+            }
+            return
+        }
+
+        job = viewModelScope.launch {
             val result = if (!isNew) {
                 if (activeBudgetIsNew) repository.insertBudget(budget)
                 else repository.updateBudget(budget)
@@ -197,10 +214,12 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     fun deleteActiveBudget() {
+        if (job?.isActive == true) return
+
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeBudget.budget ?: return
-        viewModelScope.launch {
+        job = viewModelScope.launch {
             if (!isNew && !activeBudgetIsNew)
                 repository.deleteBudget(budget.id)
             _uiState.update {
@@ -227,9 +246,11 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     fun saveAndBack() {
+        if (job?.isActive == true) return
+
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
-        viewModelScope.launch {
+        job = viewModelScope.launch {
             if (!isNew) {
                 repository.updateEnvelope(uiState.envelope)
                 back()
@@ -240,8 +261,8 @@ class EnvelopeViewModel @AssistedInject constructor(
                 Success -> back()
                 EnvelopeArchived -> back()
                 BudgetOverlaps -> _uiState.update {
-                    if (it !is EnvelopeUiState.Success) it
-                    else it.copy(envelopeSubmissionError = EnvelopeSubmissionError.BudgetOverlaps)
+                    if (it !is EnvelopeUiState.Success) return@update it
+                    it.copy(envelopeSubmissionError = EnvelopeSubmissionError.BudgetOverlaps)
                 }
             }
         }

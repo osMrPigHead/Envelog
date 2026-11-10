@@ -172,6 +172,57 @@ class EnvelopeSummaryQueryInstrumentedTest {
     }
 
     @Test
+    fun summaries_countTodayAllocationsWhenNoBudgetCoversToday() = runBlocking {
+        val deletedAt = java.time.Instant.parse("2026-10-20T05:00:00Z")
+        seed(
+            envelopes = listOf(envelope()),
+            budgets = listOf(
+                budget(0xD1, start = LocalDate.of(2026, 10, 1), end = LocalDate.of(2026, 10, 15), amount = 40_000),
+                budget(0xD2, start = LocalDate.of(2026, 10, 22), end = monthEnd, amount = 80_000),
+            ),
+            entries = listOf(
+                record(0xB1, LocalDate.of(2026, 10, 19), 3_000),
+                record(0xB2, today, 7_000),
+                record(0xB3, today, 2_000),
+                record(0xB4, today, 5_000, deletedAt = deletedAt),
+            ),
+        )
+
+        val row = summaries().single()
+
+        assertNull(row.currentBudget)
+        assertNull(row.currentSpanStartDate)
+        assertNull(row.currentSpanEndDate)
+        assertEquals(9_000L, row.currentSpanAllocated)
+        assertEquals(40_000L, row.priorBudget)
+        assertEquals(3_000L, row.priorAllocated)
+        assertEquals(12_000L, row.allocated)
+    }
+
+    @Test
+    fun summaries_keepCurrentSpanAllocatedWhenTodayIsInsideBudget() = runBlocking {
+        seed(
+            envelopes = listOf(envelope()),
+            budgets = listOf(
+                budget(0xD1, start = LocalDate.of(2026, 10, 15), end = LocalDate.of(2026, 10, 22), amount = 60_000),
+            ),
+            entries = listOf(
+                record(0xB1, LocalDate.of(2026, 10, 18), 20_000),
+                record(0xB2, today, 4_000),
+            ),
+        )
+
+        val row = summaries().single()
+
+        assertEquals(60_000L, row.currentBudget)
+        assertEquals(LocalDate.of(2026, 10, 15), row.currentSpanStartDate)
+        assertEquals(LocalDate.of(2026, 10, 22), row.currentSpanEndDate)
+        assertEquals(24_000L, row.currentSpanAllocated)
+        assertNull(row.priorBudget)
+        assertNull(row.priorAllocated)
+    }
+
+    @Test
     fun summaries_ignoreSoftDeletedRows() = runBlocking {
         val deletedAt = java.time.Instant.parse("2026-10-19T04:00:00Z")
         seed(

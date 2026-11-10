@@ -30,7 +30,7 @@ sealed interface EnvelopeSummary {
         val usedProportion = Ratio.of(allocated, totalBudget)
 
         init {
-            val realCurrent = currentBudget?.minus(currentSpanAllocated) ?: 0
+            val realCurrent = (currentBudget ?: 0) - currentSpanAllocated
             val realPrior = priorBudget - priorAllocated
             if (realCurrent < 0) {
                 if (-realCurrent < realPrior) {

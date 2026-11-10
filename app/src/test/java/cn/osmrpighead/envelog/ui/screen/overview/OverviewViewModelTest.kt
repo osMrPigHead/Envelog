@@ -127,10 +127,10 @@ class OverviewViewModelTest {
         val balance = state.summaryItems.filterIsInstance<SummaryItem.Balance>().single()
 
         // 归档预算 50000 不计入总预算；归档信封的 7000 支出仍计入总支出。
-        assertEquals(80_000L, remaining.cents)
+        assertEquals(83_000L, remaining.cents)
         assertEquals(20_000L, expenses.cents)
         assertEquals(-20_000L, balance.cents)
-        assertEquals(0, BigDecimal("0.2").compareTo(remaining.usedProportion.ratio))
+        assertEquals(0, BigDecimal("0.17").compareTo(remaining.usedProportion.ratio))
     }
 
     private suspend fun successState(): OverviewUiState.Success =
