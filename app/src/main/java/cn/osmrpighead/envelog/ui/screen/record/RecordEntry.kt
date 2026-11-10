@@ -5,14 +5,15 @@ import androidx.navigation3.runtime.EntryProviderScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 
 fun EntryProviderScope<AppRoute>.recordEntry(
-    cancel: (AppRoute.Record) -> Unit,
+    back: (AppRoute.Record) -> Unit,
 ) {
     entry<AppRoute.Record> { key ->
         val viewModel: RecordViewModel = hiltViewModel<RecordViewModel, RecordViewModel.Factory>(
-            creationCallback = { it.create(key) { cancel(key) } },
+            creationCallback = { it.create(key) { back(key) } },
         )
         RecordScreen(
             uiState = viewModel.uiState,
+            back = { back(key) },
         )
     }
 }

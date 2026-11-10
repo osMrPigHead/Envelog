@@ -7,7 +7,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 
 fun EntryProviderScope<AppRoute>.envelopeEntry(
-    cancel: (AppRoute.Envelope) -> Unit,
+    back: (AppRoute.Envelope) -> Unit,
 ) {
     entry<AppRoute.Envelope> { key ->
         val viewModel: EnvelopeViewModel = hiltViewModel<EnvelopeViewModel, EnvelopeViewModel.Factory>(
@@ -24,7 +24,7 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
             closeActiveBudget = viewModel::closeActiveBudget,
             saveActiveBudget = viewModel::saveActiveBudget,
             deleteActiveBudget = viewModel::deleteActiveBudget,
-            cancel = { cancel(key) },
+            cancel = { back(key) },
             save = viewModel::save,
         )
     }

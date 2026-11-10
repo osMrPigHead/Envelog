@@ -43,4 +43,7 @@
     <string name="delete">Delete</string>
     <string name="budget_overlaps">Budget overlaps</string>
     <string name="envelope_archived">Edits on archived envelope are prohibited</string>
+    <string name="edit_envelope">Edit Envelope</string>
+    <string name="back">Back</string>
+    <string name="record_expenditure">Record an expense</string>
 </resources>

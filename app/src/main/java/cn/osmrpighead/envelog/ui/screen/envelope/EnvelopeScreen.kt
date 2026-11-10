@@ -20,6 +20,7 @@ import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
+import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetItemSheet
@@ -40,17 +41,37 @@ private fun Success(
     saveActiveBudget: (suspend () -> Unit) -> Unit,
     deleteActiveBudget: (suspend () -> Unit) -> Unit,
     save: () -> Unit,
-    cancel: () -> Unit,
+    back: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BackHandler {
         save()
-        cancel()
+        back()
     }
 
     val uiContext = rememberCoroutineScope().coroutineContext
 
-    Scaffold(modifier = modifier) { innerPadding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(R.string.edit_envelope)) },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            save()
+                            back()
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icon.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
+                    }
+                },
+            )
+        },
+        modifier = modifier,
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)

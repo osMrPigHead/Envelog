@@ -30,8 +30,8 @@ fun AppNavDisplay(backStack: NavBackStack<AppRoute>) {
                 onNavigateToEnvelopeWithoutId = { backStack.navigate(it, AppRoute.Envelope(NavigationTarget.New())) },
                 onNavigateToRecord = { key, id -> backStack.navigate(key, AppRoute.Record(id)) },
             )
-            recordEntry(cancel = { backStack.pop(it) })
-            envelopeEntry(cancel = { backStack.pop(it) })
+            recordEntry(back = { backStack.pop(it) })
+            envelopeEntry(back = { backStack.pop(it) })
         },
         transitionSpec = {
             slideInHorizontally(initialOffsetX = { it }) togetherWith
