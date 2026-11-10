@@ -1,8 +1,8 @@
 package cn.osmrpighead.envelog.data.model
 
 import cn.osmrpighead.envelog.core.time.toLocalDate
-import cn.osmrpighead.envelog.util.UUIDGenerator
 import cn.osmrpighead.envelog.util.UUIDSerializer
+import cn.osmrpighead.envelog.util.generateUUID
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.LocalDate
@@ -20,7 +20,7 @@ value class ExpenditureId(override val value: @Serializable(with = UUIDSerialize
     override fun toString(): String = value.toString()
 
     companion object {
-        fun generate() = ExpenditureId(UUIDGenerator.instance.generate())
+        fun generate() = ExpenditureId(generateUUID())
     }
 }
 
