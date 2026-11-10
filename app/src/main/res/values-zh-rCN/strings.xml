@@ -5,6 +5,7 @@
     <string name="common_action_cancel">取消</string>
     <string name="common_action_delete">删除</string>
     <string name="common_action_ok">确认</string>
+    <string name="common_label_error">错误</string>
     <string name="common_label_name">名称</string>
     <string name="common_msg_amount_positive">金额必须为正数</string>
     <string name="currency_cny_prefix">\u200b</string>

@@ -24,7 +24,7 @@ interface EnvelogRepository {
     ): Flow<List<DailyAllocationSummary>>
 
     suspend fun getEnvelope(id: EnvelopeId): Envelope
-    suspend fun updateEnvelope(envelope: Envelope)
+    suspend fun updateEnvelope(envelope: Envelope): EnvelopeUpdateResult
     suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>): BudgetWriteResult
     suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult
 

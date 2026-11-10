@@ -26,6 +26,7 @@ import java.time.YearMonth
 @HiltViewModel(assistedFactory = EnvelopeViewModel.Factory::class)
 class EnvelopeViewModel @AssistedInject constructor(
     @Assisted route: AppRoute.Envelope,
+    @Assisted private val back: () -> Unit,
     private val appState: AppStateHolder,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
@@ -35,6 +36,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     private val isNew = route.id is NavigationTarget.New
+    private var activeBudgetIsNew = false
     private val _uiState = MutableStateFlow(if (isNew) EnvelopeUiState.IsNew else EnvelopeUiState.Loading)
     val uiState = _uiState.asStateFlow()
     private val fieldId = Any()
@@ -64,10 +66,14 @@ class EnvelopeViewModel @AssistedInject constructor(
             envelope = envelope,
             yearMonth = yearMonth.value,
             budgets = emptyMap(),
-            fieldId = fieldId,
+            amountFieldId = fieldId,
             allocations = emptyList(),
-            activeBudget = null,
-            activeIsNew = false,
+            activeBudget = ActiveBudget(
+                budget = null,
+                error = null,
+                complete = true,
+            ),
+            envelopeSubmissionError = null,
         )
     }
 
@@ -81,10 +87,14 @@ class EnvelopeViewModel @AssistedInject constructor(
                 envelope = envelope,
                 yearMonth = yearMonth.value,
                 budgets = budgets,
-                fieldId = fieldId,
+                amountFieldId = fieldId,
                 allocations = allocations,
-                activeBudget = null,
-                activeIsNew = false,
+                activeBudget = ActiveBudget(
+                    budget = null,
+                    error = null,
+                    complete = true,
+                ),
+                envelopeSubmissionError = null,
             )
         }
     }
@@ -99,23 +109,33 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun openActiveBudget(id: BudgetId) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
-            it.copy(activeBudget = it.budgets[id], activeIsNew = false, activeError = null)
+            activeBudgetIsNew = false
+            it.copy(
+                activeBudget = ActiveBudget(
+                    budget = it.budgets[id],
+                    error = null,
+                    complete = false,
+                ),
+            )
         }
     }
 
     fun newActiveBudget(date: LocalDate) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
+            activeBudgetIsNew = true
             it.copy(
-                activeBudget = Budget(
-                    id = BudgetId.generate(),
-                    envelopeId = it.envelope.id,
-                    dateSpan = date untilExclusive date.plusDays(1),
-                    attributedMonth = yearMonth.value,
-                    amount = 0,
+                activeBudget = ActiveBudget(
+                    budget = Budget(
+                        id = BudgetId.generate(),
+                        envelopeId = it.envelope.id,
+                        dateSpan = date untilExclusive date.plusDays(1),
+                        attributedMonth = yearMonth.value,
+                        amount = 0,
+                    ),
+                    error = null,
+                    complete = false,
                 ),
-                activeIsNew = true,
-                activeError = null,
             )
         }
     }
@@ -124,35 +144,31 @@ class EnvelopeViewModel @AssistedInject constructor(
         _uiState.update {
             require(it is EnvelopeUiState.Success)
             it.copy(
-                activeBudget = budget,
-                activeError =
-                    if ((it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap())
-                        ActiveError.BudgetOverlaps
-                    else null,
+                activeBudget = it.activeBudget.copy(
+                    budget = budget,
+                    error =
+                        if ((it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap())
+                            ActiveError.BudgetOverlaps
+                        else null,
+                ),
             )
         }
     }
 
-    fun closeActiveBudget(callback: suspend () -> Unit) {
-        viewModelScope.launch {
-            try {
-                callback()
-            } finally {
-                _uiState.update {
-                    require(it is EnvelopeUiState.Success)
-                    it.copy(activeBudget = null, activeError = null)
-                }
-            }
+    fun closeActiveBudget() {
+        _uiState.update {
+            require(it is EnvelopeUiState.Success)
+            it.copy(activeBudget = it.activeBudget.copy(complete = true))
         }
     }
 
-    fun saveActiveBudget(callback: suspend () -> Unit) {
+    fun saveActiveBudget() {
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
-        val budget = uiState.activeBudget ?: return
+        val budget = uiState.activeBudget.budget ?: return
         viewModelScope.launch {
             val result = if (!isNew) {
-                if (uiState.activeIsNew) repository.insertBudget(budget)
+                if (activeBudgetIsNew) repository.insertBudget(budget)
                 else repository.updateBudget(budget)
             } else null
 
@@ -160,65 +176,86 @@ class EnvelopeViewModel @AssistedInject constructor(
                 _uiState.update {
                     if (it !is EnvelopeUiState.Success) return@update it
                     it.copy(
-                        activeError = when (result) {
-                            EnvelopeArchived -> ActiveError.EnvelopeArchived
-                            BudgetOverlaps -> ActiveError.BudgetOverlaps
-                        },
+                        activeBudget = it.activeBudget.copy(
+                            error = when (result) {
+                                EnvelopeArchived -> ActiveError.EnvelopeArchived
+                                BudgetOverlaps -> ActiveError.BudgetOverlaps
+                            },
+                        ),
                     )
                 }
                 return@launch
             }
-
-            try {
-                callback()
-            } finally {
-                _uiState.update {
-                    if (it !is EnvelopeUiState.Success) return@update it
-                    it.copy(
-                        budgets = it.budgets + (budget.id to budget),
-                        activeBudget = null,
-                        activeError = null,
-                    )
-                }
+            _uiState.update {
+                if (it !is EnvelopeUiState.Success) return@update it
+                it.copy(
+                    budgets = it.budgets + (budget.id to budget),
+                    activeBudget = it.activeBudget.copy(complete = true),
+                )
             }
         }
     }
 
-    fun deleteActiveBudget(callback: suspend () -> Unit) {
+    fun deleteActiveBudget() {
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
-        val budget = uiState.activeBudget ?: return
+        val budget = uiState.activeBudget.budget ?: return
         viewModelScope.launch {
-            if (!isNew && !uiState.activeIsNew)
+            if (!isNew && !activeBudgetIsNew)
                 repository.deleteBudget(budget.id)
-            try {
-                callback()
-            } finally {
-                _uiState.update {
-                    if (it !is EnvelopeUiState.Success) return@update it
-                    it.copy(
-                        budgets = it.budgets - budget.id,
-                        activeBudget = null,
-                    )
-                }
+            _uiState.update {
+                if (it !is EnvelopeUiState.Success) return@update it
+                it.copy(
+                    budgets = it.budgets - budget.id,
+                    activeBudget = it.activeBudget.copy(complete = true),
+                )
             }
         }
     }
 
-    fun save() {
+    fun clearActiveBudget() {
+        _uiState.update {
+            require(it is EnvelopeUiState.Success)
+            it.copy(
+                activeBudget = ActiveBudget(
+                    budget = null,
+                    error = null,
+                    complete = false,
+                ),
+            )
+        }
+    }
+
+    fun saveAndBack() {
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         viewModelScope.launch {
             if (!isNew) {
                 repository.updateEnvelope(uiState.envelope)
+                back()
                 return@launch
             }
-            repository.insertEnvelope(uiState.envelope, uiState.budgets.values.toList())
+            val result = repository.insertEnvelope(uiState.envelope, uiState.budgets.values.toList())
+            when (result) {
+                Success -> back()
+                EnvelopeArchived -> back()
+                BudgetOverlaps -> _uiState.update {
+                    if (it !is EnvelopeUiState.Success) it
+                    else it.copy(envelopeSubmissionError = EnvelopeSubmissionError.BudgetOverlaps)
+                }
+            }
+        }
+    }
+
+    fun clearSubmissionError() {
+        _uiState.update {
+            require(it is EnvelopeUiState.Success)
+            it.copy(envelopeSubmissionError = null)
         }
     }
 
     @AssistedFactory
     interface Factory {
-        fun create(route: AppRoute.Envelope): EnvelopeViewModel
+        fun create(route: AppRoute.Envelope, back: () -> Unit): EnvelopeViewModel
     }
 }

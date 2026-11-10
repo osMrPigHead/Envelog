@@ -116,7 +116,7 @@ interface EnvelopeDao {
     suspend fun archive(id: EnvelopeId, now: Instant): Int
 
     @Update
-    suspend fun update(entity: EnvelopeEntity)
+    suspend fun update(entity: EnvelopeEntity): Int
 
     @Insert
     suspend fun insert(entity: EnvelopeEntity)

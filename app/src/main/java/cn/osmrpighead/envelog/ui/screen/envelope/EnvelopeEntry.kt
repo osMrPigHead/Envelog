@@ -11,7 +11,7 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
 ) {
     entry<AppRoute.Envelope> { key ->
         val viewModel: EnvelopeViewModel = hiltViewModel<EnvelopeViewModel, EnvelopeViewModel.Factory>(
-            creationCallback = { it.create(key) },
+            creationCallback = { it.create(key) { back(key) } },
         )
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         EnvelopeScreen(
@@ -24,8 +24,9 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
             closeActiveBudget = viewModel::closeActiveBudget,
             saveActiveBudget = viewModel::saveActiveBudget,
             deleteActiveBudget = viewModel::deleteActiveBudget,
-            cancel = { back(key) },
-            save = viewModel::save,
+            clearActiveBudget = viewModel::clearActiveBudget,
+            saveAndBack = viewModel::saveAndBack,
+            clearSubmissionError = viewModel::clearSubmissionError,
         )
     }
 }

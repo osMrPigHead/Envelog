@@ -32,7 +32,7 @@ class EnvelopeUiStateTest {
         envelope = Envelope(envelopeId, "餐饮", true, false),
         yearMonth = month,
         budgets = budgets.associateBy { it.id },
-        fieldId = Any(),
+        amountFieldId = Any(),
         allocations = allocations,
         activeBudget = null,
         activeIsNew = false,

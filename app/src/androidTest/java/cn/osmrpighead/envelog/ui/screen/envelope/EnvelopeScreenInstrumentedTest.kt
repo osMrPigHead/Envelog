@@ -174,8 +174,8 @@ class EnvelopeScreenInstrumentedTest {
                     },
                     saveActiveBudget = { saveBudgetCalls++ },
                     deleteActiveBudget = { deleteBudgetCalls++ },
-                    save = { saveCalls++ },
-                    cancel = { cancelCalls++ },
+                    saveAndBack = { saveCalls++ },
+                    back = { cancelCalls++ },
                 )
             }
         }
@@ -190,7 +190,7 @@ class EnvelopeScreenInstrumentedTest {
         envelope = envelope,
         yearMonth = InstrumentedTestData.month,
         budgets = budgets,
-        fieldId = fieldId,
+        amountFieldId = fieldId,
         allocations = emptyList(),
         activeBudget = activeBudget,
         activeIsNew = false,

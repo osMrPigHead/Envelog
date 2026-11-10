@@ -11,3 +11,7 @@ enum class DeleteResult {
 enum class BudgetWriteResult {
     EnvelopeArchived, BudgetOverlaps, Success,
 }
+
+enum class EnvelopeUpdateResult {
+    NotFound, Success,
+}

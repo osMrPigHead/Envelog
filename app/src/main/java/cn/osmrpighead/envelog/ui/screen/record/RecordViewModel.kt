@@ -23,7 +23,7 @@ import java.time.Clock
 @HiltViewModel(assistedFactory = RecordViewModel.Factory::class)
 class RecordViewModel @AssistedInject constructor(
     @Assisted route: AppRoute.Record,
-    @Assisted private val onCancel: () -> Unit,
+    @Assisted private val back: () -> Unit,
     clock: Clock,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
@@ -37,7 +37,7 @@ class RecordViewModel @AssistedInject constructor(
 
     private val host = NumKeypadHostState()
     private val fieldId = Any()
-    private val consumer = AmountConsumer(2, RoundingMode.HALF_UP, ::submit, onCancel)
+    private val consumer = AmountConsumer(2, RoundingMode.HALF_UP, ::submit, back)
 
     private val _uiState = mutableStateOf(
         RecordUiState(
@@ -67,12 +67,12 @@ class RecordViewModel @AssistedInject constructor(
                 ),
             )
             _uiState.value = _uiState.value.copy(amount = amount)
-            onCancel()
+            back()
         }
     }
 
     @AssistedFactory
     interface Factory {
-        fun create(route: AppRoute.Record, cancel: () -> Unit): RecordViewModel
+        fun create(route: AppRoute.Record, back: () -> Unit): RecordViewModel
     }
 }

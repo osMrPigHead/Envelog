@@ -4,6 +4,7 @@
     <string name="common_action_cancel">Cancel</string>
     <string name="common_action_delete">Delete</string>
     <string name="common_action_ok">OK</string>
+    <string name="common_label_error">Error</string>
     <string name="common_label_name">Name</string>
     <string name="common_msg_amount_positive">Amount should be positive</string>
     <string name="currency_cny_prefix">¥\u2009</string>

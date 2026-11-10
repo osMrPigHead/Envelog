@@ -12,6 +12,7 @@ import cn.osmrpighead.envelog.data.repository.ArchiveResult
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
 import cn.osmrpighead.envelog.data.repository.DeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository.EnvelopeUpdateResult
 import cn.osmrpighead.envelog.data.repository.room.mapper.toDomain
 import cn.osmrpighead.envelog.data.repository.room.mapper.toEntity
 import cn.osmrpighead.envelog.util.toSetIfNonDuplicates
@@ -67,9 +68,9 @@ class RoomEnvelogRepository @Inject constructor(
     override suspend fun getEnvelope(id: EnvelopeId): Envelope =
         envelopeDao.get(id)?.toDomain() ?: throw NoSuchElementException()
 
-    override suspend fun updateEnvelope(envelope: Envelope) {
-        envelopeDao.update(envelope.toEntity())
-    }
+    override suspend fun updateEnvelope(envelope: Envelope): EnvelopeUpdateResult =
+        if (envelopeDao.update(envelope.toEntity()) == 0) EnvelopeUpdateResult.NotFound
+        else EnvelopeUpdateResult.Success
 
     override suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>): BudgetWriteResult {
         if (budgets.map { it.dateSpan }.hasOverlap()) return BudgetWriteResult.BudgetOverlaps

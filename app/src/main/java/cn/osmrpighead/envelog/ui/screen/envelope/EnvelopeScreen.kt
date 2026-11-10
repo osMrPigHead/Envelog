@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -18,15 +15,10 @@ import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
-import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
-import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.icon.Icon
-import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
-import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetItemSheet
-import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
-import cn.osmrpighead.envelog.util.wrapSuspending
-import java.math.RoundingMode
+import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetItemModalSheet
+import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,31 +29,22 @@ private fun Success(
     openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
-    closeActiveBudget: (suspend () -> Unit) -> Unit,
-    saveActiveBudget: (suspend () -> Unit) -> Unit,
-    deleteActiveBudget: (suspend () -> Unit) -> Unit,
-    save: () -> Unit,
-    back: () -> Unit,
+    closeActiveBudget: () -> Unit,
+    saveActiveBudget: () -> Unit,
+    deleteActiveBudget: () -> Unit,
+    clearActiveBudget: () -> Unit,
+    saveAndBack: () -> Unit,
+    clearSubmissionError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    BackHandler {
-        save()
-        back()
-    }
-
-    val uiContext = rememberCoroutineScope().coroutineContext
+    BackHandler { saveAndBack() }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.envelope_edit_title)) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            save()
-                            back()
-                        },
-                    ) {
+                    IconButton(onClick = saveAndBack) {
                         Icon(
                             imageVector = Icon.ArrowBack,
                             contentDescription = stringResource(R.string.common_action_back),
@@ -92,7 +75,12 @@ private fun Success(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = dimensionResource(R.dimen.spacingMedium)),
-            ) { Text(text = stringResource(R.string.envelope_edit_label_budgeted), style = MaterialTheme.typography.bodyLarge) }
+            ) {
+                Text(
+                    text = stringResource(R.string.envelope_edit_label_budgeted),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
 
             if (uiState.envelope.isBudgeted) BudgetCalendar(
                 model = uiState.calendar,
@@ -103,68 +91,21 @@ private fun Success(
                     .padding(top = dimensionResource(R.dimen.spacingMedium)),
             )
 
-            if (uiState.activeBudget != null) {
-                val numKeypadHost = rememberNumKeypadHostState()
-                val sheetState = rememberModalBottomSheetState()
+            BudgetItemModalSheet(
+                activeBudget = uiState.activeBudget,
+                amountFieldId = uiState.amountFieldId,
+                update = updateActiveBudget,
+                close = closeActiveBudget,
+                save = saveActiveBudget,
+                delete = deleteActiveBudget,
+                clear = clearActiveBudget,
+            )
 
-                LaunchedEffect(sheetState.currentValue) {
-                    when (sheetState.currentValue) {
-                        PartiallyExpanded -> numKeypadHost.cancel()
-                        else -> {}
-                    }
-                }
-
-                LaunchedEffect(uiState.activeError, sheetState.currentValue) {
-                    if (uiState.activeError != null && sheetState.currentValue == SheetValue.Hidden)
-                        sheetState.show()
-                }
-
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        numKeypadHost.cancel()
-                        saveActiveBudget {}
-                    },
-                    sheetState = sheetState,
-                ) {
-                    LaunchedEffect(sheetState) {
-                        sheetState.show()
-                    }
-
-                    LaunchedEffect(numKeypadHost.isOpen) {
-                        if (numKeypadHost.isOpen) sheetState.expand()
-                        else sheetState.partialExpand()
-                    }
-
-                    Scaffold(
-                        bottomBar = {
-                            NumKeypadHost(
-                                numKeypadHost,
-                                modifier = Modifier.disableVerticalDrag(),
-                            )
-                        },
-                    ) { innerPadding ->
-                        BudgetItemSheet(
-                            budget = uiState.activeBudget,
-                            onSpanChange = { updateActiveBudget(uiState.activeBudget.copy(dateSpan = it)) },
-                            numKeypadHost = numKeypadHost,
-                            amountConsumer = AmountConsumer(
-                                scale = 0,
-                                roundingMode = RoundingMode.HALF_UP,
-                                submit = { updateActiveBudget(uiState.activeBudget.copy(amount = it)) },
-                                cancel = {},
-                            ),
-                            fieldId = uiState.fieldId,
-                            onSave = { saveActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
-                            onCancel = { closeActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
-                            onDelete = { deleteActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
-                            error = uiState.activeError,
-                            modifier = Modifier
-                                .padding(innerPadding)
-                                .padding(dimensionResource(R.dimen.spacingLarge)),
-                        )
-                    }
-                }
-            }
+            if (uiState.envelopeSubmissionError != null)
+                EnvelopeSubmissionErrorDialog(
+                    error = uiState.envelopeSubmissionError,
+                    onDismiss = clearSubmissionError,
+                )
         }
     }
 }
@@ -177,11 +118,12 @@ fun EnvelopeScreen(
     openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
-    closeActiveBudget: (suspend () -> Unit) -> Unit,
-    saveActiveBudget: (suspend () -> Unit) -> Unit,
-    deleteActiveBudget: (suspend () -> Unit) -> Unit,
-    save: () -> Unit,
-    cancel: () -> Unit,
+    closeActiveBudget: () -> Unit,
+    saveActiveBudget: () -> Unit,
+    deleteActiveBudget: () -> Unit,
+    clearActiveBudget: () -> Unit,
+    saveAndBack: () -> Unit,
+    clearSubmissionError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -206,8 +148,9 @@ fun EnvelopeScreen(
             closeActiveBudget,
             saveActiveBudget,
             deleteActiveBudget,
-            save,
-            cancel,
+            clearActiveBudget,
+            saveAndBack,
+            clearSubmissionError,
             modifier,
         )
     }

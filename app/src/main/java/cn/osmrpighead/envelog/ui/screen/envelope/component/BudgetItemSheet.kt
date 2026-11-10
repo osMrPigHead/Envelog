@@ -5,10 +5,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -20,13 +27,18 @@ import cn.osmrpighead.envelog.ui.component.form.ConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
+import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
+import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
+import cn.osmrpighead.envelog.ui.screen.envelope.ActiveBudget
 import cn.osmrpighead.envelog.ui.screen.envelope.ActiveError
 import cn.osmrpighead.envelog.ui.screen.envelope.ActiveError.*
+import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import java.math.RoundingMode
 
 @Composable
 fun BudgetItemSheet(
@@ -99,6 +111,85 @@ fun BudgetItemSheet(
                 enabled = error == null,
             ) {
                 Text(text = stringResource(R.string.common_action_ok))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BudgetItemModalSheet(
+    activeBudget: ActiveBudget,
+    amountFieldId: Any,
+    update: (Budget) -> Unit,
+    close: () -> Unit,
+    save: () -> Unit,
+    delete: () -> Unit,
+    clear: () -> Unit,
+) {
+    if (activeBudget.budget != null) {
+        val numKeypadHost = rememberNumKeypadHostState()
+        val sheetState = rememberModalBottomSheetState()
+
+        LaunchedEffect(sheetState) { sheetState.show() }
+
+        LaunchedEffect(sheetState.currentValue) {
+            when (sheetState.currentValue) {
+                PartiallyExpanded -> numKeypadHost.cancel()
+                else -> {}
+            }
+        }
+
+        LaunchedEffect(numKeypadHost.isOpen) {
+            if (numKeypadHost.isOpen) sheetState.expand()
+            else sheetState.partialExpand()
+        }
+
+        LaunchedEffect(activeBudget.error, sheetState.currentValue) {
+            if (activeBudget.error != null && sheetState.currentValue == SheetValue.Hidden)
+                sheetState.show()
+        }
+
+        LaunchedEffect(activeBudget.complete) {
+            if (!activeBudget.complete) return@LaunchedEffect
+            sheetState.hide()
+            clear()
+        }
+
+        ModalBottomSheet(
+            onDismissRequest = {
+                numKeypadHost.cancel()
+                save()
+            },
+            sheetState = sheetState,
+        ) {
+            Scaffold(
+                bottomBar = {
+                    NumKeypadHost(
+                        numKeypadHost,
+                        modifier = Modifier.disableVerticalDrag(),
+                    )
+                },
+            ) { innerPadding ->
+                BudgetItemSheet(
+                    budget = activeBudget.budget,
+                    onSpanChange = { update(activeBudget.budget.copy(dateSpan = it)) },
+                    numKeypadHost = numKeypadHost,
+                    amountConsumer = AmountConsumer(
+                        scale = 0,
+                        roundingMode = RoundingMode.HALF_UP,
+                        submit = { update(activeBudget.budget.copy(amount = it)) },
+                        cancel = {},
+                    ),
+                    fieldId = amountFieldId,
+                    onSave = save,
+                    onCancel = close,
+                    onDelete = delete,
+                    error = activeBudget.error,
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .padding(dimensionResource(R.dimen.spacingLarge)),
+                )
             }
         }
     }

@@ -9,20 +9,29 @@ import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
 import java.time.DayOfWeek
 import java.time.YearMonth
 
+enum class EnvelopeSubmissionError {
+    BudgetOverlaps,
+}
+
 enum class ActiveError {
     EnvelopeArchived, BudgetOverlaps,
 }
+
+data class ActiveBudget(
+    val budget: Budget?,
+    val error: ActiveError?,
+    val complete: Boolean,
+)
 
 sealed interface EnvelopeUiState {
     data class Success(
         val envelope: Envelope,
         val yearMonth: YearMonth,
         val budgets: Map<BudgetId, Budget>,
-        val fieldId: Any,
+        val amountFieldId: Any,
         val allocations: List<DailyAllocationSummary>,
-        val activeBudget: Budget?,
-        val activeIsNew: Boolean,
-        val activeError: ActiveError? = null,
+        val activeBudget: ActiveBudget,
+        val envelopeSubmissionError: EnvelopeSubmissionError?,
     ) : EnvelopeUiState {
         val allocationsByDate = allocations.associateBy { it.happenedDate }
         val calendar = BudgetCalendarModel.of(  // TODO: 优化
