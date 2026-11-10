@@ -23,6 +23,7 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
             updateActiveBudget = viewModel::updateActiveBudget,
             closeActiveBudget = viewModel::closeActiveBudget,
             saveActiveBudget = viewModel::saveActiveBudget,
+            deleteActiveBudget = viewModel::deleteActiveBudget,
             cancel = { cancel(key) },
             save = viewModel::save,
         )

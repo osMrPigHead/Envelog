@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.core.navigation.NavigationTarget
+import cn.osmrpighead.envelog.core.time.hasOverlap
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
+import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
+import cn.osmrpighead.envelog.data.repository.BudgetWriteResult.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import dagger.assisted.Assisted
@@ -38,14 +41,14 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val fieldId = Any()
 
     private val savedEnvelope = flow {
-        if (route.id is NavigationTarget.Existing) emit(repository.getEnvelopeById(route.id.value))
+        if (route.id is NavigationTarget.Existing) emit(repository.getEnvelope(route.id.value))
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val savedBudgets = if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
         repository.observeBudgets(
             envelopeId = route.id.value,
-            attributedMonth = yearMonth,
+            dateSpan = yearMonth.toHalfOpenDateSpan(),  // TODO: User rule
         ).map { budgets -> budgets.associateBy { it.id } }
     } else flowOf()
 
@@ -62,10 +65,10 @@ class EnvelopeViewModel @AssistedInject constructor(
             envelope = envelope,
             yearMonth = yearMonth.value,
             budgets = emptyMap(),
-            activeBudget = null,
-            activeIsNew = false,
             fieldId = fieldId,
             allocations = emptyList(),
+            activeBudget = null,
+            activeIsNew = false,
         )
     }
 
@@ -79,10 +82,10 @@ class EnvelopeViewModel @AssistedInject constructor(
                 envelope = envelope,
                 yearMonth = yearMonth.value,
                 budgets = budgets,
-                activeBudget = null,
-                activeIsNew = false,
                 fieldId = fieldId,
                 allocations = allocations,
+                activeBudget = null,
+                activeIsNew = false,
             )
         }
     }
@@ -97,7 +100,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun openActiveBudget(id: BudgetId) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
-            it.copy(activeBudget = it.budgets[id], activeIsNew = false)
+            it.copy(activeBudget = it.budgets[id], activeIsNew = false, activeError = null)
         }
     }
 
@@ -113,6 +116,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                     amount = 0,
                 ),
                 activeIsNew = true,
+                activeError = null,
             )
         }
     }
@@ -120,14 +124,26 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun updateActiveBudget(budget: Budget) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
-            it.copy(activeBudget = budget)
+            it.copy(
+                activeBudget = budget,
+                activeError =
+                    if ((it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap())
+                        ActiveError.BudgetOverlaps
+                    else null,
+            )
         }
     }
 
-    fun closeActiveBudget() {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(activeBudget = null)
+    fun closeActiveBudget(callback: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                callback()
+            } finally {
+                _uiState.update {
+                    require(it is EnvelopeUiState.Success)
+                    it.copy(activeBudget = null, activeError = null)
+                }
+            }
         }
     }
 
@@ -136,10 +152,24 @@ class EnvelopeViewModel @AssistedInject constructor(
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeBudget ?: return
         viewModelScope.launch {
-            if (!isNew) {
+            val result = if (!isNew) {
                 if (uiState.activeIsNew) repository.insertBudget(budget)
                 else repository.updateBudget(budget)
+            } else null
+
+            if (result != null && result != Success) {
+                _uiState.update {
+                    if (it !is EnvelopeUiState.Success) return@update it
+                    it.copy(
+                        activeError = when (result) {
+                            EnvelopeArchived -> ActiveError.EnvelopeArchived
+                            BudgetOverlaps -> ActiveError.BudgetOverlaps
+                        },
+                    )
+                }
+                return@launch
             }
+
             try {
                 callback()
             } finally {
@@ -147,6 +177,28 @@ class EnvelopeViewModel @AssistedInject constructor(
                     if (it !is EnvelopeUiState.Success) return@update it
                     it.copy(
                         budgets = it.budgets + (budget.id to budget),
+                        activeBudget = null,
+                        activeError = null,
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteActiveBudget(callback: suspend () -> Unit) {
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        val budget = uiState.activeBudget ?: return
+        viewModelScope.launch {
+            if (!isNew && !uiState.activeIsNew)
+                repository.deleteBudget(budget.id)
+            try {
+                callback()
+            } finally {
+                _uiState.update {
+                    if (it !is EnvelopeUiState.Success) return@update it
+                    it.copy(
+                        budgets = it.budgets - budget.id,
                         activeBudget = null,
                     )
                 }

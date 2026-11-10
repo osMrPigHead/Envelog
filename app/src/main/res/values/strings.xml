@@ -40,4 +40,7 @@
     <string name="name">Name</string>
     <string name="envelope_budgeted">Budgeted</string>
     <string name="budget_title">Budget</string>
+    <string name="delete">Delete</string>
+    <string name="budget_overlaps">Budget overlaps</string>
+    <string name="envelope_archived">Edits on archived envelope are prohibited</string>
 </resources>

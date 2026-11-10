@@ -30,4 +30,7 @@
     <string name="name">名称</string>
     <string name="envelope_budgeted">启用预算</string>
     <string name="budget_title">预算</string>
+    <string name="delete">删除</string>
+    <string name="budget_overlaps">预算区间重叠</string>
+    <string name="envelope_archived">不可编辑已归档的信封</string>
 </resources>

@@ -36,8 +36,9 @@ private fun Success(
     openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
-    closeActiveBudget: () -> Unit,
+    closeActiveBudget: (suspend () -> Unit) -> Unit,
     saveActiveBudget: (suspend () -> Unit) -> Unit,
+    deleteActiveBudget: (suspend () -> Unit) -> Unit,
     save: () -> Unit,
     cancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -92,10 +93,15 @@ private fun Success(
                     }
                 }
 
+                LaunchedEffect(uiState.activeError, sheetState.currentValue) {
+                    if (uiState.activeError != null && sheetState.currentValue == SheetValue.Hidden)
+                        sheetState.show()
+                }
+
                 ModalBottomSheet(
                     onDismissRequest = {
                         numKeypadHost.cancel()
-                        closeActiveBudget()
+                        saveActiveBudget {}
                     },
                     sheetState = sheetState,
                 ) {
@@ -128,6 +134,9 @@ private fun Success(
                             ),
                             fieldId = uiState.fieldId,
                             onSave = { saveActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
+                            onCancel = { closeActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
+                            onDelete = { deleteActiveBudget(uiContext.wrapSuspending(sheetState::hide)) },
+                            error = uiState.activeError,
                             modifier = Modifier
                                 .padding(innerPadding)
                                 .padding(dimensionResource(R.dimen.spacingLarge)),
@@ -147,8 +156,9 @@ fun EnvelopeScreen(
     openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
     updateActiveBudget: (Budget) -> Unit,
-    closeActiveBudget: () -> Unit,
+    closeActiveBudget: (suspend () -> Unit) -> Unit,
     saveActiveBudget: (suspend () -> Unit) -> Unit,
+    deleteActiveBudget: (suspend () -> Unit) -> Unit,
     save: () -> Unit,
     cancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -174,6 +184,7 @@ fun EnvelopeScreen(
             updateActiveBudget,
             closeActiveBudget,
             saveActiveBudget,
+            deleteActiveBudget,
             save,
             cancel,
             modifier,
