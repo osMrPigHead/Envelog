@@ -2,21 +2,18 @@ package cn.osmrpighead.envelog.data.repository.room
 
 import androidx.room3.withWriteTransaction
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
-import cn.osmrpighead.envelog.core.time.SpanMatchMode
-import cn.osmrpighead.envelog.core.time.SpanMatchMode.*
-import cn.osmrpighead.envelog.core.time.toLocalDate
+import cn.osmrpighead.envelog.core.time.hasOverlap
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
-import cn.osmrpighead.envelog.data.model.Budget
-import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.*
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.data.repository.ArchiveResult
+import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
+import cn.osmrpighead.envelog.data.repository.DeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
-import cn.osmrpighead.envelog.data.repository.room.mapper.toEntity
 import cn.osmrpighead.envelog.data.repository.room.mapper.toDomain
+import cn.osmrpighead.envelog.data.repository.room.mapper.toEntity
 import cn.osmrpighead.envelog.util.toSetIfNonDuplicates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -39,77 +36,90 @@ class RoomEnvelogRepository @Inject constructor(
         yearMonth: YearMonth,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<EnvelopeSummary>> =
-        envelopeDao.observeEnvelopeSummaries(today, yearMonth, dateSpan.startDate, dateSpan.endDate)
+        envelopeDao.observeSummaries(today, yearMonth, dateSpan.startDate, dateSpan.endDate)
             .map { rows -> rows.map { it.toDomain() } }
 
     override fun observeAllocations(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<AllocationWithInfo>> =
-        expenditureAllocationDao.observeAllocations(envelopeId, dateSpan.startDate, dateSpan.endDate)
+        expenditureAllocationDao.observe(envelopeId, dateSpan.startDate, dateSpan.endDate)
             .map { rows -> rows.map { it.toDomain() } }
-
-    override fun observeBudgets(
-        envelopeId: EnvelopeId,
-        dateSpan: HalfOpenDateSpan,
-        mode: SpanMatchMode,
-    ): Flow<List<Budget>> = when (mode) {
-        Overlaps -> budgetDao.observeBudgetOverlaps(envelopeId, dateSpan.startDate, dateSpan.endDate)
-            .map { rows -> rows.map { it.toDomain() } }
-
-        StartWithin -> TODO()
-        EndWithin -> TODO()
-        AttributedMonth -> throw IllegalArgumentException()
-    }
 
     override fun observeBudgets(
         envelopeId: EnvelopeId,
         attributedMonth: YearMonth,
-    ): Flow<List<Budget>> = budgetDao.observeBudgetAttributedMonth(envelopeId, attributedMonth)
+    ): Flow<List<Budget>> = budgetDao.observe(envelopeId, attributedMonth)
+        .map { rows -> rows.map { it.toDomain() } }
+
+    override fun observeBudgets(
+        envelopeId: EnvelopeId,
+        dateSpan: HalfOpenDateSpan,
+    ): Flow<List<Budget>> = budgetDao.observeOverlaps(envelopeId, dateSpan.startDate, dateSpan.endDate)
         .map { rows -> rows.map { it.toDomain() } }
 
     override fun observeDailyAllocationOverview(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<DailyAllocationSummary>> =
-        expenditureAllocationDao.observeDailyAllocationSummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
+        expenditureAllocationDao.observeDailySummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
 
-    override suspend fun getEnvelopeById(id: EnvelopeId): Envelope =
-        envelopeDao.getById(id)?.toDomain() ?: throw NoSuchElementException()
+    override suspend fun getEnvelope(id: EnvelopeId): Envelope =
+        envelopeDao.get(id)?.toDomain() ?: throw NoSuchElementException()
 
     override suspend fun updateEnvelope(envelope: Envelope) {
         envelopeDao.update(envelope.toEntity())
     }
 
-    override suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>) {
+    override suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>): BudgetWriteResult {
+        if (budgets.map { it.dateSpan }.hasOverlap()) return BudgetWriteResult.BudgetOverlaps
         db.withWriteTransaction {
             envelopeDao.insert(envelope.toEntity())
             budgetDao.insert(budgets.map { it.toEntity() })
         }
+        return BudgetWriteResult.Success
     }
 
     override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =
-        when (envelopeDao.archiveEnvelopeById(id, clock.instant())) {
-            0 -> ArchiveResult.NotFound
+        when (envelopeDao.archive(id, clock.instant())) {
+            0 -> ArchiveResult.NotFoundOrAlreadyArchived
             else -> ArchiveResult.Archived
         }
 
-    override suspend fun updateBudget(budget: Budget) {
+    private suspend fun budgetOverlaps(budget: Budget) =
+        budgetDao.countOverlaps(budget.envelopeId, budget.id, budget.dateSpan.startDate, budget.dateSpan.endDate) != 0L
+
+    override suspend fun updateBudget(budget: Budget): BudgetWriteResult = db.withWriteTransaction {
+        if (envelopeDao.getArchived(budget.envelopeId) != null)
+            return@withWriteTransaction BudgetWriteResult.EnvelopeArchived
+        if (budgetOverlaps(budget))
+            return@withWriteTransaction BudgetWriteResult.BudgetOverlaps
         budgetDao.update(budget.normalize().toEntity())
+        return@withWriteTransaction BudgetWriteResult.Success
     }
 
-    override suspend fun insertBudget(budget: Budget) {
+    override suspend fun insertBudget(budget: Budget): BudgetWriteResult = db.withWriteTransaction {
+        if (envelopeDao.getArchived(budget.envelopeId) != null)
+            return@withWriteTransaction BudgetWriteResult.EnvelopeArchived
+        if (budgetOverlaps(budget))
+            return@withWriteTransaction BudgetWriteResult.BudgetOverlaps
         budgetDao.insert(budget.normalize().toEntity())
+        return@withWriteTransaction BudgetWriteResult.Success
     }
+
+    override suspend fun deleteBudget(id: BudgetId): DeleteResult =
+        when (budgetDao.delete(id, clock.instant())) {
+            0 -> DeleteResult.NotFoundOrAlreadyDeleted
+            else -> DeleteResult.Deleted
+        }
 
     override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) {
         db.withWriteTransaction {
             require(expenditure.allocations.isNotEmpty())
-            require(expenditure.happenedAt.toLocalDate(expenditure.happenedZone) == expenditure.happenedDate)
             require(expenditure.allocations.all { it.expenditureId == expenditure.id && it.amount > 0 })
             val envelopeIds = expenditure.allocations.map { it.envelopeId }.toSetIfNonDuplicates()
             requireNotNull(envelopeIds)
-            val envelopes = envelopeDao.getByIds(envelopeIds)
+            val envelopes = envelopeDao.get(envelopeIds)
             require(envelopes.all { it.archivedAt == null })
 
             expenditureDao.insert(expenditure.toEntity())

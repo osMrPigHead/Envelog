@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.data.model
 
+import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.util.UUIDGenerator
 import cn.osmrpighead.envelog.util.UUIDSerializer
 import kotlinx.serialization.Serializable
@@ -33,10 +34,11 @@ sealed interface Entry {
 data class ExpenditureSubmission(
     override val id: ExpenditureId,
     override val happenedAt: Instant,
-    override val happenedDate: LocalDate,
     override val happenedZone: ZoneId,
     val allocations: List<ExpenditureAllocation>,
-) : Entry
+) : Entry {
+    override val happenedDate: LocalDate = happenedAt.toLocalDate(happenedZone)
+}
 
 data class ExpenditureMetaInfo(
     override val id: ExpenditureId,

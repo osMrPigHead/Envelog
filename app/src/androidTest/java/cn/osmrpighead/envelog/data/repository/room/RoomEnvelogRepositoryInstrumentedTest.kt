@@ -78,7 +78,6 @@ class RoomEnvelogRepositoryInstrumentedTest {
         val submission = ExpenditureSubmission(
             id = expenditureId,
             happenedAt = at(happenedDate),
-            happenedDate = happenedDate,
             happenedZone = zone,
             allocations = listOf(
                 ExpenditureAllocation(expenditureId, envelopeA, 6_000),
@@ -103,7 +102,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         seedEnvelopes()
 
         assertEquals(ArchiveResult.Archived, repository.archiveEnvelope(envelopeA))
-        assertNotNull(database.envelopeDao().getById(envelopeA)?.archivedAt)
-        assertEquals(ArchiveResult.NotFound, repository.archiveEnvelope(envelopeA))
+        assertNotNull(database.envelopeDao().get(envelopeA)?.archivedAt)
+        assertEquals(ArchiveResult.NotFoundOrAlreadyArchived, repository.archiveEnvelope(envelopeA))
     }
 }

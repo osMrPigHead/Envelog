@@ -2,7 +2,6 @@ package cn.osmrpighead.envelog.data.repository
 
 import android.app.Application
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
-import cn.osmrpighead.envelog.core.time.SpanMatchMode
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.model.Budget
@@ -88,17 +87,19 @@ class RoomEnvelogRepositoryQueryTest {
     }
 
     @Test
-    fun observeBudgets_overlapsModeMapsBudgetEntities() = runTest {
+    fun observeBudgets_mapsBudgetEntitiesByAttributedMonth() = runTest {
         val current = RoomTestData.budget(
             id = RoomTestData.budgetA,
             start = RoomTestData.monthStart,
             end = RoomTestData.monthEnd,
+            attributedMonth = RoomTestData.month,
             amount = 100_000,
         )
         val nextMonth = RoomTestData.budget(
             id = RoomTestData.budgetB,
             start = RoomTestData.monthEnd,
             end = RoomTestData.monthEnd.plusMonths(1),
+            attributedMonth = RoomTestData.month.plusMonths(1),
             amount = 80_000,
         )
 
@@ -120,11 +121,7 @@ class RoomEnvelogRepositoryQueryTest {
                     amount = 100_000,
                 ),
             ),
-            repository.observeBudgets(
-                RoomTestData.envelopeA,
-                RoomTestData.month.toHalfOpenDateSpan(),
-                SpanMatchMode.Overlaps,
-            ).first(),
+            repository.observeBudgets(RoomTestData.envelopeA, RoomTestData.month).first(),
         )
     }
 

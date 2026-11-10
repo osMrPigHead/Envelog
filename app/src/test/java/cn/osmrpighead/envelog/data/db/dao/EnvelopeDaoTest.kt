@@ -37,7 +37,7 @@ class EnvelopeDaoTest {
     }
 
     private suspend fun summaries(): List<EnvelopeSummaryRow> =
-        dao.observeEnvelopeSummaries(
+        dao.observeSummaries(
             today = RoomTestData.today,
             yearMonth = RoomTestData.month,
             spanStart = RoomTestData.monthStart,
@@ -209,9 +209,9 @@ class EnvelopeDaoTest {
         val first = Instant.parse("2026-10-20T04:00:00Z")
         val second = Instant.parse("2026-10-21T04:00:00Z")
 
-        assertEquals(1, dao.archiveEnvelopeById(RoomTestData.envelopeA, first))
-        assertEquals(0, dao.archiveEnvelopeById(RoomTestData.envelopeA, second))
-        assertEquals(first, dao.getById(RoomTestData.envelopeA)?.archivedAt)
+        assertEquals(1, dao.archive(RoomTestData.envelopeA, first))
+        assertEquals(0, dao.archive(RoomTestData.envelopeA, second))
+        assertEquals(first, dao.get(RoomTestData.envelopeA)?.archivedAt)
     }
 
     @Test
@@ -223,7 +223,7 @@ class EnvelopeDaoTest {
             ),
         )
 
-        val found = dao.getByIds(setOf(RoomTestData.envelopeA, RoomTestData.envelopeId(0xEE), RoomTestData.envelopeB))
+        val found = dao.get(setOf(RoomTestData.envelopeA, RoomTestData.envelopeId(0xEE), RoomTestData.envelopeB))
 
         assertEquals(
             setOf(RoomTestData.envelopeA, RoomTestData.envelopeB),
@@ -235,7 +235,7 @@ class EnvelopeDaoTest {
     fun getById_returnsNullForUnknownEnvelope() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
-        assertNull(dao.getById(RoomTestData.envelopeId(0xEE)))
+        assertNull(dao.get(RoomTestData.envelopeId(0xEE)))
     }
 
     @Test
@@ -277,12 +277,12 @@ class EnvelopeDaoTest {
 
     @Test
     fun getByIds_returnsEmptyListWhenDatabaseIsEmpty() = runTest {
-        assertTrue(dao.getByIds(setOf(RoomTestData.envelopeA)).isEmpty())
+        assertTrue(dao.get(setOf(RoomTestData.envelopeA)).isEmpty())
     }
 
     @Test
     fun archiveEnvelopeById_returnsZeroWhenEnvelopeIsMissing() = runTest {
-        assertEquals(0, dao.archiveEnvelopeById(RoomTestData.envelopeA, Instant.parse("2026-10-20T04:00:00Z")))
+        assertEquals(0, dao.archive(RoomTestData.envelopeA, Instant.parse("2026-10-20T04:00:00Z")))
     }
 
     @Test
@@ -290,7 +290,7 @@ class EnvelopeDaoTest {
         val archivedAt = Instant.parse("2026-10-01T04:00:00Z")
         database.seed(envelopes = listOf(RoomTestData.envelope(archivedAt = archivedAt)))
 
-        assertEquals(archivedAt, dao.getById(RoomTestData.envelopeA)?.archivedAt)
+        assertEquals(archivedAt, dao.get(RoomTestData.envelopeA)?.archivedAt)
     }
 
     @Test
@@ -303,7 +303,7 @@ class EnvelopeDaoTest {
             ),
         )
 
-        val found = dao.getByIds(setOf(RoomTestData.envelopeA, RoomTestData.envelopeB))
+        val found = dao.get(setOf(RoomTestData.envelopeA, RoomTestData.envelopeB))
 
         assertEquals(2, found.size)
         assertNull(found.single { it.id == RoomTestData.envelopeA }.archivedAt)
@@ -328,14 +328,14 @@ class EnvelopeDaoTest {
 
         dao.update(updated)
 
-        assertEquals(updated, dao.getById(RoomTestData.envelopeA))
-        assertEquals("购物", dao.getById(RoomTestData.envelopeB)?.name)
+        assertEquals(updated, dao.get(RoomTestData.envelopeA))
+        assertEquals("购物", dao.get(RoomTestData.envelopeB)?.name)
     }
 
     @Test
     fun updateEnvelope_missingEnvelope_isNoOp() = runTest {
         dao.update(RoomTestData.envelope(name = "新名字"))
 
-        assertNull(dao.getById(RoomTestData.envelopeA))
+        assertNull(dao.get(RoomTestData.envelopeA))
     }
 }

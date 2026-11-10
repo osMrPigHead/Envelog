@@ -36,7 +36,7 @@ class DemoDatabaseSeederTest {
     }
 
     private suspend fun totalAllocated(): Long = database.envelopeDao()
-        .observeEnvelopeSummaries(
+        .observeSummaries(
             today = RoomTestData.today,
             yearMonth = RoomTestData.month,
             spanStart = RoomTestData.monthStart,
@@ -63,6 +63,6 @@ class DemoDatabaseSeederTest {
         seeder.seedIfNeeded()
 
         assertEquals(1, database.seedDao().envelopeCount())
-        assertEquals("已有信封", database.envelopeDao().getById(RoomTestData.envelopeA)?.name)
+        assertEquals("已有信封", database.envelopeDao().get(RoomTestData.envelopeA)?.name)
     }
 }

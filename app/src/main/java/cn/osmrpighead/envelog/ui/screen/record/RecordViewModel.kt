@@ -5,14 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
 import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
-import cn.osmrpighead.envelog.ui.model.AppStateHolder
-import com.fasterxml.uuid.NoArgGenerator
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -26,18 +24,15 @@ import java.time.Clock
 class RecordViewModel @AssistedInject constructor(
     @Assisted route: AppRoute.Record,
     @Assisted private val onCancel: () -> Unit,
-    appState: AppStateHolder,
     clock: Clock,
-    uuidGenerator: NoArgGenerator,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
     private val envelopeId = route.id
 
-    private val today = appState.today.value
     private val zone = clock.zone
     private val instant = clock.instant()
 
-    private val expenditureId = ExpenditureId(uuidGenerator.generate())
+    private val expenditureId = ExpenditureId.generate()
     private var submission: Job? = null
 
     private val host = NumKeypadHostState()
@@ -60,8 +55,7 @@ class RecordViewModel @AssistedInject constructor(
             repository.recordExpenditure(
                 ExpenditureSubmission(
                     id = expenditureId,
-                    happenedAt = instant,
-                    happenedDate = today,
+                    happenedAt = instant, // TODO: User select
                     happenedZone = zone,
                     allocations = listOf(
                         ExpenditureAllocation(

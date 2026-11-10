@@ -65,6 +65,7 @@ class AllocationQueryInstrumentedTest {
         value: Long,
         date: LocalDate,
         vararg shares: Pair<EnvelopeId, Long>,
+        deletedAt: Instant? = null,
     ): Pair<ExpenditureEntity, List<ExpenditureAllocationEntity>> {
         val id = ExpenditureId(UUID(0L, value))
         val expenditure = ExpenditureEntity(
@@ -72,7 +73,7 @@ class AllocationQueryInstrumentedTest {
             happenedAt = at(date),
             happenedDate = date,
             happenedZone = zone,
-            deletedAt = null,
+            deletedAt = deletedAt,
         )
         return expenditure to shares.map { (envelopeId, amount) ->
             ExpenditureAllocationEntity(id, envelopeId, amount)
@@ -92,10 +93,10 @@ class AllocationQueryInstrumentedTest {
     }
 
     private suspend fun allocations(): List<AllocationWithInfoRow> =
-        dao.observeAllocations(envelopeA, monthStart, monthEnd).first()
+        dao.observe(envelopeA, monthStart, monthEnd).first()
 
     private suspend fun daily(): List<DailyAllocationSummary> =
-        dao.observeDailyAllocationSummaries(envelopeA, monthStart, monthEnd).first()
+        dao.observeDailySummaries(envelopeA, monthStart, monthEnd).first()
 
     @Test
     fun allocations_filterEnvelopeAndSpanAndCarryExpenditureInfo() = runBlocking {
@@ -167,5 +168,22 @@ class AllocationQueryInstrumentedTest {
             rows.associate { it.happenedDate to it.amount },
         )
         assertEquals(setOf(envelopeA), rows.map { it.envelopeId }.toSet())
+    }
+
+    @Test
+    fun allocationsAndDailySummaries_excludeSoftDeletedExpenditures() = runBlocking {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        seed(
+            listOf(
+                record(0xB1, LocalDate.of(2026, 10, 5), envelopeA to 6_000),
+                record(0xB2, LocalDate.of(2026, 10, 5), envelopeA to 9_000, deletedAt = deletedAt),
+                record(0xB3, LocalDate.of(2026, 10, 6), envelopeA to 2_000, deletedAt = deletedAt),
+            ),
+        )
+
+        assertEquals(1, allocations().size)
+        assertEquals(6_000L, allocations().single().amount)
+        assertEquals(1, daily().size)
+        assertEquals(6_000L, daily().single().amount)
     }
 }

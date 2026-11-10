@@ -16,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.Instant
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -39,13 +40,13 @@ class ExpenditureAllocationDaoTest {
         spanStart: LocalDate = RoomTestData.monthStart,
         spanEnd: LocalDate = RoomTestData.monthEnd,
     ): List<AllocationWithInfoRow> =
-        dao.observeAllocations(RoomTestData.envelopeA, spanStart, spanEnd).first()
+        dao.observe(RoomTestData.envelopeA, spanStart, spanEnd).first()
 
     private suspend fun daily(
         spanStart: LocalDate = RoomTestData.monthStart,
         spanEnd: LocalDate = RoomTestData.monthEnd,
     ): List<DailyAllocationSummary> =
-        dao.observeDailyAllocationSummaries(RoomTestData.envelopeA, spanStart, spanEnd).first()
+        dao.observeDailySummaries(RoomTestData.envelopeA, spanStart, spanEnd).first()
 
     private suspend fun seedMixedRecords() {
         val (firstDay, firstDayShares) = RoomTestData.record(
@@ -79,15 +80,28 @@ class ExpenditureAllocationDaoTest {
             LocalDate.of(2026, 9, 30),
             RoomTestData.envelopeA to 3_000,
         )
+        val (deleted, deletedShares) = RoomTestData.record(
+            0xB7,
+            LocalDate.of(2026, 10, 5),
+            RoomTestData.envelopeA to 9_000,
+        )
 
         database.seed(
             envelopes = listOf(
                 RoomTestData.envelope(RoomTestData.envelopeA),
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
-            expenditures = listOf(firstDay, sameDay, anotherSameDay, lastDay, nextMonth, previousMonth),
+            expenditures = listOf(
+                firstDay,
+                sameDay,
+                anotherSameDay,
+                lastDay,
+                nextMonth,
+                previousMonth,
+                deleted.copy(deletedAt = Instant.parse("2026-10-19T04:00:00Z")),
+            ),
             allocations = firstDayShares + sameDayShares + anotherSameDayShares +
-                lastDayShares + nextMonthShares + previousMonthShares,
+                lastDayShares + nextMonthShares + previousMonthShares + deletedShares,
         )
     }
 
@@ -173,5 +187,28 @@ class ExpenditureAllocationDaoTest {
         seedMixedRecords()
 
         assertEquals(7_000L, daily().single { it.happenedDate == LocalDate.of(2026, 10, 5) }.amount)
+    }
+
+    @Test
+    fun observeAllocations_excludesSoftDeletedExpenditures() = runTest {
+        seedMixedRecords()
+
+        assertEquals(
+            4,
+            allocations().size,
+        )
+        assertTrue(
+            allocations().none { it.expenditureId == RoomTestData.expenditureId(0xB7) },
+        )
+    }
+
+    @Test
+    fun observeDailyAllocationSummaries_excludesSoftDeletedExpenditures() = runTest {
+        seedMixedRecords()
+
+        assertEquals(
+            7_000L,
+            daily().single { it.happenedDate == LocalDate.of(2026, 10, 5) }.amount,
+        )
     }
 }

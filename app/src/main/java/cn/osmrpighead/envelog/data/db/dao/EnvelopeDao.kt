@@ -96,21 +96,24 @@ interface EnvelopeDao {
             LEFT JOIN priorAllocated     pa ON ev.id = pa.envelopeId
         """,
     )
-    fun observeEnvelopeSummaries(
+    fun observeSummaries(
         today: LocalDate,
         yearMonth: YearMonth,
         spanStart: LocalDate,
         spanEnd: LocalDate,
     ): Flow<List<EnvelopeSummaryRow>>
 
+    @Query("SELECT archivedAt FROM envelope WHERE id = :id")
+    suspend fun getArchived(id: EnvelopeId): Instant?
+
     @Query("SELECT * FROM envelope WHERE id = :id")
-    suspend fun getById(id: EnvelopeId): EnvelopeEntity?
+    suspend fun get(id: EnvelopeId): EnvelopeEntity?
 
     @Query("SELECT * FROM envelope WHERE id IN (:ids)")
-    suspend fun getByIds(ids: Set<EnvelopeId>): List<EnvelopeEntity>
+    suspend fun get(ids: Set<EnvelopeId>): List<EnvelopeEntity>
 
     @Query("UPDATE envelope SET archivedAt = :now WHERE id = :id AND archivedAt IS NULL")
-    suspend fun archiveEnvelopeById(id: EnvelopeId, now: Instant): Int
+    suspend fun archive(id: EnvelopeId, now: Instant): Int
 
     @Update
     suspend fun update(entity: EnvelopeEntity)

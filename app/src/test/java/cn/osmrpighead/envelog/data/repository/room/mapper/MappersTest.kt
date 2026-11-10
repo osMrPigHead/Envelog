@@ -10,8 +10,10 @@ import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
+import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
 import cn.osmrpighead.envelog.data.model.ExpenditureId
 import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
+import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import org.junit.Assert.assertEquals
@@ -32,6 +34,14 @@ class MappersTest {
     private val start = LocalDate.of(2026, 10, 1)
     private val end = LocalDate.of(2026, 11, 1)
     private val happenedAt = Instant.parse("2026-10-20T04:00:00Z")
+    private val expenditure = ExpenditureSubmission(
+        id = expenditureId,
+        happenedAt = happenedAt,
+        happenedZone = zone,
+        allocations = listOf(
+            ExpenditureAllocation(expenditureId, envelopeId, 12_345),
+        ),
+    )
 
     @Test
     fun budgetEntityToDomain_copiesAllFields() {
@@ -81,6 +91,38 @@ class MappersTest {
         val envelope = Envelope(envelopeId, "旧信封", isBudgeted = true, archived = true)
 
         assertThrows(IllegalArgumentException::class.java) { envelope.toEntity() }
+    }
+
+    @Test
+    fun expenditureSubmissionToEntity_copiesEntryFields() {
+        val entity = expenditure.toEntity()
+
+        assertEquals(expenditureId, entity.id)
+        assertEquals(expenditure.happenedAt, entity.happenedAt)
+        assertEquals(expenditure.happenedDate, entity.happenedDate)
+        assertEquals(zone, entity.happenedZone)
+    }
+
+    @Test
+    fun expenditureSubmissionToEntity_startsNotDeleted() {
+        assertNull(expenditure.toEntity().deletedAt)
+    }
+
+    @Test
+    fun expenditureAllocationToEntity_copiesReferencesAndAmount() {
+        val entity = expenditure.allocations.single().toEntity()
+
+        assertEquals(expenditureId, entity.expenditureId)
+        assertEquals(envelopeId, entity.envelopeId)
+        assertEquals(12_345L, entity.amount)
+    }
+
+    @Test
+    fun expenditureAllocationToEntity_keepsAmountIndependentOfOtherAllocations() {
+        val other = ExpenditureAllocation(expenditureId, EnvelopeId(UUID(0L, 3L)), 1)
+
+        assertEquals(12_345L, expenditure.allocations.single().toEntity().amount)
+        assertEquals(1L, other.toEntity().amount)
     }
 
     @Test

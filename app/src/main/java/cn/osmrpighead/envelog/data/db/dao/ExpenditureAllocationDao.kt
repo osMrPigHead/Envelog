@@ -21,13 +21,14 @@ interface ExpenditureAllocationDao {
                    ex.happenedAt, ex.happenedDate, ex.happenedZone
             FROM expenditureAllocation ea
             JOIN expenditure ex
-              ON ea.expenditureId = ex.id
+              ON ex.deletedAt IS NULL
+             AND ea.expenditureId = ex.id
              AND ex.happenedDate >= :spanStart
              AND ex.happenedDate < :spanEnd
             WHERE ea.envelopeId = :envelopeId
         """,
     )
-    fun observeAllocations(
+    fun observe(
         envelopeId: EnvelopeId,
         spanStart: LocalDate,
         spanEnd: LocalDate,
@@ -38,14 +39,15 @@ interface ExpenditureAllocationDao {
             SELECT ea.envelopeId, ex.happenedDate, SUM(ea.amount) as amount
             FROM expenditureAllocation ea
             JOIN expenditure ex
-              ON ea.expenditureId = ex.id
+              ON ex.deletedAt IS NULL
+             AND ea.expenditureId = ex.id
              AND ex.happenedDate >= :spanStart
              AND ex.happenedDate < :spanEnd
             WHERE ea.envelopeId = :envelopeId
             GROUP BY ex.happenedDate
         """,
     )
-    fun observeDailyAllocationSummaries(
+    fun observeDailySummaries(
         envelopeId: EnvelopeId,
         spanStart: LocalDate,
         spanEnd: LocalDate,

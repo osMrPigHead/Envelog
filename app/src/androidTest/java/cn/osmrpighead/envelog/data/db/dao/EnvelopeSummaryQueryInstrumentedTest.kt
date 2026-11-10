@@ -113,7 +113,7 @@ class EnvelopeSummaryQueryInstrumentedTest {
         }
     }
 
-    private suspend fun summaries(): List<EnvelopeSummaryRow> = dao.observeEnvelopeSummaries(
+    private suspend fun summaries(): List<EnvelopeSummaryRow> = dao.observeSummaries(
         today = today,
         yearMonth = month,
         spanStart = monthStart,

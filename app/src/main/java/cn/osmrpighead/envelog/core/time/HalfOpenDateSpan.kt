@@ -1,7 +1,5 @@
 package cn.osmrpighead.envelog.core.time
 
-import android.R.attr.end
-import android.R.attr.start
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -20,7 +18,7 @@ data class HalfOpenDateSpan(
 
     fun splitIntoWeeks(firstDayOfWeek: DayOfWeek): List<HalfOpenDateSpan> = buildList {
         var weekStart = startDate
-        var weekEnd = startDate.nextOrSame(firstDayOfWeek)
+        var weekEnd = startDate.next(firstDayOfWeek)
         while (weekEnd < endDate) {
             add(weekStart untilExclusive weekEnd)
             weekStart = weekEnd
@@ -51,4 +49,10 @@ data class HalfOpenDateSpan(
     operator fun contains(date: LocalDate): Boolean = date in startDate..<endDate
 
     fun toClosed() = ClosedDateSpan(startDate, endDate.minusDays(1))
+}
+
+fun Collection<HalfOpenDateSpan>.hasOverlap(): Boolean {
+    val sorted = filter { it.startDate < it.endDate }.sortedBy { it.startDate }
+    for (i in 1 until sorted.size) if (sorted[i - 1].endDate > sorted[i].startDate) return true
+    return false
 }

@@ -9,7 +9,6 @@ import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -21,7 +20,7 @@ import java.time.YearMonth
 import java.util.UUID
 
 /**
- * 在真实设备的 SQLite 上复验按区间查询预算的过滤行为。
+ * 在真实设备的 SQLite 上复验预算区间重叠计数。
  */
 @RunWith(AndroidJUnit4::class)
 class BudgetQueryInstrumentedTest {
@@ -78,11 +77,12 @@ class BudgetQueryInstrumentedTest {
         seedDao.insertBudgets(budgets)
     }
 
-    private suspend fun overlaps(): List<BudgetEntity> =
-        dao.observeBudgetOverlaps(envelopeA, monthStart, monthEnd).first()
+    private suspend fun overlaps(
+        budgetId: BudgetId = BudgetId(UUID(0L, 0xEF)),
+    ): Long = dao.countOverlaps(envelopeA, budgetId, monthStart, monthEnd)
 
     @Test
-    fun overlaps_returnsBudgetsCrossingOrInsideSpan() = runBlocking {
+    fun countOverlaps_countsBudgetsCrossingOrInsideSpan() = runBlocking {
         val wholeMonth = budget(0xD1, start = LocalDate.of(2026, 10, 1), end = LocalDate.of(2026, 11, 1))
         val crossesStart = budget(0xD2, start = LocalDate.of(2026, 9, 20), end = LocalDate.of(2026, 10, 5))
         val inside = budget(0xD3, start = LocalDate.of(2026, 10, 10), end = LocalDate.of(2026, 10, 12))
@@ -96,20 +96,29 @@ class BudgetQueryInstrumentedTest {
 
         seed(listOf(wholeMonth, crossesStart, inside, startsAtSpanEnd, otherEnvelope))
 
-        assertEquals(
-            setOf(wholeMonth.id, crossesStart.id, inside.id),
-            overlaps().map { it.id }.toSet(),
-        )
+        assertEquals(3L, overlaps())
     }
 
     @Test
-    fun overlaps_returnsEmptyWhenEveryBudgetStartsAfterSpan() = runBlocking {
+    fun countOverlaps_returnsZeroWhenEveryBudgetStartsAfterSpan() = runBlocking {
         seed(
             listOf(
                 budget(0xD1, start = LocalDate.of(2026, 11, 1), end = LocalDate.of(2026, 12, 1)),
             ),
         )
 
-        assertEquals(emptyList<BudgetEntity>(), overlaps())
+        assertEquals(0L, overlaps())
+    }
+
+    @Test
+    fun countOverlaps_excludesGivenBudgetId() = runBlocking {
+        seed(
+            listOf(
+                budget(0xD1, start = LocalDate.of(2026, 10, 1), end = LocalDate.of(2026, 11, 1)),
+            ),
+        )
+
+        assertEquals(0L, overlaps(BudgetId(UUID(0L, 0xD1))))
+        assertEquals(1L, overlaps(BudgetId(UUID(0L, 0xD2))))
     }
 }

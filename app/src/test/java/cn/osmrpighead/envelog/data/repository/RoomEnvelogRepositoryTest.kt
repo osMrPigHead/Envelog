@@ -65,11 +65,9 @@ class RoomEnvelogRepositoryTest {
         date: LocalDate = RoomTestData.monthStart.plusDays(4),
         id: ExpenditureId = expenditureId,
         happenedAt: Instant = RoomTestData.at(date),
-        happenedDate: LocalDate = date,
     ): ExpenditureSubmission = ExpenditureSubmission(
         id = id,
         happenedAt = happenedAt,
-        happenedDate = happenedDate,
         happenedZone = RoomTestData.zone,
         allocations = allocations,
     )
@@ -221,17 +219,17 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
-    fun archiveEnvelope_archivesOnceThenReportsNotFound() = runTest {
+    fun archiveEnvelope_archivesOnceThenReportsNotFoundOrAlreadyArchived() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertEquals(ArchiveResult.Archived, repository.archiveEnvelope(RoomTestData.envelopeA))
-        assertNotNull(database.envelopeDao().getById(RoomTestData.envelopeA)?.archivedAt)
-        assertEquals(ArchiveResult.NotFound, repository.archiveEnvelope(RoomTestData.envelopeA))
+        assertNotNull(database.envelopeDao().get(RoomTestData.envelopeA)?.archivedAt)
+        assertEquals(ArchiveResult.NotFoundOrAlreadyArchived, repository.archiveEnvelope(RoomTestData.envelopeA))
     }
 
     @Test
-    fun archiveEnvelope_reportsNotFoundForUnknownEnvelope() = runTest {
-        assertEquals(ArchiveResult.NotFound, repository.archiveEnvelope(RoomTestData.envelopeA))
+    fun archiveEnvelope_reportsNotFoundOrAlreadyArchivedForUnknownEnvelope() = runTest {
+        assertEquals(ArchiveResult.NotFoundOrAlreadyArchived, repository.archiveEnvelope(RoomTestData.envelopeA))
     }
 
     @Test
@@ -250,22 +248,6 @@ class RoomEnvelogRepositoryTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertRejected { repository.recordExpenditure(newExpenditure(allocations = emptyList())) }
-        assertNothingRecorded()
-    }
-
-    @Test
-    fun recordExpenditure_rejectsHappenedDateMismatch() = runTest {
-        database.seed(envelopes = listOf(RoomTestData.envelope()))
-
-        assertRejected {
-            repository.recordExpenditure(
-                newExpenditure(
-                    allocations = listOf(allocation(RoomTestData.envelopeA, 10_000)),
-                    date = RoomTestData.monthStart.plusDays(4),
-                    happenedDate = RoomTestData.monthStart.plusDays(5),
-                ),
-            )
-        }
         assertNothingRecorded()
     }
 
@@ -432,7 +414,7 @@ class RoomEnvelogRepositoryTest {
         assertEquals(ArchiveResult.Archived, repository.archiveEnvelope(RoomTestData.envelopeA))
         assertEquals(
             RoomTestData.at(RoomTestData.today),
-            database.envelopeDao().getById(RoomTestData.envelopeA)?.archivedAt,
+            database.envelopeDao().get(RoomTestData.envelopeA)?.archivedAt,
         )
     }
 }
