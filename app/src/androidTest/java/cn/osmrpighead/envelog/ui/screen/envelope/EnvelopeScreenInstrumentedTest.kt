@@ -51,6 +51,7 @@ class EnvelopeScreenInstrumentedTest {
     private var openedBudgetId: BudgetId? = null
     private var newBudgetDate: LocalDate? = null
     private var saveBudgetCalls = 0
+    private var deleteBudgetCalls = 0
     private var saveCalls = 0
     private var cancelCalls = 0
 
@@ -115,6 +116,22 @@ class EnvelopeScreenInstrumentedTest {
     }
 
     @Test
+    fun envelope_budgetSheetDeleteReportsCallback() {
+        val budget = InstrumentedTestData.budget(0xD3)
+        state.value = successState(activeBudget = budget)
+        setScreen()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNode(
+            hasText(context.getString(R.string.common_action_delete)) and hasClickAction() and hasButtonRole(),
+        ).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, deleteBudgetCalls) }
+    }
+
+    @Test
     fun envelope_backPressSavesAndCancels() {
         setScreen()
         composeRule.onNode(hasSetTextAction()).assertExists()
@@ -156,6 +173,7 @@ class EnvelopeScreenInstrumentedTest {
                         runBlocking { callback() }
                     },
                     saveActiveBudget = { saveBudgetCalls++ },
+                    deleteActiveBudget = { deleteBudgetCalls++ },
                     save = { saveCalls++ },
                     cancel = { cancelCalls++ },
                 )

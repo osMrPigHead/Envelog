@@ -64,6 +64,7 @@ class RecordScreenInstrumentedTest {
                         amountConsumer = consumer,
                         fieldId = fieldId,
                     ),
+                    back = {},
                     modifier = Modifier.fillMaxSize(),
                 )
             }

@@ -15,12 +15,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -122,6 +124,140 @@ class RoomEnvelogRepositoryQueryTest {
                 ),
             ),
             repository.observeBudgets(RoomTestData.envelopeA, RoomTestData.month).first(),
+        )
+    }
+
+    @Test
+    fun observeBudgetsBySpan_selectsOverlappingBudgetsOfTheEnvelope() = runTest {
+        val septemberAttributed = RoomTestData.budget(
+            id = RoomTestData.budgetB,
+            start = LocalDate.of(2026, 9, 20),
+            end = LocalDate.of(2026, 10, 5),
+            attributedMonth = RoomTestData.month.minusMonths(1),
+            amount = 60_000,
+        )
+
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    start = RoomTestData.monthStart,
+                    end = RoomTestData.monthEnd,
+                    amount = 100_000,
+                ),
+                septemberAttributed,
+                RoomTestData.budget(
+                    id = RoomTestData.budgetC,
+                    start = LocalDate.of(2026, 10, 10),
+                    end = LocalDate.of(2026, 10, 12),
+                    amount = 30_000,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetId(0xD4),
+                    start = RoomTestData.monthEnd,
+                    end = RoomTestData.monthEnd.plusMonths(1),
+                    amount = 70_000,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetId(0xD5),
+                    start = RoomTestData.monthStart.minusMonths(1),
+                    end = RoomTestData.monthStart,
+                    amount = 40_000,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetId(0xD6),
+                    envelopeId = RoomTestData.envelopeB,
+                    start = RoomTestData.monthStart,
+                    end = RoomTestData.monthEnd,
+                    amount = 80_000,
+                ),
+            ),
+        )
+
+        assertEquals(
+            setOf(
+                Budget(
+                    id = RoomTestData.budgetA,
+                    envelopeId = RoomTestData.envelopeA,
+                    dateSpan = HalfOpenDateSpan(RoomTestData.monthStart, RoomTestData.monthEnd),
+                    attributedMonth = RoomTestData.month,
+                    amount = 100_000,
+                ),
+                Budget(
+                    id = RoomTestData.budgetB,
+                    envelopeId = RoomTestData.envelopeA,
+                    dateSpan = HalfOpenDateSpan(LocalDate.of(2026, 9, 20), LocalDate.of(2026, 10, 5)),
+                    attributedMonth = RoomTestData.month.minusMonths(1),
+                    amount = 60_000,
+                ),
+                Budget(
+                    id = RoomTestData.budgetC,
+                    envelopeId = RoomTestData.envelopeA,
+                    dateSpan = HalfOpenDateSpan(LocalDate.of(2026, 10, 10), LocalDate.of(2026, 10, 12)),
+                    attributedMonth = RoomTestData.month,
+                    amount = 30_000,
+                ),
+            ),
+            repository.observeBudgets(
+                RoomTestData.envelopeA,
+                RoomTestData.month.toHalfOpenDateSpan(),
+            ).first().toSet(),
+        )
+    }
+
+    @Test
+    fun observeBudgetsBySpan_excludesSoftDeletedBudgets() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(id = RoomTestData.budgetA, amount = 100_000),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetB,
+                    amount = 50_000,
+                    deletedAt = Instant.parse("2026-10-19T04:00:00Z"),
+                ),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                Budget(
+                    id = RoomTestData.budgetA,
+                    envelopeId = RoomTestData.envelopeA,
+                    dateSpan = HalfOpenDateSpan(RoomTestData.monthStart, RoomTestData.monthEnd),
+                    attributedMonth = RoomTestData.month,
+                    amount = 100_000,
+                ),
+            ),
+            repository.observeBudgets(
+                RoomTestData.envelopeA,
+                RoomTestData.month.toHalfOpenDateSpan(),
+            ).first(),
+        )
+    }
+
+    @Test
+    fun observeBudgetsBySpan_returnsEmptyWhenNothingOverlaps() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    start = RoomTestData.monthEnd,
+                    end = RoomTestData.monthEnd.plusMonths(1),
+                ),
+            ),
+        )
+
+        assertTrue(
+            repository.observeBudgets(
+                RoomTestData.envelopeA,
+                RoomTestData.month.toHalfOpenDateSpan(),
+            ).first().isEmpty(),
         )
     }
 

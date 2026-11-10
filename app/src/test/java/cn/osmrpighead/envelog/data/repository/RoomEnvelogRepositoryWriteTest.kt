@@ -357,4 +357,70 @@ class RoomEnvelogRepositoryWriteTest {
                 .isEmpty(),
         )
     }
+
+    @Test
+    fun deleteBudget_deletesOnceThenReportsNotFoundOrAlreadyDeleted() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA)),
+        )
+
+        assertEquals(DeleteResult.Deleted, repository.deleteBudget(RoomTestData.budgetA))
+        assertTrue(
+            "删除后预算不应再按归属月份返回",
+            repository.observeBudgets(RoomTestData.envelopeA, RoomTestData.month).first().isEmpty(),
+        )
+        assertEquals(
+            DeleteResult.NotFoundOrAlreadyDeleted,
+            repository.deleteBudget(RoomTestData.budgetA),
+        )
+    }
+
+    @Test
+    fun deleteBudget_reportsNotFoundOrAlreadyDeletedForUnknownBudget() = runTest {
+        assertEquals(
+            DeleteResult.NotFoundOrAlreadyDeleted,
+            repository.deleteBudget(RoomTestData.budgetId(0xEE)),
+        )
+    }
+
+    @Test
+    fun deleteBudget_keepsOtherBudgetsAndReleasesTheSpan() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    start = date(10, 1),
+                    end = date(10, 5),
+                    amount = 40_000,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetB,
+                    start = date(10, 5),
+                    end = date(10, 15),
+                    amount = 60_000,
+                ),
+            ),
+        )
+        val second = budget(
+            id = RoomTestData.budgetB,
+            start = date(10, 5),
+            end = date(10, 15),
+            amount = 60_000,
+        )
+
+        assertEquals(DeleteResult.Deleted, repository.deleteBudget(RoomTestData.budgetA))
+
+        assertEquals(listOf(second), budgetsOf())
+
+        val replacement = budget(
+            id = RoomTestData.budgetC,
+            start = date(10, 1),
+            end = date(10, 5),
+            amount = 50_000,
+        )
+        assertEquals(BudgetWriteResult.Success, repository.insertBudget(replacement))
+        assertEquals(setOf(second, replacement), budgetsOf().toSet())
+    }
 }

@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import cn.osmrpighead.envelog.core.time.hasOverlap
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
