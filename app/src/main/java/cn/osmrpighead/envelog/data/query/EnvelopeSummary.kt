@@ -25,9 +25,26 @@ sealed interface EnvelopeSummary {
         val priorBudget: Long,
         val priorAllocated: Long,
     ) : EnvelopeSummary {
-        val currentAvailable = currentBudget?.minus(currentSpanAllocated) ?: 0
+        val currentAvailable: Long
+        val priorDifference: Long
         val usedProportion = Ratio.of(allocated, totalBudget)
-        val priorDifference = priorBudget - priorAllocated
+
+        init {
+            val realCurrent = currentBudget?.minus(currentSpanAllocated) ?: 0
+            val realPrior = priorBudget - priorAllocated
+            if (realCurrent < 0) {
+                if (-realCurrent < realPrior) {
+                    currentAvailable = 0
+                    priorDifference = realPrior + realCurrent
+                } else {
+                    currentAvailable = realPrior + realCurrent
+                    priorDifference = 0
+                }
+            } else {
+                currentAvailable = realCurrent
+                priorDifference = realPrior
+            }
+        }
     }
 
     data class NonBudget(
