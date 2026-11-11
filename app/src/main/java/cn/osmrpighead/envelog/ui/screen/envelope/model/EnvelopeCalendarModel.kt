@@ -25,38 +25,38 @@ sealed interface BudgetDisplay {
     data class Spacer(override val length: Long) : BudgetDisplay
 }
 
-data class BudgetCalendarWeekModel(
+data class EnvelopeCalendarWeekModel(
     val before: Long,
     val after: Long,
     val span: HalfOpenDateSpan,
     val budgets: List<BudgetDisplay>,
 )
 
-data class BudgetCalendarDateModel(
+data class EnvelopeCalendarDateModel(
     val allocationSummary: DailyAllocationSummary?,
     val budgetId: BudgetId?,
 )
 
-data class BudgetCalendarModel(
-    val weeks: List<BudgetCalendarWeekModel>,
-    val dates: Map<LocalDate, BudgetCalendarDateModel>,
+data class EnvelopeCalendarModel(
+    val weeks: List<EnvelopeCalendarWeekModel>,
+    val dates: Map<LocalDate, EnvelopeCalendarDateModel>,
 ) {
     companion object {
         fun of(
             span: HalfOpenDateSpan,
             firstDayOfWeek: DayOfWeek,
-            budgets: Collection<Budget>,
+            budgets: Collection<Budget>?,
             allocations: Map<LocalDate, DailyAllocationSummary>,
-        ): BudgetCalendarModel {
-            val x = BudgetCalendarModel(
+        ): EnvelopeCalendarModel {
+            val x = EnvelopeCalendarModel(
                 span.splitIntoWeeks(firstDayOfWeek).map { week ->
                     val firstDayOfThisWeek = week.startDate.previousOrSame(firstDayOfWeek)
                     val firstDayOfNextWeek = week.endDate.nextOrSame(firstDayOfWeek)
-                    BudgetCalendarWeekModel(
+                    EnvelopeCalendarWeekModel(
                         (firstDayOfThisWeek countDaysTo week.startDate),
                         (week.endDate countDaysTo firstDayOfNextWeek),
                         week,
-                        buildList {
+                        if (budgets != null) buildList {
                             var date = firstDayOfThisWeek
                             budgets.filter { it.dateSpan overlaps week }.sortedBy { it.dateSpan.startDate }.forEach {
                                 val intersect = it.dateSpan intersect week
@@ -70,14 +70,17 @@ data class BudgetCalendarModel(
                                 date = intersect.endDate
                             }
                             if (date < firstDayOfNextWeek) add(BudgetDisplay.Spacer(date countDaysTo firstDayOfNextWeek))
-                        },
+                        } else emptyList(),
                     )
                 },
                 buildMap {
-                    for (date in span) put(date, BudgetCalendarDateModel(
-                        allocationSummary = allocations[date],
-                        budgetId = budgets.find { date in it.dateSpan }?.id,
-                    ))
+                    for (date in span) put(
+                        date,
+                        EnvelopeCalendarDateModel(
+                            allocationSummary = allocations[date],
+                            budgetId = budgets?.find { date in it.dateSpan }?.id,
+                        ),
+                    )
                 },
             )
             return x

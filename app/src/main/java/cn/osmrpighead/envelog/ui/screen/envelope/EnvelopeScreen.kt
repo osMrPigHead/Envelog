@@ -82,7 +82,7 @@ private fun Success(
                 )
             }
 
-            if (uiState.envelope.isBudgeted) BudgetCalendar(
+            BudgetCalendar(
                 model = uiState.calendar,
                 onDateClick = newActiveBudget,
                 onBudgetClick = openActiveBudget,

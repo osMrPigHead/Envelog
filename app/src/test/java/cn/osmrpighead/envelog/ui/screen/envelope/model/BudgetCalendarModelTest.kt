@@ -34,7 +34,7 @@ class BudgetCalendarModelTest {
     private fun model(
         budgets: Collection<Budget> = emptyList(),
         allocations: Map<LocalDate, DailyAllocationSummary> = emptyMap(),
-    ): BudgetCalendarModel = BudgetCalendarModel.of(
+    ): EnvelopeCalendarModel = EnvelopeCalendarModel.of(
         span = month.toHalfOpenDateSpan(),
         firstDayOfWeek = DayOfWeek.MONDAY,
         budgets = budgets,

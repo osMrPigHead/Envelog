@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.ui.component.statitem.*
-import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetCalendarModel
+import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetDisplay
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
@@ -80,7 +80,7 @@ private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier
 
 @Composable
 fun BudgetCalendar(
-    model: BudgetCalendarModel,
+    model: EnvelopeCalendarModel,
     onDateClick: (LocalDate) -> Unit,
     onBudgetClick: (BudgetId) -> Unit,
     modifier: Modifier = Modifier,
@@ -107,7 +107,7 @@ fun BudgetCalendar(
                 }
                 if (after > 0) Spacer(modifier = spacerModifier.weight(after.toFloat()))
             }
-            Row {
+            if (budgets.isNotEmpty()) Row {
                 for (budget in budgets) when (budget) {
                     is BudgetDisplay.NoSpace -> BudgetCapsule(
                         budget = budget,

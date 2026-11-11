@@ -203,10 +203,11 @@ class EnvelopeViewModel @AssistedInject constructor(
                 }
                 return@launch
             }
+            val updatedBudgets = if (!isNew) savedBudgets.first() else null
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
-                    budgets = it.budgets + (budget.id to budget),
+                    budgets = updatedBudgets ?: (it.budgets + (budget.id to budget)),
                     activeBudget = it.activeBudget.copy(complete = true),
                 )
             }
@@ -220,12 +221,12 @@ class EnvelopeViewModel @AssistedInject constructor(
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeBudget.budget ?: return
         job = viewModelScope.launch {
-            if (!isNew && !activeBudgetIsNew)
-                repository.deleteBudget(budget.id)
+            if (!isNew && !activeBudgetIsNew) repository.deleteBudget(budget.id)
+            val updatedBudgets = if (!isNew) savedBudgets.first() else null
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
-                    budgets = it.budgets - budget.id,
+                    budgets = updatedBudgets ?: (it.budgets - budget.id),
                     activeBudget = it.activeBudget.copy(complete = true),
                 )
             }
