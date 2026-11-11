@@ -79,15 +79,15 @@ class EnvelopeScreenInstrumentedTest {
     }
 
     @Test
-    fun envelope_togglingBudgetHidesBudgetTabAndFallsBackToExpenses() {
-        state.value = successState(allocationsWithInfo = listOf(allocation(0xC4, 5, 12_345)))
+    fun envelope_togglingBudgetHidesBudgetTabAndFallsBackToCalendar() {
         setScreen()
+        selectTab(R.string.envelope_edit_tab_budget)
 
         composeRule.onNode(isToggleable()).performClick()
 
         composeRule.runOnIdle { assertFalse(updatedEnvelope?.isBudgeted ?: true) }
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_budget)).assertDoesNotExist()
-        composeRule.onNodeWithText("123.45").assertIsDisplayed()
+        composeRule.onNodeWithText("15").assertIsDisplayed()
 
         composeRule.onNode(isToggleable()).performClick()
 
@@ -103,6 +103,13 @@ class EnvelopeScreenInstrumentedTest {
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_budget)).assertDoesNotExist()
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_expenses)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_calendar)).assertIsDisplayed()
+    }
+
+    @Test
+    fun envelope_defaultsToCalendarTab() {
+        setScreen()
+
+        composeRule.onNodeWithText("15").assertIsDisplayed()
     }
 
     @Test
@@ -134,6 +141,7 @@ class EnvelopeScreenInstrumentedTest {
         )
         state.value = successState(budgets = mapOf(budget.id to budget))
         setScreen()
+        selectTab(R.string.envelope_edit_tab_budget)
 
         val dateRange = context.getString(R.string.time_format_day, 5) +
             context.getString(R.string.symbol_en_dash) +
@@ -149,6 +157,7 @@ class EnvelopeScreenInstrumentedTest {
         val budget = InstrumentedTestData.budget(0xD7)
         state.value = successState(budgets = mapOf(budget.id to budget))
         setScreen()
+        selectTab(R.string.envelope_edit_tab_budget)
 
         val dateRange = context.getString(R.string.time_format_day, 1) +
             context.getString(R.string.symbol_en_dash) +
@@ -175,11 +184,8 @@ class EnvelopeScreenInstrumentedTest {
         val budget = InstrumentedTestData.budget(0xD2)
         state.value = successState(activeItem = ActiveItem(budget = budget, isNew = false, error = null, complete = false))
         setScreen()
+        awaitBudgetSheet()
 
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title)).fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_title)).assertExists()
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_range_label)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_amount_label)).assertIsDisplayed()
 
@@ -193,10 +199,8 @@ class EnvelopeScreenInstrumentedTest {
         val budget = InstrumentedTestData.budget(0xD3)
         state.value = successState(activeItem = ActiveItem(budget = budget, isNew = false, error = null, complete = false))
         setScreen()
+        awaitBudgetSheet()
 
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title)).fetchSemanticsNodes().isNotEmpty()
-        }
         composeRule.onNode(
             hasText(context.getString(R.string.common_action_delete)) and hasClickAction() and hasButtonRole(),
         ).performClick()
@@ -209,10 +213,8 @@ class EnvelopeScreenInstrumentedTest {
         val budget = InstrumentedTestData.budget(0xD4)
         state.value = successState(activeItem = ActiveItem(budget = budget, isNew = false, error = null, complete = false))
         setScreen()
+        awaitBudgetSheet()
 
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title)).fetchSemanticsNodes().isNotEmpty()
-        }
         composeRule.onNode(
             hasText(context.getString(R.string.common_action_cancel)) and hasClickAction() and hasButtonRole(),
         ).performClick()
@@ -244,11 +246,7 @@ class EnvelopeScreenInstrumentedTest {
             ),
         )
         setScreen()
-
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title))
-                .fetchSemanticsNodes().isNotEmpty()
-        }
+        awaitBudgetSheet()
 
         val dateTime = allocation.expenditure.happenedAt.format(allocation.expenditure.happenedZone)
         composeRule.onNodeWithText(dateTime).performScrollTo().assertIsDisplayed()
@@ -301,6 +299,13 @@ class EnvelopeScreenInstrumentedTest {
             enabled = composeRule.activity.onBackPressedDispatcher.hasEnabledCallbacks()
         }
         return enabled
+    }
+
+    private fun awaitBudgetSheet() {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_range_label))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun selectTab(labelRes: Int) {

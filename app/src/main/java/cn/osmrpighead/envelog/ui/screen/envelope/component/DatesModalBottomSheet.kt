@@ -201,7 +201,10 @@ fun DatesModalBottomSheet(
                     )
                     AllocationList(
                         allocations = activeItem.allocations,
-                        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+                        modifier = Modifier.padding(
+                            top = dimensionResource(R.dimen.spacingMedium),
+                            bottom = dimensionResource(R.dimen.spacingBold),
+                        ),
                     )
                 }
             }

@@ -1,6 +1,8 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +30,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
+import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.time.LocalDate
 
 private enum class EnvelopeTab { Calendar, Budget, Allocation }
@@ -125,27 +128,50 @@ private fun Success(
                     .padding(top = dimensionResource(R.dimen.spacingMedium))
                     .verticalScroll(rememberScrollState()),
             ) {
-                when (activeTab) {
-                    EnvelopeTab.Budget -> BudgetList(
-                        budgets = uiState.budgets.values,
-                        yearMonth = uiState.yearMonth,
-                        onBudgetClick = openActiveBudget,
-                        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
-                    )
+                AnimatedContent(
+                    targetState = activeTab,
+                    transitionSpec = {
+                        val direction = if (targetState.ordinal > initialState.ordinal) 1 else -1
+                        val enter = slideInHorizontally(
+                            animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
+                            initialOffsetX = { width -> direction * width / 4 },
+                        ) + fadeIn(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
+                        val exit = slideOutHorizontally(
+                            animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
+                            targetOffsetX = { width -> -direction * width / 4 },
+                        ) + fadeOut(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
+                        (enter togetherWith exit).using(null)
+                    },
+                    label = "EnvelopeTabContent",
+                ) { tab ->
+                    when (tab) {
+                        EnvelopeTab.Budget -> BudgetList(
+                            budgets = uiState.budgets.values,
+                            yearMonth = uiState.yearMonth,
+                            onBudgetClick = openActiveBudget,
+                            modifier = Modifier.padding(
+                                top = dimensionResource(R.dimen.spacingMedium),
+                                bottom = dimensionResource(R.dimen.spacingBold),
+                            ),
+                        )
 
-                    EnvelopeTab.Allocation -> AllocationList(
-                        allocations = uiState.allocationsWithInfo,
-                        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
-                    )
+                        EnvelopeTab.Allocation -> AllocationList(
+                            allocations = uiState.allocationsWithInfo,
+                            modifier = Modifier.padding(
+                                top = dimensionResource(R.dimen.spacingMedium),
+                                bottom = dimensionResource(R.dimen.spacingBold),
+                            ),
+                        )
 
-                    EnvelopeTab.Calendar -> BudgetCalendar(
-                        model = uiState.calendar,
-                        onDateClick = newActiveBudget,
-                        onBudgetClick = openActiveBudget,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
-                    )
+                        EnvelopeTab.Calendar -> BudgetCalendar(
+                            model = uiState.calendar,
+                            onDateClick = newActiveBudget,
+                            onBudgetClick = openActiveBudget,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+                        )
+                    }
                 }
             }
         }
