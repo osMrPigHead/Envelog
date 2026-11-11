@@ -118,8 +118,6 @@ class DateSpanGeometryTest {
 
     @Test
     fun splitIntoWeeks_whenStartIsFirstDayOfWeek_doesNotEmitZeroLengthWeek() {
-        // 已知缺陷：当前实现会先产出 [10-05, 10-05) 的零长度周，待修复 splitIntoWeeks；
-        // 按约定保留此失败用例，不要修改断言来绕过。
         val weeks = span(LocalDate.of(2026, 10, 5), LocalDate.of(2026, 10, 26))
             .splitIntoWeeks(DayOfWeek.MONDAY)
 

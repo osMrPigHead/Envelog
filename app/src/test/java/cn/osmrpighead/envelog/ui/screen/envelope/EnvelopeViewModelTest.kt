@@ -249,7 +249,7 @@ class EnvelopeViewModelTest {
     }
 
     @Test
-    fun applyQuickSet_weekly_createsWholeWeekBudgets() = runTest {
+    fun applyQuickSet_weekly_createsWholeWeekBudgetsIncludingMostlyCoveredLastWeek() = runTest {
         val newRepository = FakeRepository(
             envelope = Envelope(EnvelopeId.generate(), "新信封", true, false),
             budget = budget,
@@ -265,9 +265,9 @@ class EnvelopeViewModelTest {
             )
 
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
-            assertEquals(3, state.budgets.size)
+            assertEquals(4, state.budgets.size)
             assertEquals(LocalDate.of(2026, 10, 5), state.budgets.values.minOf { it.dateSpan.startDate })
-            assertEquals(LocalDate.of(2026, 10, 26), state.budgets.values.maxOf { it.dateSpan.endDate })
+            assertEquals(LocalDate.of(2026, 11, 2), state.budgets.values.maxOf { it.dateSpan.endDate })
             assertTrue(state.budgets.values.all { it.amount == 1_000L })
             assertTrue(state.quickSet.complete)
         } finally {

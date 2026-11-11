@@ -58,45 +58,72 @@ class QuickSetBudgetPlannerTest {
     }
 
     @Test
-    fun schedule_dailyMultipleDays_dropsIncompleteLastPeriod() {
+    fun schedule_dailyMultipleDays_keepsLastPeriodCoveredExactlyHalf() {
         val schedule = QuickSetBudgetPlanner.schedule(
             config = QuickSetConfig.Daily(intervalDays = 2, amount = 10_000),
             selection = wholeMonth,
             yearMonth = month,
         )!!
 
-        assertEquals(15, schedule.segments.size)
-        assertEquals(150_000, schedule.totalAmount)
-        assertEquals(date(10, 29), schedule.segments.last().span.startDate)
-        assertEquals(date(10, 31), schedule.segments.last().span.endDate)
-        assertEquals(30, schedule.segments.sumOf { it.span.length })
+        assertEquals(16, schedule.segments.size)
+        assertEquals(160_000, schedule.totalAmount)
+        assertEquals(date(10, 31), schedule.segments.last().span.startDate)
+        assertEquals(date(11, 2), schedule.segments.last().span.endDate)
     }
 
     @Test
-    fun schedule_dailyPeriodLongerThanSelection_isNull() {
+    fun schedule_dailyMultipleDays_dropsLastPeriodCoveredBelowHalf() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Daily(intervalDays = 5, amount = 10_000),
+            selection = ClosedDateSpan(date(10, 1), date(10, 12)),
+            yearMonth = month,
+        )!!
+
+        assertEquals(2, schedule.segments.size)
+        assertEquals(20_000, schedule.totalAmount)
+        assertEquals(date(10, 6), schedule.segments.last().span.startDate)
+        assertEquals(date(10, 11), schedule.segments.last().span.endDate)
+    }
+
+    @Test
+    fun schedule_dailyPeriodLongerThanSelection_keepsWhenCoverageReachesHalf() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Daily(intervalDays = 7, amount = 10_000),
+            selection = ClosedDateSpan(date(10, 1), date(10, 4)),
+            yearMonth = month,
+        )!!
+
+        assertEquals(1, schedule.segments.size)
+        assertEquals(date(10, 1), schedule.segments.single().span.startDate)
+        assertEquals(date(10, 8), schedule.segments.single().span.endDate)
+        assertEquals(10_000, schedule.totalAmount)
+    }
+
+    @Test
+    fun schedule_dailyPeriodLongerThanSelection_isNullWhenCoverageBelowHalf() {
         assertNull(
             QuickSetBudgetPlanner.schedule(
                 config = QuickSetConfig.Daily(intervalDays = 7, amount = 10_000),
-                selection = ClosedDateSpan(date(10, 1), date(10, 4)),
+                selection = ClosedDateSpan(date(10, 1), date(10, 3)),
                 yearMonth = month,
             ),
         )
     }
 
     @Test
-    fun schedule_weeklyWholeWeek_anchorsAtFirstMondayAndDropsIncompleteTail() {
+    fun schedule_weeklyWholeWeek_anchorsAtFirstMondayAndKeepsMostlyCoveredLastWeek() {
         val schedule = QuickSetBudgetPlanner.schedule(
             config = QuickSetConfig.Weekly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, 100_000),
             selection = wholeMonth,
             yearMonth = month,
         )!!
 
-        assertEquals(3, schedule.segments.size)
-        assertEquals(300_000, schedule.totalAmount)
+        assertEquals(4, schedule.segments.size)
+        assertEquals(400_000, schedule.totalAmount)
         assertEquals(date(10, 5), schedule.segments.first().span.startDate)
         assertEquals(date(10, 12), schedule.segments.first().span.endDate)
-        assertEquals(date(10, 19), schedule.segments.last().span.startDate)
-        assertEquals(date(10, 26), schedule.segments.last().span.endDate)
+        assertEquals(date(10, 26), schedule.segments.last().span.startDate)
+        assertEquals(date(11, 2), schedule.segments.last().span.endDate)
     }
 
     @Test
@@ -116,7 +143,7 @@ class QuickSetBudgetPlannerTest {
     }
 
     @Test
-    fun schedule_weeklyDropsIncompleteLastPeriod() {
+    fun schedule_weeklyDropsLastPeriodCoveredBelowHalf() {
         val schedule = QuickSetBudgetPlanner.schedule(
             config = QuickSetConfig.Weekly(DayOfWeek.FRIDAY, DayOfWeek.TUESDAY, 100_000),
             selection = ClosedDateSpan(date(10, 1), date(10, 9)),

@@ -126,7 +126,7 @@ object QuickSetBudgetPlanner {
         return buildList {
             var cursor = span.startDate
             var current = cursor untilExclusive cursor.plusDays(periodDays)
-            while ((current intersect span).length >= periodDays / 2) {
+            while (2 * (current intersect span).length >= periodDays) {
                 add(QuickSetSegment(current, config.amount))
                 cursor = current.endDate
                 current = cursor untilExclusive cursor.plusDays(periodDays)
@@ -143,7 +143,7 @@ object QuickSetBudgetPlanner {
         return buildList {
             var cursor = span.startDate.nextOrSame(config.startDayOfWeek)
             var current = cursor untilExclusive cursor.plusDays(periodDays)
-            while ((current intersect span).length >= periodDays / 2) {
+            while (2 * (current intersect span).length >= periodDays) {
                 add(QuickSetSegment(current, config.amount))
                 cursor = cursor.plusDays(7)
                 current = cursor untilExclusive cursor.plusDays(periodDays)

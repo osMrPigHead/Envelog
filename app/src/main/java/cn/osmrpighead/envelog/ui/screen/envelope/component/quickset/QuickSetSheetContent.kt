@@ -25,7 +25,7 @@ import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.ui.component.LabeledBox
-import cn.osmrpighead.envelog.ui.component.form.ConfirmEventHandler
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
@@ -115,7 +115,7 @@ private fun QuickSetTargetRangeField(
     DateRangePickerField(
         span = span,
         dialogBuilder = DateRangePickerDialogBuilder.Default(
-            confirmEventHandler = ConfirmEventHandler.Default(onSpanChange),
+            confirmEventHandler = DateRangePickerConfirmEventHandler.Default(onSpanChange),
             initialSpan = span,
             selectableDates = selectableDates,
         ),

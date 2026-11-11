@@ -393,8 +393,8 @@ class EnvelopeViewModel @AssistedInject constructor(
 
     private fun persistQuickSet(plan: QuickSetBudgetPlan) {
         job = viewModelScope.launch {
-            if (!isNew) {
-                val state = _uiState.value as? EnvelopeUiState.Success ?: return@launch
+            val state = _uiState.value as? EnvelopeUiState.Success ?: return@launch
+            if (!state.isNew) {
                 val result = repository.replaceBudgets(
                     envelopeId = state.envelope.id,
                     deleteBudgetIds = plan.conflicts.map { it.id },
