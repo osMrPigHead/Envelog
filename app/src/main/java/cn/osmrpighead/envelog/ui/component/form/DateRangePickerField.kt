@@ -10,6 +10,7 @@ import androidx.compose.material3.DatePickerFormatter
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldColors
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
+import cn.osmrpighead.envelog.core.time.toUtcMillis
 import java.time.LocalDate
 
 sealed interface ConfirmEventHandler {
@@ -65,10 +67,16 @@ sealed interface DateRangePickerDialogBuilder {
         private val colors: DatePickerColors? = null,
         private val title: (@Composable () -> Unit)? = null,
         private val headline: (@Composable () -> Unit)? = null,
+        private val initialSpan: ClosedDateSpan? = null,
+        private val selectableDates: SelectableDates? = null,
     ) : DateRangePickerDialogBuilder {
         @Composable
         override fun Composable(hideDialog: () -> Unit, modifier: Modifier) {
-            val dateRangePickerState = rememberDateRangePickerState()
+            val dateRangePickerState = rememberDateRangePickerState(
+                initialSelectedStartDateMillis = initialSpan?.startDate?.toUtcMillis(),
+                initialSelectedEndDateMillis = initialSpan?.endDate?.toUtcMillis(),
+                selectableDates = selectableDates ?: object : SelectableDates {},
+            )
             DatePickerDialog(
                 onDismissRequest = { onDismiss(hideDialog) },
                 confirmButton = {
@@ -123,6 +131,7 @@ fun DateRangePickerField(
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = OutlinedTextFieldDefaults.shape,
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
+    onOpen: () -> Unit = {},
 ) {
     val internalSource = remember { MutableInteractionSource() }
     val effectiveSource = interactionSource ?: internalSource
@@ -131,7 +140,10 @@ fun DateRangePickerField(
 
     PickerField(
         value = span.format(),
-        onClick = { showPicker = true },
+        onClick = {
+            onOpen()
+            showPicker = true
+        },
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,

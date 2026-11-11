@@ -19,8 +19,9 @@ import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.ui.screen.envelope.component.QuickSetBudgetModalBottomSheet
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -40,7 +41,7 @@ private fun Success(
     clearSubmissionError: () -> Unit,
     openQuickSet: () -> Unit,
     dismissQuickSet: () -> Unit,
-    applyQuickSet: (QuickSetMode, Long) -> Unit,
+    applyQuickSet: (QuickSetConfig, ClosedDateSpan) -> Unit,
     confirmQuickSetOverwrite: () -> Unit,
     cancelQuickSetOverwrite: () -> Unit,
     clearQuickSet: () -> Unit,
@@ -123,7 +124,6 @@ private fun Success(
 
         if (uiState.quickSet.open) QuickSetBudgetModalBottomSheet(
             yearMonth = uiState.yearMonth,
-            today = uiState.today,
             complete = uiState.quickSet.complete,
             conflict = uiState.quickSet.conflict,
             error = uiState.quickSet.error,
@@ -157,7 +157,7 @@ fun EnvelopeScreen(
     clearSubmissionError: () -> Unit,
     openQuickSet: () -> Unit,
     dismissQuickSet: () -> Unit,
-    applyQuickSet: (QuickSetMode, Long) -> Unit,
+    applyQuickSet: (QuickSetConfig, ClosedDateSpan) -> Unit,
     confirmQuickSetOverwrite: () -> Unit,
     cancelQuickSetOverwrite: () -> Unit,
     clearQuickSet: () -> Unit,

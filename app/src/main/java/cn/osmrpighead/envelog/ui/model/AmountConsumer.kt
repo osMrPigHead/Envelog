@@ -1,5 +1,8 @@
 package cn.osmrpighead.envelog.ui.model
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import cn.osmrpighead.envelog.core.number.asAmount
 import cn.osmrpighead.envelog.ui.component.numkeypad.EvaluatedResult
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadConsumer
@@ -17,7 +20,7 @@ class AmountConsumer(
     private val submit: (Long) -> Unit,
     private val cancel: () -> Unit,
 ) : NumKeypadConsumer {
-    var validationError: AmountValidationError? = null
+    var validationError by mutableStateOf<AmountValidationError?>(null)
         private set
 
     private fun fail(error: AmountValidationError): Boolean {

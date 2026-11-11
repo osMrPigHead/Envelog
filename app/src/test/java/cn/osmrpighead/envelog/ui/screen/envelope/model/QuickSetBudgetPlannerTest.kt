@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.model
 
-import cn.osmrpighead.envelog.core.time.next
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
@@ -10,13 +10,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
 class QuickSetBudgetPlannerTest {
     private val envelopeId = RoomTestData.envelopeA
     private val month = RoomTestData.month
-    private val today = RoomTestData.today
+    private val wholeMonth = ClosedDateSpan(date(10, 1), date(10, 31))
 
     private fun date(month: Int, day: Int): LocalDate = LocalDate.of(2026, month, day)
 
@@ -40,128 +41,161 @@ class QuickSetBudgetPlannerTest {
     }
 
     @Test
-    fun targetSpan_dailyInCurrentMonth_startsToday() {
-        val span = QuickSetBudgetPlanner.targetSpan(QuickSetMode.Daily, month, today)
-
-        assertEquals(date(10, 20), span!!.startDate)
-        assertEquals(date(11, 1), span.endDate)
-    }
-
-    @Test
-    fun targetSpan_dailyInFutureMonth_startsAtMonthStart() {
-        val span = QuickSetBudgetPlanner.targetSpan(QuickSetMode.Daily, month.next, today)
-
-        assertEquals(date(11, 1), span!!.startDate)
-        assertEquals(date(12, 1), span.endDate)
-    }
-
-    @Test
-    fun targetSpan_inPastMonth_isNull() {
-        assertNull(QuickSetBudgetPlanner.targetSpan(QuickSetMode.Daily, month.minusMonths(1), today))
-        assertNull(QuickSetBudgetPlanner.targetSpan(QuickSetMode.MonthlyTotal, month.minusMonths(1), today))
-    }
-
-    @Test
-    fun targetSpan_totalAlwaysCoversWholeMonth() {
-        val current = QuickSetBudgetPlanner.targetSpan(QuickSetMode.MonthlyTotal, month, today)
-        val future = QuickSetBudgetPlanner.targetSpan(QuickSetMode.MonthlyTotal, month.next, today)
-
-        assertEquals(date(10, 1), current!!.startDate)
-        assertEquals(date(11, 1), current.endDate)
-        assertEquals(date(11, 1), future!!.startDate)
-        assertEquals(date(12, 1), future.endDate)
-    }
-
-    @Test
-    fun plan_daily_createsOneBudgetPerDay() {
-        val plan = QuickSetBudgetPlanner.plan(
-            mode = QuickSetMode.Daily,
-            amount = 5_000,
+    fun schedule_dailyOneDay_createsOneSegmentPerDay() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Daily(intervalDays = 1, amount = 5_000),
+            selection = wholeMonth,
             yearMonth = month,
-            today = today,
+        )!!
+
+        assertEquals(31, schedule.segments.size)
+        assertEquals(155_000, schedule.totalAmount)
+        assertEquals(date(10, 1), schedule.segments.first().span.startDate)
+        assertEquals(date(10, 2), schedule.segments.first().span.endDate)
+        assertEquals(date(10, 31), schedule.segments.last().span.startDate)
+        assertEquals(date(11, 1), schedule.segments.last().span.endDate)
+        assertTrue(schedule.segments.all { it.amount == 5_000L })
+    }
+
+    @Test
+    fun schedule_dailyMultipleDays_dropsIncompleteLastPeriod() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Daily(intervalDays = 2, amount = 10_000),
+            selection = wholeMonth,
+            yearMonth = month,
+        )!!
+
+        assertEquals(15, schedule.segments.size)
+        assertEquals(150_000, schedule.totalAmount)
+        assertEquals(date(10, 29), schedule.segments.last().span.startDate)
+        assertEquals(date(10, 31), schedule.segments.last().span.endDate)
+        assertEquals(30, schedule.segments.sumOf { it.span.length })
+    }
+
+    @Test
+    fun schedule_dailyPeriodLongerThanSelection_isNull() {
+        assertNull(
+            QuickSetBudgetPlanner.schedule(
+                config = QuickSetConfig.Daily(intervalDays = 7, amount = 10_000),
+                selection = ClosedDateSpan(date(10, 1), date(10, 4)),
+                yearMonth = month,
+            ),
+        )
+    }
+
+    @Test
+    fun schedule_weeklyWholeWeek_anchorsAtFirstMondayAndDropsIncompleteTail() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Weekly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, 100_000),
+            selection = wholeMonth,
+            yearMonth = month,
+        )!!
+
+        assertEquals(3, schedule.segments.size)
+        assertEquals(300_000, schedule.totalAmount)
+        assertEquals(date(10, 5), schedule.segments.first().span.startDate)
+        assertEquals(date(10, 12), schedule.segments.first().span.endDate)
+        assertEquals(date(10, 19), schedule.segments.last().span.startDate)
+        assertEquals(date(10, 26), schedule.segments.last().span.endDate)
+    }
+
+    @Test
+    fun schedule_weeklyCrossWeek_supportsFridayToTuesday() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Weekly(DayOfWeek.FRIDAY, DayOfWeek.TUESDAY, 100_000),
+            selection = wholeMonth,
+            yearMonth = month,
+        )!!
+
+        assertEquals(4, schedule.segments.size)
+        assertEquals(date(10, 2), schedule.segments.first().span.startDate)
+        assertEquals(date(10, 7), schedule.segments.first().span.endDate)
+        assertEquals(date(10, 9), schedule.segments[1].span.startDate)
+        assertEquals(date(10, 14), schedule.segments[1].span.endDate)
+        assertEquals(5, schedule.segments.first().span.length)
+    }
+
+    @Test
+    fun schedule_weeklyDropsIncompleteLastPeriod() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.Weekly(DayOfWeek.FRIDAY, DayOfWeek.TUESDAY, 100_000),
+            selection = ClosedDateSpan(date(10, 1), date(10, 9)),
+            yearMonth = month,
+        )!!
+
+        assertEquals(1, schedule.segments.size)
+        assertEquals(date(10, 2), schedule.segments.single().span.startDate)
+        assertEquals(date(10, 7), schedule.segments.single().span.endDate)
+        assertEquals(100_000, schedule.totalAmount)
+    }
+
+    @Test
+    fun schedule_monthly_ignoresSelectionAndCoversWholeMonth() {
+        val schedule = QuickSetBudgetPlanner.schedule(
+            config = QuickSetConfig.MonthlyTotal(150_000),
+            selection = ClosedDateSpan(date(10, 5), date(10, 10)),
+            yearMonth = month,
+        )!!
+
+        assertEquals(1, schedule.segments.size)
+        assertEquals(date(10, 1), schedule.segments.single().span.startDate)
+        assertEquals(date(11, 1), schedule.segments.single().span.endDate)
+        assertEquals(150_000, schedule.totalAmount)
+    }
+
+    @Test
+    fun plan_createsBudgetsWithDisplayedMonthAttribution() {
+        val plan = QuickSetBudgetPlanner.plan(
+            config = QuickSetConfig.Daily(intervalDays = 1, amount = 5_000),
+            selection = wholeMonth,
+            yearMonth = month,
             envelopeId = envelopeId,
             existing = emptyList(),
             newId = idsFrom(0x100),
         )!!
 
-        assertEquals(12, plan.budgets.size)
-        assertEquals(60_000, plan.totalAmount)
+        assertEquals(31, plan.budgets.size)
+        assertEquals(155_000, plan.totalAmount)
         assertEquals(0, plan.conflicts.size)
-        assertEquals(date(10, 20), plan.targetSpan.startDate)
+        assertEquals(date(10, 1), plan.targetSpan.startDate)
         assertEquals(date(11, 1), plan.targetSpan.endDate)
-
-        for ((index, budget) in plan.budgets.withIndex()) {
-            val expectedStart = date(10, 20).plusDays(index.toLong())
-            assertEquals(expectedStart, budget.dateSpan.startDate)
-            assertEquals(expectedStart.plusDays(1), budget.dateSpan.endDate)
+        for (budget in plan.budgets) {
             assertEquals(month, budget.attributedMonth)
-            assertEquals(5_000, budget.amount)
             assertEquals(envelopeId, budget.envelopeId)
+            assertEquals(5_000, budget.amount)
         }
         assertEquals(plan.budgets.size, plan.budgets.map { it.id }.toSet().size)
     }
 
     @Test
-    fun plan_total_createsWholeMonthBudget() {
+    fun plan_marksOnlyBudgetsIntersectingGeneratedSegmentsAsConflicts() {
+        val inGap = budget(0xD1, date(10, 7), date(10, 9))
+        val overlappingFirst = budget(0xD2, date(10, 3), date(10, 4))
+        val overlappingLater = budget(0xD3, date(10, 20), date(10, 21))
+        val inAnotherGap = budget(0xD4, date(10, 14), date(10, 16))
+
         val plan = QuickSetBudgetPlanner.plan(
-            mode = QuickSetMode.MonthlyTotal,
-            amount = 150_000,
+            config = QuickSetConfig.Weekly(DayOfWeek.FRIDAY, DayOfWeek.TUESDAY, 100_000),
+            selection = wholeMonth,
             yearMonth = month,
-            today = today,
             envelopeId = envelopeId,
-            existing = emptyList(),
+            existing = listOf(inGap, overlappingFirst, overlappingLater, inAnotherGap),
             newId = idsFrom(0x100),
         )!!
 
-        assertEquals(1, plan.budgets.size)
-        assertEquals(150_000, plan.totalAmount)
-        assertEquals(date(10, 1), plan.budgets.single().dateSpan.startDate)
-        assertEquals(date(11, 1), plan.budgets.single().dateSpan.endDate)
-        assertEquals(month, plan.budgets.single().attributedMonth)
-        assertEquals(150_000, plan.budgets.single().amount)
+        assertEquals(setOf(overlappingFirst, overlappingLater), plan.conflicts.toSet())
     }
 
     @Test
-    fun plan_marksIntersectingBudgetsAsConflicts() {
-        val adjacent = budget(0xD1, date(10, 18), date(10, 20))
-        val overlapping = budget(0xD2, date(10, 19), date(10, 22))
-        val inside = budget(0xD3, date(10, 25), date(10, 26))
-
-        val daily = QuickSetBudgetPlanner.plan(
-            mode = QuickSetMode.Daily,
-            amount = 5_000,
-            yearMonth = month,
-            today = today,
-            envelopeId = envelopeId,
-            existing = listOf(adjacent, overlapping, inside),
-            newId = idsFrom(0x100),
-        )!!
-        assertEquals(setOf(overlapping, inside), daily.conflicts.toSet())
-
-        val total = QuickSetBudgetPlanner.plan(
-            mode = QuickSetMode.MonthlyTotal,
-            amount = 150_000,
-            yearMonth = month,
-            today = today,
-            envelopeId = envelopeId,
-            existing = listOf(adjacent, overlapping, inside),
-            newId = idsFrom(0x100),
-        )!!
-        assertEquals(setOf(adjacent, overlapping, inside), total.conflicts.toSet())
-    }
-
-    @Test
-    fun plan_ignoresAdjacentAndOtherEnvelopeBudgets() {
-        val adjacent = budget(0xD1, date(10, 1), date(10, 20))
-        val otherEnvelope = budget(0xD2, date(10, 21), date(10, 22), envelopeId = RoomTestData.envelopeB)
+    fun plan_ignoresOtherEnvelopeBudgets() {
+        val otherEnvelope = budget(0xD1, date(10, 2), date(10, 10), envelopeId = RoomTestData.envelopeB)
 
         val plan = QuickSetBudgetPlanner.plan(
-            mode = QuickSetMode.Daily,
-            amount = 5_000,
+            config = QuickSetConfig.Daily(intervalDays = 1, amount = 5_000),
+            selection = wholeMonth,
             yearMonth = month,
-            today = today,
             envelopeId = envelopeId,
-            existing = listOf(adjacent, otherEnvelope),
+            existing = listOf(otherEnvelope),
             newId = idsFrom(0x100),
         )!!
 
@@ -169,53 +203,56 @@ class QuickSetBudgetPlannerTest {
     }
 
     @Test
-    fun plan_withNonPositiveAmount_isNull() {
+    fun schedule_invalidAmountOrInterval_isNull() {
         assertNull(
-            QuickSetBudgetPlanner.plan(
-                mode = QuickSetMode.Daily,
-                amount = 0,
+            QuickSetBudgetPlanner.schedule(
+                QuickSetConfig.Daily(intervalDays = 1, amount = 0),
+                wholeMonth,
+                month,
+            ),
+        )
+        assertNull(
+            QuickSetBudgetPlanner.schedule(
+                QuickSetConfig.Daily(intervalDays = 0, amount = 5_000),
+                wholeMonth,
+                month,
+            ),
+        )
+        assertNull(
+            QuickSetBudgetPlanner.schedule(
+                QuickSetConfig.Weekly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, 0),
+                wholeMonth,
+                month,
+            ),
+        )
+        assertNull(
+            QuickSetBudgetPlanner.schedule(
+                QuickSetConfig.MonthlyTotal(0),
+                wholeMonth,
+                month,
+            ),
+        )
+    }
+
+    @Test
+    fun schedule_selectionOutsideMonth_isNull() {
+        assertNull(
+            QuickSetBudgetPlanner.schedule(
+                config = QuickSetConfig.Daily(intervalDays = 1, amount = 5_000),
+                selection = ClosedDateSpan(date(9, 1), date(9, 30)),
                 yearMonth = month,
-                today = today,
-                envelopeId = envelopeId,
-                existing = emptyList(),
             ),
         )
+    }
+
+    @Test
+    fun schedule_overflow_isNull() {
         assertNull(
-            QuickSetBudgetPlanner.plan(
-                mode = QuickSetMode.MonthlyTotal,
-                amount = -1,
+            QuickSetBudgetPlanner.schedule(
+                config = QuickSetConfig.Daily(intervalDays = 1, amount = Long.MAX_VALUE),
+                selection = wholeMonth,
                 yearMonth = month,
-                today = today,
-                envelopeId = envelopeId,
-                existing = emptyList(),
             ),
         )
-    }
-
-    @Test
-    fun plan_inPastMonth_isNull() {
-        assertNull(
-            QuickSetBudgetPlanner.plan(
-                mode = QuickSetMode.Daily,
-                amount = 5_000,
-                yearMonth = month.minusMonths(1),
-                today = today,
-                envelopeId = envelopeId,
-                existing = emptyList(),
-            ),
-        )
-    }
-
-    @Test
-    fun totalAmount_returnsNullOnOverflow() {
-        val span = QuickSetBudgetPlanner.targetSpan(QuickSetMode.Daily, month, today)!!
-
-        assertNull(QuickSetBudgetPlanner.totalAmount(QuickSetMode.Daily, Long.MAX_VALUE, span))
-        assertEquals(Long.MAX_VALUE, QuickSetBudgetPlanner.totalAmount(QuickSetMode.MonthlyTotal, Long.MAX_VALUE, span))
-    }
-
-    @Test
-    fun totalAmount_returnsNullForEmptySpan() {
-        assertNull(QuickSetBudgetPlanner.totalAmount(QuickSetMode.Daily, 1, date(10, 1) untilExclusive date(10, 1)))
     }
 }

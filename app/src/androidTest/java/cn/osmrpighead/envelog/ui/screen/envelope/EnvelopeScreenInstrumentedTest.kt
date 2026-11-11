@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -121,11 +122,16 @@ class EnvelopeScreenInstrumentedTest {
 
         composeRule.runOnIdle { assertEquals(1, openQuickSetCalls) }
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_mode_label))
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_mode_daily_label))
                 .fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_range_label)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_amount_daily_label)).assertExists()
+        composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_mode_daily_label))
+            .onFirst().assertExists()
+        composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_mode_weekly_label))
+            .onFirst().assertExists()
+        composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_monthly_amount_field))
+            .onFirst().assertExists()
 
         composeRule.onNode(
             hasText(context.getString(R.string.common_action_cancel)) and hasClickAction() and hasButtonRole(),
@@ -133,7 +139,7 @@ class EnvelopeScreenInstrumentedTest {
 
         composeRule.runOnIdle { assertEquals(1, dismissQuickSetCalls) }
         composeRule.waitUntil(timeoutMillis = 5_000) { clearQuickSetCalls == 1 }
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_mode_label)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_mode_daily_label)).assertDoesNotExist()
     }
 
     @Test

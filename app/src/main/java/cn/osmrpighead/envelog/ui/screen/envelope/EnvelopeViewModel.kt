@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.core.navigation.NavigationTarget
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.hasOverlap
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
@@ -16,7 +17,7 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlanner
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -313,17 +314,16 @@ class EnvelopeViewModel @AssistedInject constructor(
         }
     }
 
-    fun applyQuickSet(mode: QuickSetMode, amount: Long) {
+    fun applyQuickSet(config: QuickSetConfig, targetSpan: ClosedDateSpan) {
         if (job?.isActive == true) return
 
         val state = _uiState.value as? EnvelopeUiState.Success ?: return
-        if (amount <= 0) return
+        if (config.amount <= 0) return
 
         val plan = QuickSetBudgetPlanner.plan(
-            mode = mode,
-            amount = amount,
+            config = config,
+            selection = targetSpan,
             yearMonth = state.yearMonth,
-            today = state.today,
             envelopeId = state.envelope.id,
             existing = state.budgets.values,
         ) ?: return

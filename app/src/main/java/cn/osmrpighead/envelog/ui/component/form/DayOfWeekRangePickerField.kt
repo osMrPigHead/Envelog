@@ -64,6 +64,7 @@ fun DayOfWeekRangePickerField(
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = OutlinedTextFieldDefaults.shape,
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
+    onOpen: () -> Unit = {},
 ) {
     val internalSource = remember { MutableInteractionSource() }
     val effectiveSource = interactionSource ?: internalSource
@@ -71,7 +72,10 @@ fun DayOfWeekRangePickerField(
 
     PickerField(
         value = dayOfWeekRangeText(startDayOfWeek, endDayOfWeek),
-        onClick = { showSheet = true },
+        onClick = {
+            onOpen()
+            showSheet = true
+        },
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,
