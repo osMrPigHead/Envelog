@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
@@ -36,6 +35,21 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val yearMonth = appState.yearMonth
     fun selectMonth(yearMonth: YearMonth) {
         appState.selectMonth(yearMonth)
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        if (!uiState.isNew) fetchEnvelope()
+        else _uiState.update {
+            if (it !is EnvelopeUiState.Success) return@update it
+            it.copy(
+                yearMonth = yearMonth,
+                activeItem = ActiveItem(
+                    budget = null,
+                    isNew = false,
+                    error = null,
+                    complete = true,
+                ),
+            )
+        }
     }
 
     private val _uiState = MutableStateFlow(
@@ -103,34 +117,38 @@ class EnvelopeViewModel @AssistedInject constructor(
         )
     }
 
+    fun fetchEnvelope() {
+        viewModelScope.launch {
+            val success = combine(
+                savedEnvelope,
+                savedBudgets,
+                allocations,
+                monthlyAllocations,
+            ) { envelope, budgets, allocations, allocationsWithInfo ->
+                EnvelopeUiState.Success(
+                    envelope = envelope,
+                    isNew = false,
+                    yearMonth = yearMonth.value,
+                    budgets = budgets,
+                    amountFieldId = fieldId,
+                    allocations = allocations,
+                    allocationsWithInfo = allocationsWithInfo,
+                    activeItem = ActiveItem(
+                        budget = null,
+                        isNew = false,
+                        error = null,
+                        complete = true,
+                    ),
+                    envelopeSubmissionError = null,
+                )
+            }.first()
+            _uiState.value = success
+        }
+    }
+
     init {
         if (route.id is NavigationTarget.Existing) {
-            viewModelScope.launch {
-                val success = combine(
-                    savedEnvelope,
-                    savedBudgets,
-                    allocations,
-                    monthlyAllocations,
-                ) { envelope, budgets, allocations, allocationsWithInfo ->
-                    EnvelopeUiState.Success(
-                        envelope = envelope,
-                        isNew = false,
-                        yearMonth = yearMonth.value,
-                        budgets = budgets,
-                        amountFieldId = fieldId,
-                        allocations = allocations,
-                        allocationsWithInfo = allocationsWithInfo,
-                        activeItem = ActiveItem(
-                            budget = null,
-                            isNew = false,
-                            error = null,
-                            complete = true,
-                        ),
-                        envelopeSubmissionError = null,
-                    )
-                }.first()
-                _uiState.value = success
-            }
+            fetchEnvelope()
             viewModelScope.launch {
                 activeAllocations.collect { allocations ->
                     _uiState.update {

@@ -15,7 +15,7 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.component.LabeledBox
-import cn.osmrpighead.envelog.ui.component.form.ConfirmEventHandler
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
@@ -52,7 +52,7 @@ fun BudgetItemSheet(
         DateRangePickerField(
             span = budget.dateSpan.toClosed(),
             dialogBuilder = DateRangePickerDialogBuilder.Default(
-                ConfirmEventHandler.Default { onSpanChange(it.toHalfOpen()) },
+                DateRangePickerConfirmEventHandler.Default { onSpanChange(it.toHalfOpen()) },
             ),
             label = { Text(stringResource(R.string.envelope_edit_budget_range_label)) },
             modifier = Modifier.fillMaxWidth(),

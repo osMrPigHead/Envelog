@@ -16,6 +16,7 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         EnvelopeScreen(
             uiState = uiState,
+            selectMonth = viewModel::selectMonth,
             initializeForNew = viewModel::initializeForNew,
             updateEnvelope = viewModel::updateEnvelope,
             openActiveBudget = viewModel::openActiveBudget,

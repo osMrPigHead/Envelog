@@ -24,6 +24,9 @@ import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
+import cn.osmrpighead.envelog.ui.component.form.MonthPickerButton
+import cn.osmrpighead.envelog.ui.component.form.MonthPickerConfirmEventHandler
+import cn.osmrpighead.envelog.ui.component.form.MonthPickerSheetBuilder
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.envelope.component.AllocationList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.ArchiveEnvelopeConfirmationDialog
@@ -34,6 +37,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErr
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.time.LocalDate
+import java.time.YearMonth
 
 private enum class EnvelopeTab { Calendar, Budget, Allocation }
 
@@ -48,6 +52,7 @@ private val EnvelopeTab.labelRes: Int
 @Composable
 private fun Success(
     uiState: EnvelopeUiState.Success,
+    selectMonth: (YearMonth) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
     openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
@@ -82,6 +87,13 @@ private fun Success(
                         )
                     }
                 },
+                actions = {
+                    MonthPickerButton(
+                        uiState.yearMonth,
+                        MonthPickerSheetBuilder.Default(MonthPickerConfirmEventHandler.Default(selectMonth)),
+                        modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingExtra))
+                    )
+                }
             )
         },
         modifier = modifier,
@@ -217,6 +229,7 @@ private fun Success(
 @Composable
 fun EnvelopeScreen(
     uiState: EnvelopeUiState,
+    selectMonth: (YearMonth) -> Unit,
     initializeForNew: (Envelope) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
     openActiveBudget: (BudgetId) -> Unit,
@@ -246,6 +259,7 @@ fun EnvelopeScreen(
 
         is EnvelopeUiState.Success -> Success(
             uiState,
+            selectMonth,
             updateEnvelope,
             openActiveBudget,
             newActiveBudget,

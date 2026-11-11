@@ -40,6 +40,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
@@ -58,6 +59,7 @@ class EnvelopeScreenInstrumentedTest {
     private val state = mutableStateOf<EnvelopeUiState>(successState())
 
     private var updatedEnvelope: Envelope? = null
+    private var selectedMonth: YearMonth? = null
     private var openedBudgetId: BudgetId? = null
     private var newBudgetDate: LocalDate? = null
     private var saveBudgetCalls = 0
@@ -113,6 +115,21 @@ class EnvelopeScreenInstrumentedTest {
         setScreen()
 
         composeRule.onNodeWithText("15").assertIsDisplayed()
+    }
+
+    @Test
+    fun envelope_monthPickerReportsSelectedMonth() {
+        setScreen()
+
+        composeRule.onNodeWithText(context.getString(R.string.time_format_year_month, 2026, 10))
+            .performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText("09").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("09").performClick()
+        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).performClick()
+
+        composeRule.runOnIdle { assertEquals(YearMonth.of(2026, 9), selectedMonth) }
     }
 
     @Test
@@ -373,6 +390,10 @@ class EnvelopeScreenInstrumentedTest {
             EnvelogTheme(dynamicColor = false) {
                 EnvelopeScreen(
                     uiState = state.value,
+                    selectMonth = {
+                        selectedMonth = it
+                        state.value = (state.value as EnvelopeUiState.Success).copy(yearMonth = it)
+                    },
                     initializeForNew = {},
                     updateEnvelope = {
                         updatedEnvelope = it
