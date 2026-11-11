@@ -21,3 +21,9 @@ fun yearMonthText(yearMonth: YearMonth): String = stringResource(
     yearMonth.year,
     yearMonth.monthValue,
 )
+
+@Composable
+fun dayRangeText(start: LocalDate, endInclusive: LocalDate): String =
+    stringResource(R.string.time_format_day, start.dayOfMonth) +
+        stringResource(R.string.symbol_en_dash) +
+        stringResource(R.string.time_format_day, endInclusive.dayOfMonth)

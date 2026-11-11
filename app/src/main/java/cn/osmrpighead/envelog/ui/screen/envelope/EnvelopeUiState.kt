@@ -33,6 +33,7 @@ sealed interface EnvelopeUiState {
         val budgets: Map<BudgetId, Budget>,
         val amountFieldId: Any,
         val allocations: List<DailyAllocationSummary>,
+        val allocationsWithInfo: List<AllocationWithInfo>,
         val activeItem: ActiveItem,
         val envelopeSubmissionError: EnvelopeSubmissionError?,
     ) : EnvelopeUiState {

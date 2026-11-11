@@ -8,6 +8,7 @@ import cn.osmrpighead.envelog.core.navigation.NavId
 import cn.osmrpighead.envelog.core.navigation.NavigationTarget
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.TodayProvider
+import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
@@ -65,6 +66,7 @@ class EnvelopeViewModelTest {
 
     private val envelopeId = EnvelopeId(UUID(0L, 0xA1))
     private val budgetId = BudgetId(UUID(0L, 0xD1))
+    private val monthSpan = month.toHalfOpenDateSpan()
     private val budgetSpan = LocalDate.of(2026, 10, 1) untilExclusive LocalDate.of(2026, 10, 8)
     private val nextBudgetSpan = LocalDate.of(2026, 10, 8) untilExclusive LocalDate.of(2026, 10, 15)
     private val budget = Budget(
@@ -108,7 +110,7 @@ class EnvelopeViewModelTest {
         val allocations = awaitAllocations()
 
         assertEquals(setOf(early, late), allocations.toSet())
-        assertEquals(listOf(budgetSpan), repository.requestedSpans)
+        assertEquals(listOf(monthSpan, budgetSpan), repository.requestedSpans)
     }
 
     @Test
@@ -122,7 +124,7 @@ class EnvelopeViewModelTest {
         val allocations = awaitAllocations { it.contains(outside) && it.size == 1 }
 
         assertEquals(listOf(outside), allocations)
-        assertEquals(listOf(budgetSpan, nextBudgetSpan), repository.requestedSpans)
+        assertEquals(listOf(monthSpan, budgetSpan, nextBudgetSpan), repository.requestedSpans)
     }
 
     @Test
@@ -133,6 +135,14 @@ class EnvelopeViewModelTest {
         val allocations = awaitAllocations()
 
         assertEquals(listOf(early, late), allocations)
+    }
+
+    @Test
+    fun success_exposesMonthlyAllocationsChronologically() = runTest {
+        val state = awaitSuccess()
+
+        assertEquals(listOf(early, late, outside), state.allocationsWithInfo)
+        assertEquals(listOf(monthSpan), repository.requestedSpans)
     }
 
     @Test
@@ -147,7 +157,7 @@ class EnvelopeViewModelTest {
             .filterIsInstance<EnvelopeUiState.Success>()
             .first { it.activeItem.budget == null }
         assertEquals(emptyList<AllocationWithInfo>(), state.activeItem.allocations)
-        assertEquals(listOf(budgetSpan), repository.requestedSpans)
+        assertEquals(listOf(monthSpan, budgetSpan), repository.requestedSpans)
     }
 
     @Test
@@ -165,6 +175,7 @@ class EnvelopeViewModelTest {
             assertTrue(newRepository.requestedSpans.isEmpty())
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
             assertEquals(emptyList<AllocationWithInfo>(), state.activeItem.allocations)
+            assertEquals(emptyList<AllocationWithInfo>(), state.allocationsWithInfo)
         } finally {
             newViewModel.viewModelScope.cancel()
         }

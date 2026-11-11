@@ -16,6 +16,9 @@
     <string name="envelope_edit_label_budgeted">Budgeted</string>
     <string name="envelope_edit_msg_archived">Edits on archived envelope are prohibited</string>
     <string name="envelope_edit_msg_budget_overlaps">Budget overlaps</string>
+    <string name="envelope_edit_tab_budget">Budget</string>
+    <string name="envelope_edit_tab_calendar">Calendar</string>
+    <string name="envelope_edit_tab_expenses">Expenses</string>
     <string name="envelope_edit_title">Edit Envelope</string>
     <string name="month_picker_label_month">Month</string>
     <string name="month_picker_label_year">Year</string>
@@ -43,9 +46,11 @@
     <string name="overview_summary_remaining_caption">Used: %1$s</string>
     <string name="overview_summary_remaining_title">Remaining</string>
     <string name="record_expense_title">Record an expense</string>
+    <string name="symbol_en_dash" translatable="false">\u2013</string>
     <string name="symbol_hair_space" translatable="false">\u200a</string>
     <string name="symbol_percent_nan" translatable="false">\u2014</string>
     <string name="symbol_space" translatable="false">\u0020</string>
+    <string name="time_format_day">%1$02d</string>
     <string name="time_format_month">%1$02d</string>
     <string name="time_format_within_days">within %1$dd</string>
     <string name="time_format_year">%1$04d</string>

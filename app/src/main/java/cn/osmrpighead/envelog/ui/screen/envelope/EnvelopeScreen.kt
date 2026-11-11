@@ -2,10 +2,17 @@ package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -16,10 +23,21 @@ import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.screen.envelope.component.AllocationList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
+import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
 import java.time.LocalDate
+
+private enum class EnvelopeTab { Calendar, Budget, Allocation }
+
+private val EnvelopeTab.labelRes: Int
+    get() = when (this) {
+        EnvelopeTab.Calendar -> R.string.envelope_edit_tab_calendar
+        EnvelopeTab.Budget -> R.string.envelope_edit_tab_budget
+        EnvelopeTab.Allocation -> R.string.envelope_edit_tab_expenses
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +56,12 @@ private fun Success(
     modifier: Modifier = Modifier,
 ) {
     BackHandler { saveAndBack() }
+
+    var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
+    val visibleTabs =
+        if (uiState.envelope.isBudgeted) EnvelopeTab.entries
+        else EnvelopeTab.entries - EnvelopeTab.Budget
+    val activeTab = selectedTab.takeIf { it in visibleTabs } ?: visibleTabs.first()
 
     Scaffold(
         topBar = {
@@ -58,38 +82,72 @@ private fun Success(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+                .fillMaxSize(),
         ) {
-
-            OutlinedTextField(
-                value = uiState.envelope.name,
-                onValueChange = { updateEnvelope(uiState.envelope.copy(name = it)) },
-                label = { Text(text = stringResource(R.string.common_label_name)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            LabeledSwitch(
-                checked = uiState.envelope.isBudgeted,
-                onCheckedChange = { updateEnvelope(uiState.envelope.copy(isBudgeted = it)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
-            ) {
-                Text(
-                    text = stringResource(R.string.envelope_edit_label_budgeted),
-                    style = MaterialTheme.typography.bodyLarge,
+            Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold))) {
+                OutlinedTextField(
+                    value = uiState.envelope.name,
+                    onValueChange = { updateEnvelope(uiState.envelope.copy(name = it)) },
+                    label = { Text(text = stringResource(R.string.common_label_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
+
+                LabeledSwitch(
+                    checked = uiState.envelope.isBudgeted,
+                    onCheckedChange = { updateEnvelope(uiState.envelope.copy(isBudgeted = it)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                ) {
+                    Text(
+                        text = stringResource(R.string.envelope_edit_label_budgeted),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+
+                SecondaryTabRow(
+                    selectedTabIndex = visibleTabs.indexOf(activeTab),
+                    modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+                ) {
+                    for (tab in visibleTabs) Tab(
+                        selected = activeTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = { Text(text = stringResource(tab.labelRes)) },
+                    )
+                }
             }
 
-            BudgetCalendar(
-                model = uiState.calendar,
-                onDateClick = newActiveBudget,
-                onBudgetClick = openActiveBudget,
+            Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
-            )
+                    .padding(top = dimensionResource(R.dimen.spacingMedium))
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                when (activeTab) {
+                    EnvelopeTab.Budget -> BudgetList(
+                        budgets = uiState.budgets.values,
+                        yearMonth = uiState.yearMonth,
+                        onBudgetClick = openActiveBudget,
+                        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+                    )
+
+                    EnvelopeTab.Allocation -> AllocationList(
+                        allocations = uiState.allocationsWithInfo,
+                        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+                    )
+
+                    EnvelopeTab.Calendar -> BudgetCalendar(
+                        model = uiState.calendar,
+                        onDateClick = newActiveBudget,
+                        onBudgetClick = openActiveBudget,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+                    )
+                }
+            }
         }
 
         DatesModalBottomSheet(

@@ -64,6 +64,13 @@ class EnvelopeViewModel @AssistedInject constructor(
     } else flowOf()
 
     @OptIn(ExperimentalCoroutinesApi::class)
+    private val monthlyAllocations: Flow<List<AllocationWithInfo>> =
+        if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
+            repository.observeAllocations(route.id.value, yearMonth.toHalfOpenDateSpan())
+                .map { allocations -> allocations.sortedBy { it.expenditure.happenedAt } }
+        } else flowOf(emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val activeAllocations: Flow<List<AllocationWithInfo>> =
         if (route.id is NavigationTarget.Existing) _uiState
             .map { (it as? EnvelopeUiState.Success)?.activeItem?.budget?.dateSpan }
@@ -82,6 +89,7 @@ class EnvelopeViewModel @AssistedInject constructor(
             budgets = emptyMap(),
             amountFieldId = fieldId,
             allocations = emptyList(),
+            allocationsWithInfo = emptyList(),
             activeItem = ActiveItem(
                 budget = null,
                 isNew = false,
@@ -95,24 +103,29 @@ class EnvelopeViewModel @AssistedInject constructor(
     init {
         if (route.id is NavigationTarget.Existing) {
             viewModelScope.launch {
-                val (envelope, budgets, allocations) =
-                    combine(savedEnvelope, savedBudgets, allocations) { envelope, budgets, allocations ->
-                        Triple(envelope, budgets, allocations)
-                    }.first()
-                _uiState.value = EnvelopeUiState.Success(
-                    envelope = envelope,
-                    yearMonth = yearMonth.value,
-                    budgets = budgets,
-                    amountFieldId = fieldId,
-                    allocations = allocations,
-                    activeItem = ActiveItem(
-                        budget = null,
-                        isNew = false,
-                        error = null,
-                        complete = true,
-                    ),
-                    envelopeSubmissionError = null,
-                )
+                val success = combine(
+                    savedEnvelope,
+                    savedBudgets,
+                    allocations,
+                    monthlyAllocations,
+                ) { envelope, budgets, allocations, allocationsWithInfo ->
+                    EnvelopeUiState.Success(
+                        envelope = envelope,
+                        yearMonth = yearMonth.value,
+                        budgets = budgets,
+                        amountFieldId = fieldId,
+                        allocations = allocations,
+                        allocationsWithInfo = allocationsWithInfo,
+                        activeItem = ActiveItem(
+                            budget = null,
+                            isNew = false,
+                            error = null,
+                            complete = true,
+                        ),
+                        envelopeSubmissionError = null,
+                    )
+                }.first()
+                _uiState.value = success
             }
             viewModelScope.launch {
                 activeAllocations.collect { allocations ->

@@ -21,6 +21,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.format
+import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
@@ -29,9 +30,12 @@ import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.testing.InstrumentedTestData
 import cn.osmrpighead.envelog.testing.hasButtonRole
+import cn.osmrpighead.envelog.ui.text.Formatter
+import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,18 +79,36 @@ class EnvelopeScreenInstrumentedTest {
     }
 
     @Test
-    fun envelope_togglingBudgetReportsUpdateAndHidesCalendar() {
+    fun envelope_togglingBudgetHidesBudgetTabAndFallsBackToExpenses() {
+        state.value = successState(allocationsWithInfo = listOf(allocation(0xC4, 5, 12_345)))
         setScreen()
 
         composeRule.onNode(isToggleable()).performClick()
 
         composeRule.runOnIdle { assertFalse(updatedEnvelope?.isBudgeted ?: true) }
-        composeRule.onNodeWithText("15").assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_budget)).assertDoesNotExist()
+        composeRule.onNodeWithText("123.45").assertIsDisplayed()
+
+        composeRule.onNode(isToggleable()).performClick()
+
+        composeRule.runOnIdle { assertTrue(updatedEnvelope?.isBudgeted ?: false) }
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_budget)).assertExists()
+    }
+
+    @Test
+    fun envelope_hidesBudgetTabWhenNotBudgeted() {
+        state.value = successState(envelope = envelope.copy(isBudgeted = false))
+        setScreen()
+
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_budget)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_expenses)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_tab_calendar)).assertIsDisplayed()
     }
 
     @Test
     fun envelope_clickingDayWithoutBudgetRequestsNewBudget() {
         setScreen()
+        selectTab(R.string.envelope_edit_tab_calendar)
 
         composeRule.onNodeWithText("15").performClick()
 
@@ -98,10 +120,52 @@ class EnvelopeScreenInstrumentedTest {
         val budget = InstrumentedTestData.budget(0xD1)
         state.value = successState(budgets = mapOf(budget.id to budget))
         setScreen()
+        selectTab(R.string.envelope_edit_tab_calendar)
 
         composeRule.onNodeWithText("15").performClick()
 
         composeRule.runOnIdle { assertEquals(budget.id, openedBudgetId) }
+    }
+
+    @Test
+    fun envelope_budgetListShowsDateRangeAndAmount() {
+        val budget = InstrumentedTestData.budget(0xD6, amount = 12_345).copy(
+            dateSpan = LocalDate.of(2026, 10, 5) untilExclusive LocalDate.of(2026, 10, 10),
+        )
+        state.value = successState(budgets = mapOf(budget.id to budget))
+        setScreen()
+
+        val dateRange = context.getString(R.string.time_format_day, 5) +
+            context.getString(R.string.symbol_en_dash) +
+            context.getString(R.string.time_format_day, 9)
+        composeRule.onNodeWithText(dateRange).assertIsDisplayed()
+        composeRule.onNodeWithText(budget.amount.formatAsAmount(Formatter.AmountConcise)).assertIsDisplayed()
+    }
+
+    @Test
+    fun envelope_budgetRowClickOpensBudget() {
+        val budget = InstrumentedTestData.budget(0xD7)
+        state.value = successState(budgets = mapOf(budget.id to budget))
+        setScreen()
+
+        val dateRange = context.getString(R.string.time_format_day, 1) +
+            context.getString(R.string.symbol_en_dash) +
+            context.getString(R.string.time_format_day, 31)
+        composeRule.onNodeWithText(dateRange).performClick()
+
+        composeRule.runOnIdle { assertEquals(budget.id, openedBudgetId) }
+    }
+
+    @Test
+    fun envelope_expenseListShowsAllocation() {
+        state.value = successState(allocationsWithInfo = listOf(allocation(0xC5, 5, 12_345)))
+        setScreen()
+        selectTab(R.string.envelope_edit_tab_expenses)
+
+        val expenditure = allocation(0xC5, 5, 12_345).expenditure
+        val dateTime = expenditure.happenedAt.format(expenditure.happenedZone)
+        composeRule.onNodeWithText(dateTime).assertIsDisplayed()
+        composeRule.onNodeWithText("123.45").assertIsDisplayed()
     }
 
     @Test
@@ -237,6 +301,24 @@ class EnvelopeScreenInstrumentedTest {
         return enabled
     }
 
+    private fun selectTab(labelRes: Int) {
+        composeRule.onNode(hasText(context.getString(labelRes)) and hasClickAction()).performClick()
+        composeRule.waitForIdle()
+    }
+
+    private fun allocation(value: Long, day: Int, amount: Long): AllocationWithInfo =
+        AllocationWithInfo(
+            expenditure = ExpenditureMetaInfo(
+                id = ExpenditureId(UUID(0L, value)),
+                happenedAt = LocalDate.of(2026, 10, day).atTime(12, 0)
+                    .atZone(InstrumentedTestData.zone).toInstant(),
+                happenedDate = LocalDate.of(2026, 10, day),
+                happenedZone = InstrumentedTestData.zone,
+            ),
+            envelopeId = InstrumentedTestData.envelopeA,
+            amount = amount,
+        )
+
     private fun setScreen() {
         composeRule.setContent {
             EnvelogTheme(dynamicColor = false) {
@@ -272,6 +354,7 @@ class EnvelopeScreenInstrumentedTest {
     private fun successState(
         envelope: Envelope = this.envelope,
         budgets: Map<BudgetId, Budget> = emptyMap(),
+        allocationsWithInfo: List<AllocationWithInfo> = emptyList(),
         activeItem: ActiveItem = ActiveItem(budget = null, isNew = false, error = null, complete = true),
         envelopeSubmissionError: EnvelopeSubmissionError? = null,
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
@@ -280,6 +363,7 @@ class EnvelopeScreenInstrumentedTest {
         budgets = budgets,
         amountFieldId = fieldId,
         allocations = emptyList(),
+        allocationsWithInfo = allocationsWithInfo,
         activeItem = activeItem,
         envelopeSubmissionError = envelopeSubmissionError,
     )
