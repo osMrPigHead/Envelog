@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -21,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.format
+import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
@@ -29,6 +31,7 @@ import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.testing.InstrumentedTestData
 import cn.osmrpighead.envelog.testing.hasButtonRole
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -61,6 +64,11 @@ class EnvelopeScreenInstrumentedTest {
     private var closeBudgetCalls = 0
     private var saveAndBackCalls = 0
     private var clearSubmissionErrorCalls = 0
+    private var openQuickSetCalls = 0
+    private var dismissQuickSetCalls = 0
+    private var applyQuickSetCalls = 0
+    private var confirmQuickSetOverwriteCalls = 0
+    private var cancelQuickSetOverwriteCalls = 0
 
     private val okText: String get() = context.getString(R.string.common_action_ok)
 
@@ -82,6 +90,64 @@ class EnvelopeScreenInstrumentedTest {
 
         composeRule.runOnIdle { assertFalse(updatedEnvelope?.isBudgeted ?: true) }
         composeRule.onNodeWithText("15").assertDoesNotExist()
+    }
+
+    @Test
+    fun envelope_quickSetButtonHiddenWhenNotBudgeted() {
+        state.value = successState(envelope = envelope.copy(isBudgeted = false))
+        setScreen()
+
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun envelope_quickSetButtonDisabledForPastMonth() {
+        state.value = successState(today = LocalDate.of(2026, 11, 5))
+        setScreen()
+
+        composeRule.onNode(
+            hasText(context.getString(R.string.envelope_edit_quick_set_title)) and hasClickAction(),
+        ).assertIsNotEnabled()
+    }
+
+    @Test
+    fun envelope_quickSetButtonOpensSheet() {
+        setScreen()
+
+        composeRule.onNode(
+            hasText(context.getString(R.string.envelope_edit_quick_set_title)) and hasClickAction(),
+        ).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, openQuickSetCalls) }
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_mode_label))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_range_label)).assertExists()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_amount_daily_label)).assertExists()
+    }
+
+    @Test
+    fun envelope_quickSetConflictDialogReportsOverwrite() {
+        val conflict = QuickSetBudgetPlan(
+            targetSpan = LocalDate.of(2026, 10, 20) untilExclusive LocalDate.of(2026, 11, 1),
+            totalAmount = 60_000,
+            budgets = emptyList(),
+            conflicts = listOf(InstrumentedTestData.budget(0xD1)),
+        )
+        state.value = successState(quickSet = QuickSetUiState(open = true, conflict = conflict))
+        setScreen()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_quick_set_conflict_title))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNode(
+            hasText(context.getString(R.string.envelope_edit_quick_set_conflict_confirm)) and
+                hasClickAction() and hasButtonRole(),
+        ).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, confirmQuickSetOverwriteCalls) }
     }
 
     @Test
@@ -263,6 +329,23 @@ class EnvelopeScreenInstrumentedTest {
                         val current = state.value as EnvelopeUiState.Success
                         state.value = current.copy(envelopeSubmissionError = null)
                     },
+                    openQuickSet = {
+                        openQuickSetCalls++
+                        val current = state.value as EnvelopeUiState.Success
+                        state.value = current.copy(quickSet = current.quickSet.copy(open = true))
+                    },
+                    dismissQuickSet = {
+                        dismissQuickSetCalls++
+                        val current = state.value as EnvelopeUiState.Success
+                        state.value = current.copy(quickSet = QuickSetUiState())
+                    },
+                    applyQuickSet = { _, _ -> applyQuickSetCalls++ },
+                    confirmQuickSetOverwrite = { confirmQuickSetOverwriteCalls++ },
+                    cancelQuickSetOverwrite = {
+                        cancelQuickSetOverwriteCalls++
+                        val current = state.value as EnvelopeUiState.Success
+                        state.value = current.copy(quickSet = current.quickSet.copy(conflict = null))
+                    },
                 )
             }
         }
@@ -274,13 +357,17 @@ class EnvelopeScreenInstrumentedTest {
         budgets: Map<BudgetId, Budget> = emptyMap(),
         activeItem: ActiveItem = ActiveItem(budget = null, isNew = false, error = null, complete = true),
         envelopeSubmissionError: EnvelopeSubmissionError? = null,
+        today: LocalDate = InstrumentedTestData.today,
+        quickSet: QuickSetUiState = QuickSetUiState(),
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
         envelope = envelope,
         yearMonth = InstrumentedTestData.month,
+        today = today,
         budgets = budgets,
         amountFieldId = fieldId,
         allocations = emptyList(),
         activeItem = activeItem,
         envelopeSubmissionError = envelopeSubmissionError,
+        quickSet = quickSet,
     )
 }

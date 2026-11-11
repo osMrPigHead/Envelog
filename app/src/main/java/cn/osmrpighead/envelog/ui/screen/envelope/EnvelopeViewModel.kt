@@ -14,6 +14,9 @@ import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlanner
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -79,6 +82,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         _uiState.value = EnvelopeUiState.Success(
             envelope = envelope,
             yearMonth = yearMonth.value,
+            today = appState.today.value,
             budgets = emptyMap(),
             amountFieldId = fieldId,
             allocations = emptyList(),
@@ -93,6 +97,14 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     init {
+        viewModelScope.launch {
+            appState.today.collect { today ->
+                _uiState.update {
+                    if (it !is EnvelopeUiState.Success) return@update it
+                    it.copy(today = today)
+                }
+            }
+        }
         if (route.id is NavigationTarget.Existing) {
             viewModelScope.launch {
                 val (envelope, budgets, allocations) =
@@ -102,6 +114,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 _uiState.value = EnvelopeUiState.Success(
                     envelope = envelope,
                     yearMonth = yearMonth.value,
+                    today = appState.today.value,
                     budgets = budgets,
                     amountFieldId = fieldId,
                     allocations = allocations,
@@ -270,6 +283,108 @@ class EnvelopeViewModel @AssistedInject constructor(
                     complete = false,
                 ),
             )
+        }
+    }
+
+    fun openQuickSet() {
+        _uiState.update {
+            if (it !is EnvelopeUiState.Success) return@update it
+            it.copy(quickSet = QuickSetUiState(open = true))
+        }
+    }
+
+    fun dismissQuickSet() {
+        _uiState.update {
+            if (it !is EnvelopeUiState.Success) return@update it
+            it.copy(quickSet = QuickSetUiState())
+        }
+    }
+
+    fun applyQuickSet(mode: QuickSetMode, amount: Long) {
+        if (job?.isActive == true) return
+
+        val state = _uiState.value as? EnvelopeUiState.Success ?: return
+        if (amount <= 0) return
+
+        val plan = QuickSetBudgetPlanner.plan(
+            mode = mode,
+            amount = amount,
+            yearMonth = state.yearMonth,
+            today = state.today,
+            envelopeId = state.envelope.id,
+            existing = state.budgets.values,
+        ) ?: return
+
+        if (plan.conflicts.isNotEmpty()) {
+            _uiState.update {
+                if (it !is EnvelopeUiState.Success) return@update it
+                it.copy(
+                    quickSet = it.quickSet.copy(
+                        conflict = plan,
+                        error = null,
+                    ),
+                )
+            }
+            return
+        }
+
+        _uiState.update {
+            if (it !is EnvelopeUiState.Success) return@update it
+            it.copy(quickSet = it.quickSet.copy(error = null))
+        }
+        persistQuickSet(plan)
+    }
+
+    fun confirmQuickSetOverwrite() {
+        if (job?.isActive == true) return
+
+        val state = _uiState.value as? EnvelopeUiState.Success ?: return
+        val plan = state.quickSet.conflict ?: return
+        persistQuickSet(plan)
+    }
+
+    fun cancelQuickSetOverwrite() {
+        _uiState.update {
+            if (it !is EnvelopeUiState.Success) return@update it
+            it.copy(quickSet = it.quickSet.copy(conflict = null))
+        }
+    }
+
+    private fun persistQuickSet(plan: QuickSetBudgetPlan) {
+        job = viewModelScope.launch {
+            if (!isNew) {
+                val state = _uiState.value as? EnvelopeUiState.Success ?: return@launch
+                val result = repository.replaceBudgets(
+                    envelopeId = state.envelope.id,
+                    deleteBudgetIds = plan.conflicts.map { it.id },
+                    budgets = plan.budgets,
+                )
+                if (result != Success) {
+                    _uiState.update {
+                        if (it !is EnvelopeUiState.Success) return@update it
+                        it.copy(
+                            quickSet = it.quickSet.copy(
+                                conflict = null,
+                                error = if (result == EnvelopeArchived) {
+                                    QuickSetError.EnvelopeArchived
+                                } else {
+                                    QuickSetError.BudgetOverlaps
+                                },
+                            ),
+                        )
+                    }
+                    return@launch
+                }
+            }
+
+            _uiState.update {
+                if (it !is EnvelopeUiState.Success) return@update it
+                val removed = plan.conflicts.map { conflict -> conflict.id }.toSet()
+                it.copy(
+                    budgets = (it.budgets - removed) + plan.budgets.associateBy { budget -> budget.id },
+                    quickSet = QuickSetUiState(),
+                )
+            }
         }
     }
 

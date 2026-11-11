@@ -206,6 +206,12 @@ class OverviewViewModelTest {
         override suspend fun insertBudget(budget: Budget): BudgetWriteResult =
             throw NotImplementedError()
 
+        override suspend fun replaceBudgets(
+            envelopeId: EnvelopeId,
+            deleteBudgetIds: Collection<BudgetId>,
+            budgets: List<Budget>,
+        ): BudgetWriteResult = throw NotImplementedError()
+
         override suspend fun deleteBudget(id: BudgetId): DeleteResult =
             throw NotImplementedError()
 

@@ -62,8 +62,39 @@ interface BudgetDao {
         attributedMonth: YearMonth,
     ): Flow<List<BudgetEntity>>
 
+    @Query(
+        """
+            SELECT *
+            FROM budget
+            WHERE deletedAt IS NULL
+              AND budget.envelopeId = :envelopeId
+              AND budget.startDate < :spanEnd
+              AND budget.endDate > :spanStart
+        """,
+    )
+    suspend fun getOverlaps(
+        envelopeId: EnvelopeId,
+        spanStart: LocalDate,
+        spanEnd: LocalDate,
+    ): List<BudgetEntity>
+
     @Query("UPDATE budget SET deletedAt = :now WHERE id = :id AND deletedAt IS NULL")
     suspend fun delete(id: BudgetId, now: Instant): Int
+
+    @Query(
+        """
+            UPDATE budget
+            SET deletedAt = :now
+            WHERE id IN (:ids)
+              AND envelopeId = :envelopeId
+              AND deletedAt IS NULL
+        """,
+    )
+    suspend fun deleteAll(
+        ids: Collection<BudgetId>,
+        envelopeId: EnvelopeId,
+        now: Instant,
+    ): Int
 
     @Update
     suspend fun update(entity: BudgetEntity)

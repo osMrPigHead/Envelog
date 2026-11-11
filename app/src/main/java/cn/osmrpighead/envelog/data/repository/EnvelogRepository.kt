@@ -30,6 +30,12 @@ interface EnvelogRepository {
 
     suspend fun updateBudget(budget: Budget): BudgetWriteResult
     suspend fun insertBudget(budget: Budget): BudgetWriteResult
+    suspend fun replaceBudgets(
+        envelopeId: EnvelopeId,
+        deleteBudgetIds: Collection<BudgetId>,
+        budgets: List<Budget>,
+    ): BudgetWriteResult
+
     suspend fun deleteBudget(id: BudgetId): DeleteResult
 
     suspend fun recordExpenditure(expenditure: ExpenditureSubmission)

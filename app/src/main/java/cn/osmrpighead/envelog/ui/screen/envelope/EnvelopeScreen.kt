@@ -19,7 +19,10 @@ import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
+import cn.osmrpighead.envelog.ui.screen.envelope.component.QuickSetBudgetModalBottomSheet
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
 import java.time.LocalDate
+import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +38,11 @@ private fun Success(
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
+    openQuickSet: () -> Unit,
+    dismissQuickSet: () -> Unit,
+    applyQuickSet: (QuickSetMode, Long) -> Unit,
+    confirmQuickSetOverwrite: () -> Unit,
+    cancelQuickSetOverwrite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BackHandler { saveAndBack() }
@@ -82,6 +90,16 @@ private fun Success(
                 )
             }
 
+            if (uiState.envelope.isBudgeted) OutlinedButton(
+                onClick = openQuickSet,
+                enabled = uiState.yearMonth >= YearMonth.from(uiState.today),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
+            ) {
+                Text(text = stringResource(R.string.envelope_edit_quick_set_title))
+            }
+
             BudgetCalendar(
                 model = uiState.calendar,
                 onDateClick = newActiveBudget,
@@ -100,6 +118,17 @@ private fun Success(
             save = saveActiveBudget,
             delete = deleteActiveBudget,
             clear = clearActiveBudget,
+        )
+
+        if (uiState.quickSet.open) QuickSetBudgetModalBottomSheet(
+            yearMonth = uiState.yearMonth,
+            today = uiState.today,
+            conflict = uiState.quickSet.conflict,
+            error = uiState.quickSet.error,
+            onDismiss = dismissQuickSet,
+            onApply = applyQuickSet,
+            onConfirmOverwrite = confirmQuickSetOverwrite,
+            onCancelOverwrite = cancelQuickSetOverwrite,
         )
 
         if (uiState.envelopeSubmissionError != null) EnvelopeSubmissionErrorDialog(
@@ -123,6 +152,11 @@ fun EnvelopeScreen(
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
+    openQuickSet: () -> Unit,
+    dismissQuickSet: () -> Unit,
+    applyQuickSet: (QuickSetMode, Long) -> Unit,
+    confirmQuickSetOverwrite: () -> Unit,
+    cancelQuickSetOverwrite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -150,6 +184,11 @@ fun EnvelopeScreen(
             clearActiveBudget,
             saveAndBack,
             clearSubmissionError,
+            openQuickSet,
+            dismissQuickSet,
+            applyQuickSet,
+            confirmQuickSetOverwrite,
+            cancelQuickSetOverwrite,
             modifier,
         )
     }

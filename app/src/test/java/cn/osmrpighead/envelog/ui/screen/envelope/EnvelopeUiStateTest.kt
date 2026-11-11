@@ -31,6 +31,7 @@ class EnvelopeUiStateTest {
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
         envelope = Envelope(envelopeId, "餐饮", true, false),
         yearMonth = month,
+        today = RoomTestData.today,
         budgets = budgets.associateBy { it.id },
         amountFieldId = Any(),
         allocations = allocations,

@@ -108,6 +108,32 @@ class RoomEnvelogRepository @Inject constructor(
         return@withWriteTransaction BudgetWriteResult.Success
     }
 
+    override suspend fun replaceBudgets(
+        envelopeId: EnvelopeId,
+        deleteBudgetIds: Collection<BudgetId>,
+        budgets: List<Budget>,
+    ): BudgetWriteResult = db.withWriteTransaction {
+        if (envelopeDao.getArchived(envelopeId) != null)
+            return@withWriteTransaction BudgetWriteResult.EnvelopeArchived
+        require(budgets.all { it.envelopeId == envelopeId }) {
+            "All budgets must belong to the target envelope"
+        }
+        if (budgets.map { it.dateSpan }.hasOverlap())
+            return@withWriteTransaction BudgetWriteResult.BudgetOverlaps
+        val remainingOverlaps = budgets.any { budget ->
+            budgetDao.getOverlaps(
+                envelopeId = envelopeId,
+                spanStart = budget.dateSpan.startDate,
+                spanEnd = budget.dateSpan.endDate,
+            ).any { it.id !in deleteBudgetIds }
+        }
+        if (remainingOverlaps)
+            return@withWriteTransaction BudgetWriteResult.BudgetOverlaps
+        if (deleteBudgetIds.isNotEmpty()) budgetDao.deleteAll(deleteBudgetIds, envelopeId, clock.instant())
+        if (budgets.isNotEmpty()) budgetDao.insert(budgets.map { it.normalize().toEntity() })
+        return@withWriteTransaction BudgetWriteResult.Success
+    }
+
     override suspend fun deleteBudget(id: BudgetId): DeleteResult =
         when (budgetDao.delete(id, clock.instant())) {
             0 -> DeleteResult.NotFoundOrAlreadyDeleted

@@ -25,6 +25,7 @@ import cn.osmrpighead.envelog.data.repository.DeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.data.repository.EnvelopeUpdateResult
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -39,6 +40,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -170,6 +174,168 @@ class EnvelopeViewModelTest {
         }
     }
 
+    @Test
+    fun applyQuickSet_onNewEnvelope_createsDailyBudgetsInMemory() = runTest {
+        val newRepository = FakeRepository(
+            envelope = Envelope(EnvelopeId.generate(), "新信封", true, false),
+            budget = budget,
+            allocations = emptyList(),
+        )
+        val newViewModel = createViewModel(newRepository, NavigationTarget.New())
+        try {
+            val envelope = Envelope(EnvelopeId.generate(), "新信封", true, false)
+            newViewModel.initializeForNew(envelope)
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.Daily, 1_000)
+
+            val state = newViewModel.uiState.value as EnvelopeUiState.Success
+            assertEquals(12, state.budgets.size)
+            assertTrue(state.budgets.values.all { it.amount == 1_000L })
+            assertTrue(state.budgets.values.all { it.envelopeId == envelope.id })
+            assertEquals(LocalDate.of(2026, 10, 20), state.budgets.values.minOf { it.dateSpan.startDate })
+            assertEquals(LocalDate.of(2026, 10, 31), state.budgets.values.maxOf { it.dateSpan.startDate })
+            assertFalse(state.quickSet.open)
+            assertTrue(newRepository.replaceRequests.isEmpty())
+        } finally {
+            newViewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun applyQuickSet_withConflict_keepsBudgetsAndSetsConflict() = runTest {
+        val newRepository = FakeRepository(
+            envelope = Envelope(EnvelopeId.generate(), "新信封", true, false),
+            budget = budget,
+            allocations = emptyList(),
+        )
+        val newViewModel = createViewModel(newRepository, NavigationTarget.New())
+        try {
+            newViewModel.initializeForNew(Envelope(EnvelopeId.generate(), "新信封", true, false))
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.Daily, 1_000)
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.MonthlyTotal, 100_000)
+
+            val state = newViewModel.uiState.value as EnvelopeUiState.Success
+            assertTrue(state.quickSet.open)
+            assertNotNull(state.quickSet.conflict)
+            assertEquals(12, state.quickSet.conflict!!.conflicts.size)
+            assertEquals(12, state.budgets.size)
+            assertFalse(state.budgets.values.any { it.amount == 100_000L })
+        } finally {
+            newViewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun confirmQuickSetOverwrite_replacesBudgetsAndClosesSheet() = runTest {
+        val newRepository = FakeRepository(
+            envelope = Envelope(EnvelopeId.generate(), "新信封", true, false),
+            budget = budget,
+            allocations = emptyList(),
+        )
+        val newViewModel = createViewModel(newRepository, NavigationTarget.New())
+        try {
+            newViewModel.initializeForNew(Envelope(EnvelopeId.generate(), "新信封", true, false))
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.Daily, 1_000)
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.MonthlyTotal, 100_000)
+            newViewModel.confirmQuickSetOverwrite()
+
+            val state = newViewModel.uiState.value as EnvelopeUiState.Success
+            assertFalse(state.quickSet.open)
+            assertNull(state.quickSet.conflict)
+            assertEquals(1, state.budgets.size)
+            val budget = state.budgets.values.single()
+            assertEquals(100_000L, budget.amount)
+            assertEquals(LocalDate.of(2026, 10, 1), budget.dateSpan.startDate)
+            assertEquals(LocalDate.of(2026, 11, 1), budget.dateSpan.endDate)
+            assertTrue(newRepository.replaceRequests.isEmpty())
+        } finally {
+            newViewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun cancelQuickSetOverwrite_keepsSheetOpenAndBudgets() = runTest {
+        val newRepository = FakeRepository(
+            envelope = Envelope(EnvelopeId.generate(), "新信封", true, false),
+            budget = budget,
+            allocations = emptyList(),
+        )
+        val newViewModel = createViewModel(newRepository, NavigationTarget.New())
+        try {
+            newViewModel.initializeForNew(Envelope(EnvelopeId.generate(), "新信封", true, false))
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.Daily, 1_000)
+            newViewModel.openQuickSet()
+            newViewModel.applyQuickSet(QuickSetMode.MonthlyTotal, 100_000)
+            newViewModel.cancelQuickSetOverwrite()
+
+            val state = newViewModel.uiState.value as EnvelopeUiState.Success
+            assertTrue(state.quickSet.open)
+            assertNull(state.quickSet.conflict)
+            assertEquals(12, state.budgets.size)
+        } finally {
+            newViewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun applyQuickSet_onExistingEnvelope_usesReplaceBudgets() = runTest {
+        awaitSuccess()
+
+        viewModel.openQuickSet()
+        viewModel.applyQuickSet(QuickSetMode.Daily, 1_000)
+
+        val state = viewModel.uiState.value as EnvelopeUiState.Success
+        assertEquals(1, repository.replaceRequests.size)
+        val request = repository.replaceRequests.single()
+        assertEquals(envelopeId, request.envelopeId)
+        assertTrue(request.deleteBudgetIds.isEmpty())
+        assertEquals(12, request.budgets.size)
+        assertEquals(13, state.budgets.size)
+        assertFalse(state.quickSet.open)
+    }
+
+    @Test
+    fun applyQuickSet_onExistingEnvelope_reportsArchivedError() = runTest {
+        val archivedRepository = FakeRepository(
+            envelope = Envelope(envelopeId, "餐饮", true, false),
+            budget = budget,
+            allocations = emptyList(),
+            replaceResult = BudgetWriteResult.EnvelopeArchived,
+        )
+        val archivedViewModel = createViewModel(archivedRepository)
+        try {
+            archivedViewModel.uiState.filterIsInstance<EnvelopeUiState.Success>().first()
+            archivedViewModel.openQuickSet()
+            archivedViewModel.applyQuickSet(QuickSetMode.Daily, 1_000)
+
+            val state = archivedViewModel.uiState.value as EnvelopeUiState.Success
+            assertTrue(state.quickSet.open)
+            assertEquals(QuickSetError.EnvelopeArchived, state.quickSet.error)
+            assertNull(state.quickSet.conflict)
+            assertEquals(1, state.budgets.size)
+        } finally {
+            archivedViewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun dismissQuickSet_clearsState() = runTest {
+        awaitSuccess()
+
+        viewModel.openQuickSet()
+        viewModel.dismissQuickSet()
+
+        val state = viewModel.uiState.value as EnvelopeUiState.Success
+        assertFalse(state.quickSet.open)
+        assertNull(state.quickSet.conflict)
+        assertNull(state.quickSet.error)
+    }
+
     private suspend fun awaitSuccess(): EnvelopeUiState.Success =
         viewModel.uiState.filterIsInstance<EnvelopeUiState.Success>().first()
 
@@ -209,8 +375,17 @@ class EnvelopeViewModelTest {
         private val envelope: Envelope,
         private val budget: Budget,
         private val allocations: List<AllocationWithInfo>,
+        private val budgets: List<Budget> = listOf(budget),
+        private val replaceResult: BudgetWriteResult = BudgetWriteResult.Success,
     ) : EnvelogRepository {
+        data class ReplaceRequest(
+            val envelopeId: EnvelopeId,
+            val deleteBudgetIds: List<BudgetId>,
+            val budgets: List<Budget>,
+        )
+
         val requestedSpans = mutableListOf<HalfOpenDateSpan>()
+        val replaceRequests = mutableListOf<ReplaceRequest>()
 
         override fun observeOverview(
             today: LocalDate,
@@ -233,12 +408,12 @@ class EnvelopeViewModelTest {
         override fun observeBudgets(
             envelopeId: EnvelopeId,
             attributedMonth: YearMonth,
-        ): Flow<List<Budget>> = flowOf(listOf(budget))
+        ): Flow<List<Budget>> = flowOf(budgets)
 
         override fun observeBudgets(
             envelopeId: EnvelopeId,
             dateSpan: HalfOpenDateSpan,
-        ): Flow<List<Budget>> = flowOf(listOf(budget))
+        ): Flow<List<Budget>> = flowOf(budgets)
 
         override fun observeDailyAllocationOverview(
             envelopeId: EnvelopeId,
@@ -260,6 +435,15 @@ class EnvelopeViewModelTest {
         override suspend fun updateBudget(budget: Budget): BudgetWriteResult = throw NotImplementedError()
 
         override suspend fun insertBudget(budget: Budget): BudgetWriteResult = throw NotImplementedError()
+
+        override suspend fun replaceBudgets(
+            envelopeId: EnvelopeId,
+            deleteBudgetIds: Collection<BudgetId>,
+            budgets: List<Budget>,
+        ): BudgetWriteResult {
+            replaceRequests += ReplaceRequest(envelopeId, deleteBudgetIds.toList(), budgets)
+            return replaceResult
+        }
 
         override suspend fun deleteBudget(id: BudgetId): DeleteResult = throw NotImplementedError()
 

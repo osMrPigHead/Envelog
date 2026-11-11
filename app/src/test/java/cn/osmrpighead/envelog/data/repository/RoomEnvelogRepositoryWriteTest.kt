@@ -359,6 +359,127 @@ class RoomEnvelogRepositoryWriteTest {
     }
 
     @Test
+    fun replaceBudgets_deletesConflictsAndInsertsNewBudgets() = runTest {
+        val deleted = RoomTestData.budget(
+            id = RoomTestData.budgetA,
+            start = date(10, 1),
+            end = date(10, 21),
+            amount = 100_000,
+        )
+        val keptEntity = RoomTestData.budget(
+            id = RoomTestData.budgetB,
+            start = date(10, 25),
+            end = date(10, 28),
+            amount = 50_000,
+        )
+        val kept = budget(
+            id = RoomTestData.budgetB,
+            start = date(10, 25),
+            end = date(10, 28),
+            amount = 50_000,
+        )
+        database.seed(envelopes = listOf(RoomTestData.envelope()), budgets = listOf(deleted, keptEntity))
+        val first = budget(
+            id = RoomTestData.budgetC,
+            start = date(10, 20),
+            end = date(10, 22),
+            amount = 60_000,
+        )
+        val second = budget(
+            id = RoomTestData.budgetId(0xD4),
+            start = date(10, 22),
+            end = date(10, 25),
+            amount = 70_000,
+        )
+
+        assertEquals(
+            BudgetWriteResult.Success,
+            repository.replaceBudgets(RoomTestData.envelopeA, listOf(RoomTestData.budgetA), listOf(first, second)),
+        )
+
+        assertEquals(setOf(kept, first, second), budgetsOf().toSet())
+    }
+
+    @Test
+    fun replaceBudgets_withoutDeletesInsertsNewBudgets() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope()))
+        val newBudget = budget(
+            id = RoomTestData.budgetA,
+            start = date(10, 20),
+            end = date(10, 22),
+            amount = 50_000,
+        )
+
+        assertEquals(
+            BudgetWriteResult.Success,
+            repository.replaceBudgets(RoomTestData.envelopeA, emptyList(), listOf(newBudget)),
+        )
+
+        assertEquals(listOf(newBudget), budgetsOf())
+    }
+
+    @Test
+    fun replaceBudgets_rejectsArchivedEnvelope() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(archivedAt = Instant.parse("2026-09-01T04:00:00Z")),
+            ),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA)),
+        )
+
+        assertEquals(
+            BudgetWriteResult.EnvelopeArchived,
+            repository.replaceBudgets(
+                RoomTestData.envelopeA,
+                emptyList(),
+                listOf(budget(RoomTestData.budgetB, start = date(10, 20), end = date(10, 22))),
+            ),
+        )
+        assertEquals(listOf(budget(RoomTestData.budgetA)), budgetsOf())
+    }
+
+    @Test
+    fun replaceBudgets_rejectsOverlapWithBudgetNotDeleted() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    start = date(10, 15),
+                    end = date(10, 25),
+                    amount = 100_000,
+                ),
+            ),
+        )
+
+        assertEquals(
+            BudgetWriteResult.BudgetOverlaps,
+            repository.replaceBudgets(
+                RoomTestData.envelopeA,
+                emptyList(),
+                listOf(budget(RoomTestData.budgetB, start = date(10, 20), end = date(10, 22))),
+            ),
+        )
+        assertEquals(
+            listOf(budget(RoomTestData.budgetA, start = date(10, 15), end = date(10, 25))),
+            budgetsOf(),
+        )
+    }
+
+    @Test
+    fun replaceBudgets_rejectsSelfOverlappingNewBudgets() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope()))
+        val first = budget(RoomTestData.budgetA, start = date(10, 20), end = date(10, 25))
+        val second = budget(RoomTestData.budgetB, start = date(10, 22), end = date(10, 28))
+
+        assertEquals(
+            BudgetWriteResult.BudgetOverlaps,
+            repository.replaceBudgets(RoomTestData.envelopeA, emptyList(), listOf(first, second)),
+        )
+        assertTrue(budgetsOf().isEmpty())
+    }
+
+    @Test
     fun deleteBudget_deletesOnceThenReportsNotFoundOrAlreadyDeleted() = runTest {
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
