@@ -10,6 +10,9 @@
     <string name="common_msg_amount_positive">金额必须为正数</string>
     <string name="currency_cny_prefix">\u200b</string>
     <string name="currency_cny_suffix">\u200a元</string>
+    <string name="day_of_week_range_picker_label_end">结束</string>
+    <string name="day_of_week_range_picker_label_start">开始</string>
+    <string name="day_of_week_range_picker_title">选择星期区间</string>
     <string name="envelope_edit_budget_amount_label">限额</string>
     <string name="envelope_edit_budget_range_label">日期范围</string>
     <string name="envelope_edit_budget_title">预算</string>
@@ -50,6 +53,14 @@
     <string name="overview_summary_remaining_caption">已用 %1$s</string>
     <string name="overview_summary_remaining_title">可用预算</string>
     <string name="record_expense_title">记支出</string>
+    <string name="time_day_of_week_friday">周五</string>
+    <string name="time_day_of_week_monday">周一</string>
+    <string name="time_day_of_week_saturday">周六</string>
+    <string name="time_day_of_week_sunday">周日</string>
+    <string name="time_day_of_week_thursday">周四</string>
+    <string name="time_day_of_week_tuesday">周二</string>
+    <string name="time_day_of_week_wednesday">周三</string>
+    <string name="time_format_day_of_week_range">%1$s至%2$s</string>
     <string name="time_format_month">%1$02d月</string>
     <string name="time_format_within_days">%1$d\u200a日内</string>
     <string name="time_format_year">%1$04d年</string>

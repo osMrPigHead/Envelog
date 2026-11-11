@@ -9,6 +9,9 @@
     <string name="common_msg_amount_positive">Amount should be positive</string>
     <string name="currency_cny_prefix">¥\u2009</string>
     <string name="currency_cny_suffix">\u200b</string>
+    <string name="day_of_week_range_picker_label_end">End</string>
+    <string name="day_of_week_range_picker_label_start">Start</string>
+    <string name="day_of_week_range_picker_title">Select day range</string>
     <string name="envelope_edit_budget_amount_label">Amount</string>
     <string name="envelope_edit_budget_range_label">Date Range</string>
     <string name="envelope_edit_budget_title">Budget</string>
@@ -59,6 +62,14 @@
     <string name="symbol_hair_space" translatable="false">\u200a</string>
     <string name="symbol_percent_nan" translatable="false">\u2014</string>
     <string name="symbol_space" translatable="false">\u0020</string>
+    <string name="time_day_of_week_friday">Fri</string>
+    <string name="time_day_of_week_monday">Mon</string>
+    <string name="time_day_of_week_saturday">Sat</string>
+    <string name="time_day_of_week_sunday">Sun</string>
+    <string name="time_day_of_week_thursday">Thu</string>
+    <string name="time_day_of_week_tuesday">Tue</string>
+    <string name="time_day_of_week_wednesday">Wed</string>
+    <string name="time_format_day_of_week_range">%1$s ~ %2$s</string>
     <string name="time_format_month">%1$02d</string>
     <string name="time_format_within_days">within %1$dd</string>
     <string name="time_format_year">%1$04d</string>
