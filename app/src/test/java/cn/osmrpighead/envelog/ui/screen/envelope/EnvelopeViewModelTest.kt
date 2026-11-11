@@ -145,8 +145,8 @@ class EnvelopeViewModelTest {
 
         val state = viewModel.uiState
             .filterIsInstance<EnvelopeUiState.Success>()
-            .first { it.activeBudget.budget == null }
-        assertEquals(emptyList<AllocationWithInfo>(), state.activeBudget.allocations)
+            .first { it.activeItem.budget == null }
+        assertEquals(emptyList<AllocationWithInfo>(), state.activeItem.allocations)
         assertEquals(listOf(budgetSpan), repository.requestedSpans)
     }
 
@@ -164,7 +164,7 @@ class EnvelopeViewModelTest {
 
             assertTrue(newRepository.requestedSpans.isEmpty())
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
-            assertEquals(emptyList<AllocationWithInfo>(), state.activeBudget.allocations)
+            assertEquals(emptyList<AllocationWithInfo>(), state.activeItem.allocations)
         } finally {
             newViewModel.viewModelScope.cancel()
         }
@@ -177,7 +177,7 @@ class EnvelopeViewModelTest {
         predicate: (List<AllocationWithInfo>) -> Boolean = { it.isNotEmpty() },
     ): List<AllocationWithInfo> = viewModel.uiState
         .filterIsInstance<EnvelopeUiState.Success>()
-        .map { it.activeBudget.allocations }
+        .map { it.activeItem.allocations }
         .first(predicate)
 
     private fun createViewModel(

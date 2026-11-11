@@ -14,13 +14,14 @@ enum class EnvelopeSubmissionError {
     BudgetOverlaps,
 }
 
-enum class ActiveError {
+enum class ActiveBudgetError {
     EnvelopeArchived, BudgetOverlaps, AmountNonPositive,
 }
 
-data class ActiveBudget(
+data class ActiveItem(
     val budget: Budget?,
-    val error: ActiveError?,
+    val isNew: Boolean,
+    val error: ActiveBudgetError?,
     val complete: Boolean,
     val allocations: List<AllocationWithInfo> = emptyList(),
 )
@@ -32,7 +33,7 @@ sealed interface EnvelopeUiState {
         val budgets: Map<BudgetId, Budget>,
         val amountFieldId: Any,
         val allocations: List<DailyAllocationSummary>,
-        val activeBudget: ActiveBudget,
+        val activeItem: ActiveItem,
         val envelopeSubmissionError: EnvelopeSubmissionError?,
     ) : EnvelopeUiState {
         val allocationsByDate = allocations.associateBy { it.happenedDate }

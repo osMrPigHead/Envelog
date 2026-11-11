@@ -107,7 +107,7 @@ class EnvelopeScreenInstrumentedTest {
     @Test
     fun envelope_budgetSheetSaveReportsCallback() {
         val budget = InstrumentedTestData.budget(0xD2)
-        state.value = successState(activeBudget = ActiveBudget(budget = budget, error = null, complete = false))
+        state.value = successState(activeItem = ActiveItem(budget = budget, isNew = false, error = null, complete = false))
         setScreen()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -125,7 +125,7 @@ class EnvelopeScreenInstrumentedTest {
     @Test
     fun envelope_budgetSheetDeleteReportsCallback() {
         val budget = InstrumentedTestData.budget(0xD3)
-        state.value = successState(activeBudget = ActiveBudget(budget = budget, error = null, complete = false))
+        state.value = successState(activeItem = ActiveItem(budget = budget, isNew = false, error = null, complete = false))
         setScreen()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -141,7 +141,7 @@ class EnvelopeScreenInstrumentedTest {
     @Test
     fun envelope_budgetSheetCancelReportsClose() {
         val budget = InstrumentedTestData.budget(0xD4)
-        state.value = successState(activeBudget = ActiveBudget(budget = budget, error = null, complete = false))
+        state.value = successState(activeItem = ActiveItem(budget = budget, isNew = false, error = null, complete = false))
         setScreen()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -169,8 +169,9 @@ class EnvelopeScreenInstrumentedTest {
             amount = 12_345,
         )
         state.value = successState(
-            activeBudget = ActiveBudget(
+            activeItem = ActiveItem(
                 budget = budget,
+                isNew = false,
                 error = null,
                 complete = false,
                 allocations = listOf(allocation),
@@ -250,7 +251,7 @@ class EnvelopeScreenInstrumentedTest {
                     newActiveBudget = { newBudgetDate = it },
                     updateActiveBudget = { budget ->
                         val current = state.value as EnvelopeUiState.Success
-                        state.value = current.copy(activeBudget = current.activeBudget.copy(budget = budget))
+                        state.value = current.copy(activeItem = current.activeItem.copy(budget = budget))
                     },
                     closeActiveBudget = { closeBudgetCalls++ },
                     saveActiveBudget = { saveBudgetCalls++ },
@@ -271,7 +272,7 @@ class EnvelopeScreenInstrumentedTest {
     private fun successState(
         envelope: Envelope = this.envelope,
         budgets: Map<BudgetId, Budget> = emptyMap(),
-        activeBudget: ActiveBudget = ActiveBudget(budget = null, error = null, complete = true),
+        activeItem: ActiveItem = ActiveItem(budget = null, isNew = false, error = null, complete = true),
         envelopeSubmissionError: EnvelopeSubmissionError? = null,
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
         envelope = envelope,
@@ -279,7 +280,7 @@ class EnvelopeScreenInstrumentedTest {
         budgets = budgets,
         amountFieldId = fieldId,
         allocations = emptyList(),
-        activeBudget = activeBudget,
+        activeItem = activeItem,
         envelopeSubmissionError = envelopeSubmissionError,
     )
 }

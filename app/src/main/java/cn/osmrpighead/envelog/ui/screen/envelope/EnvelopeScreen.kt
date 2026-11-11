@@ -17,7 +17,7 @@ import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
-import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetItemModalSheet
+import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
 import java.time.LocalDate
 
@@ -92,8 +92,8 @@ private fun Success(
             )
         }
 
-        BudgetItemModalSheet(
-            activeBudget = uiState.activeBudget,
+        DatesModalBottomSheet(
+            activeItem = uiState.activeItem,
             amountFieldId = uiState.amountFieldId,
             update = updateActiveBudget,
             close = closeActiveBudget,

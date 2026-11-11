@@ -30,10 +30,10 @@ private fun AllocationRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StatItem(
-            style = StatItemStyle.SmallCenterStart,
+            style = StatItemStyle.MediumCenterStart,
             content = StatItemContent(
                 title = StatItemSlot.Empty,
-                value = StatItemSlot.Space,
+                value = StatItemSlot.Text("XXX"),
                 caption = allocation.expenditure.happenedAt
                     .format(allocation.expenditure.happenedZone)
                     .asSlot(),
@@ -41,7 +41,7 @@ private fun AllocationRow(
             modifier = Modifier.weight(1f),
         )
         StatItem(
-            style = StatItemStyle.SmallCenterEnd,
+            style = StatItemStyle.MediumCenterEnd,
             content = StatItemContent(
                 title = StatItemSlot.Empty,
                 value = allocation.amount.formatAsAmount(Formatter.AmountConcise).asSlot(),
@@ -59,11 +59,12 @@ fun AllocationList(
 ) {
     if (allocations.isEmpty()) return
     Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
+        modifier = modifier
+            .padding(horizontal = dimensionResource(R.dimen.spacingExtra))
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
     ) {
-        for (allocation in allocations) {
+        for (allocation in allocations)
             AllocationRow(allocation)
-        }
     }
 }

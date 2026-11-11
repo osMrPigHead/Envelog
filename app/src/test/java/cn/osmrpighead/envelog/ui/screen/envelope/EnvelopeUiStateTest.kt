@@ -34,7 +34,7 @@ class EnvelopeUiStateTest {
         budgets = budgets.associateBy { it.id },
         amountFieldId = Any(),
         allocations = allocations,
-        activeBudget = ActiveBudget(budget = null, error = null, complete = true),
+        activeItem = ActiveItem(budget = null, isNew = false, error = null, complete = true),
         envelopeSubmissionError = null,
     )
 
