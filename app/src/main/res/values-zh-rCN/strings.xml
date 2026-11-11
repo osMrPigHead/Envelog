@@ -11,6 +11,8 @@
     <string name="currency_cny_prefix">\u200b</string>
     <string name="currency_cny_suffix">\u200a元</string>
     <string name="envelope_edit_budget_amount_label">限额</string>
+    <string name="envelope_edit_budget_list_amount">限额</string>
+    <string name="envelope_edit_budget_list_date_range">日期区间</string>
     <string name="envelope_edit_budget_range_label">日期范围</string>
     <string name="envelope_edit_budget_title">预算</string>
     <string name="envelope_edit_default_name">新建信封</string>

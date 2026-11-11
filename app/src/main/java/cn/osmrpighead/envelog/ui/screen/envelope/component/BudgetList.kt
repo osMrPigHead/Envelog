@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
@@ -59,6 +60,33 @@ private fun BudgetRow(
 }
 
 @Composable
+private fun BudgetListHeader(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StatItem(
+            style = StatItemStyle.SmallCenterStart,
+            content = StatItemContent(
+                title = stringResource(R.string.envelope_edit_budget_list_date_range).asSlot(),
+                value = StatItemSlot.Empty,
+                caption = StatItemSlot.Empty,
+            ),
+            modifier = Modifier.weight(1f),
+        )
+        StatItem(
+            style = StatItemStyle.SmallCenterEnd,
+            content = StatItemContent(
+                title = stringResource(R.string.envelope_edit_budget_list_amount).asSlot(),
+                value = StatItemSlot.Empty,
+                caption = StatItemSlot.Empty,
+            ),
+            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingMedium)),
+        )
+    }
+}
+
+@Composable
 fun BudgetList(
     budgets: Collection<Budget>,
     yearMonth: YearMonth,
@@ -75,13 +103,15 @@ fun BudgetList(
         modifier = modifier
             .padding(horizontal = dimensionResource(R.dimen.spacingExtra))
             .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
     ) {
-        for ((budget, span) in visibleBudgets)
-            BudgetRow(
-                budget = budget,
-                dateRange = dayRangeText(span.startDate, span.endDate.minusDays(1)),
-                onBudgetClick = onBudgetClick,
-            )
+        BudgetListHeader(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacingSmall)))
+        Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge))) {
+            for ((budget, span) in visibleBudgets)
+                BudgetRow(
+                    budget = budget,
+                    dateRange = dayRangeText(span.startDate, span.endDate.minusDays(1)),
+                    onBudgetClick = onBudgetClick,
+                )
+        }
     }
 }

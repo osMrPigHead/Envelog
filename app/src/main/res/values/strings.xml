@@ -10,6 +10,8 @@
     <string name="currency_cny_prefix">¥\u2009</string>
     <string name="currency_cny_suffix">\u200b</string>
     <string name="envelope_edit_budget_amount_label">Amount</string>
+    <string name="envelope_edit_budget_list_amount">Amount</string>
+    <string name="envelope_edit_budget_list_date_range">Date Range</string>
     <string name="envelope_edit_budget_range_label">Date Range</string>
     <string name="envelope_edit_budget_title">Budget</string>
     <string name="envelope_edit_default_name">New Envelope</string>

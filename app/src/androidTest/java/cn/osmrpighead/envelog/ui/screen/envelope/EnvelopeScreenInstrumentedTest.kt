@@ -140,6 +140,8 @@ class EnvelopeScreenInstrumentedTest {
             context.getString(R.string.time_format_day, 9)
         composeRule.onNodeWithText(dateRange).assertIsDisplayed()
         composeRule.onNodeWithText(budget.amount.formatAsAmount(Formatter.AmountConcise)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_list_date_range)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_budget_list_amount)).assertIsDisplayed()
     }
 
     @Test
