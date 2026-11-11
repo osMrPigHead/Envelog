@@ -1,12 +1,14 @@
 package cn.osmrpighead.envelog.core.time
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Locale
 
 class TimeConversionTest {
     private val shanghai: ZoneId = ZoneId.of("Asia/Shanghai")
@@ -40,5 +42,15 @@ class TimeConversionTest {
         val instant = date.atTime(12, 0).atZone(shanghai).toInstant()
 
         assertEquals(date, instant.toLocalDate(shanghai))
+    }
+
+    @Test
+    fun instantFormat_usesZoneAndLocale() {
+        val instant = Instant.parse("2026-10-05T04:00:00Z")
+
+        val formatted = instant.format(shanghai, locale = Locale.US)
+
+        assertTrue(formatted, formatted.contains("10/5/26"))
+        assertTrue(formatted, formatted.contains("12:00"))
     }
 }

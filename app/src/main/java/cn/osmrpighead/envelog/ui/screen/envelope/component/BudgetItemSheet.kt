@@ -1,9 +1,12 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.ui.component.LabeledBox
 import cn.osmrpighead.envelog.ui.component.form.ConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
@@ -43,6 +47,7 @@ import java.math.RoundingMode
 @Composable
 fun BudgetItemSheet(
     budget: Budget,
+    allocations: List<AllocationWithInfo>,
     onSpanChange: (HalfOpenDateSpan) -> Unit,
     numKeypadHost: NumKeypadHostState,
     amountConsumer: AmountConsumer,
@@ -91,6 +96,10 @@ fun BudgetItemSheet(
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
+        )
+        AllocationList(
+            allocations = allocations,
+            modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
         )
         Row(
             modifier = Modifier
@@ -172,25 +181,31 @@ fun BudgetItemModalSheet(
                     )
                 },
             ) { innerPadding ->
-                BudgetItemSheet(
-                    budget = activeBudget.budget,
-                    onSpanChange = { update(activeBudget.budget.copy(dateSpan = it)) },
-                    numKeypadHost = numKeypadHost,
-                    amountConsumer = AmountConsumer(
-                        scale = 0,
-                        roundingMode = RoundingMode.HALF_UP,
-                        submit = { update(activeBudget.budget.copy(amount = it)) },
-                        cancel = {},
-                    ),
-                    fieldId = amountFieldId,
-                    onSave = save,
-                    onCancel = close,
-                    onDelete = delete,
-                    error = activeBudget.error,
+                Column(
                     modifier = Modifier
                         .padding(innerPadding)
-                        .padding(dimensionResource(R.dimen.spacingLarge)),
-                )
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    BudgetItemSheet(
+                        budget = activeBudget.budget,
+                        allocations = activeBudget.allocations,
+                        onSpanChange = { update(activeBudget.budget.copy(dateSpan = it)) },
+                        numKeypadHost = numKeypadHost,
+                        amountConsumer = AmountConsumer(
+                            scale = 0,
+                            roundingMode = RoundingMode.HALF_UP,
+                            submit = { update(activeBudget.budget.copy(amount = it)) },
+                            cancel = {},
+                        ),
+                        fieldId = amountFieldId,
+                        onSave = save,
+                        onCancel = close,
+                        onDelete = delete,
+                        error = activeBudget.error,
+                        modifier = Modifier.padding(dimensionResource(R.dimen.spacingLarge)),
+                    )
+                }
             }
         }
     }

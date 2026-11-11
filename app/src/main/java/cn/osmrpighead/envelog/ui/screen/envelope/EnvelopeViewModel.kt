@@ -10,6 +10,7 @@ import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
+import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
@@ -63,6 +64,18 @@ class EnvelopeViewModel @AssistedInject constructor(
         )
     } else flowOf()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val activeAllocations: Flow<List<AllocationWithInfo>> =
+        if (route.id is NavigationTarget.Existing) _uiState
+            .map { (it as? EnvelopeUiState.Success)?.activeBudget?.budget?.dateSpan }
+            .distinctUntilChanged()
+            .flatMapLatest { span ->
+                if (span == null) flowOf(emptyList<AllocationWithInfo>())
+                else repository.observeAllocations(route.id.value, span)
+                    .map { allocations -> allocations.sortedBy { it.expenditure.happenedAt } }
+            }
+        else flowOf<List<AllocationWithInfo>>(emptyList())
+
     fun initializeForNew(envelope: Envelope) {
         _uiState.value = EnvelopeUiState.Success(
             envelope = envelope,
@@ -80,24 +93,36 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     init {
-        if (route.id is NavigationTarget.Existing) viewModelScope.launch {
-            val (envelope, budgets, allocations) =
-                combine(savedEnvelope, savedBudgets, allocations) { envelope, budgets, allocations ->
-                    Triple(envelope, budgets, allocations)
-                }.first()
-            _uiState.value = EnvelopeUiState.Success(
-                envelope = envelope,
-                yearMonth = yearMonth.value,
-                budgets = budgets,
-                amountFieldId = fieldId,
-                allocations = allocations,
-                activeBudget = ActiveBudget(
-                    budget = null,
-                    error = null,
-                    complete = true,
-                ),
-                envelopeSubmissionError = null,
-            )
+        if (route.id is NavigationTarget.Existing) {
+            viewModelScope.launch {
+                val (envelope, budgets, allocations) =
+                    combine(savedEnvelope, savedBudgets, allocations) { envelope, budgets, allocations ->
+                        Triple(envelope, budgets, allocations)
+                    }.first()
+                _uiState.value = EnvelopeUiState.Success(
+                    envelope = envelope,
+                    yearMonth = yearMonth.value,
+                    budgets = budgets,
+                    amountFieldId = fieldId,
+                    allocations = allocations,
+                    activeBudget = ActiveBudget(
+                        budget = null,
+                        error = null,
+                        complete = true,
+                    ),
+                    envelopeSubmissionError = null,
+                )
+            }
+            viewModelScope.launch {
+                activeAllocations.collect { allocations ->
+                    _uiState.update {
+                        if (it !is EnvelopeUiState.Success) return@update it
+                        it.copy(
+                            activeBudget = it.activeBudget.copy(allocations = allocations),
+                        )
+                    }
+                }
+            }
         }
     }
 

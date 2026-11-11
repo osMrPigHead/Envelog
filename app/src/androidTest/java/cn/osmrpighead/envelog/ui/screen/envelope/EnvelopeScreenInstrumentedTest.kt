@@ -14,14 +14,19 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.core.time.format
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
+import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
+import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.testing.InstrumentedTestData
 import cn.osmrpighead.envelog.testing.hasButtonRole
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
@@ -31,6 +36,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
+import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeScreenInstrumentedTest {
@@ -146,6 +152,41 @@ class EnvelopeScreenInstrumentedTest {
         ).performClick()
 
         composeRule.runOnIdle { assertEquals(1, closeBudgetCalls) }
+    }
+
+    @Test
+    fun envelope_budgetSheetShowsAllocationDateTimeAndUnsignedAmount() {
+        val budget = InstrumentedTestData.budget(0xD5)
+        val allocation = AllocationWithInfo(
+            expenditure = ExpenditureMetaInfo(
+                id = ExpenditureId(UUID(0L, 0xC1)),
+                happenedAt = LocalDate.of(2026, 10, 5).atTime(12, 0)
+                    .atZone(InstrumentedTestData.zone).toInstant(),
+                happenedDate = LocalDate.of(2026, 10, 5),
+                happenedZone = InstrumentedTestData.zone,
+            ),
+            envelopeId = InstrumentedTestData.envelopeA,
+            amount = 12_345,
+        )
+        state.value = successState(
+            activeBudget = ActiveBudget(
+                budget = budget,
+                error = null,
+                complete = false,
+                allocations = listOf(allocation),
+            ),
+        )
+        setScreen()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_title))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val dateTime = allocation.expenditure.happenedAt.format(allocation.expenditure.happenedZone)
+        composeRule.onNodeWithText(dateTime).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("123.45").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("+123.45").assertDoesNotExist()
     }
 
     @Test

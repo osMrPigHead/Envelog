@@ -4,6 +4,7 @@ import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
+import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
 import java.time.DayOfWeek
@@ -21,6 +22,7 @@ data class ActiveBudget(
     val budget: Budget?,
     val error: ActiveError?,
     val complete: Boolean,
+    val allocations: List<AllocationWithInfo> = emptyList(),
 )
 
 sealed interface EnvelopeUiState {
