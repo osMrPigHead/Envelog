@@ -125,13 +125,11 @@ object QuickSetBudgetPlanner {
 
         return buildList {
             var cursor = span.startDate
-            while (cursor < span.endDate) {
-                val end = minOf(cursor.plusDays(periodDays), span.endDate)
-                // TODO: 最后一段不足 N 天时暂时直接丢弃，待用户规则确定后再决定是否保留或折算
-                if ((cursor countDaysTo end) < periodDays) break
-
-                add(QuickSetSegment(cursor untilExclusive end, config.amount))
-                cursor = end
+            var current = cursor untilExclusive cursor.plusDays(periodDays)
+            while ((current intersect span).length >= periodDays / 2) {
+                add(QuickSetSegment(current, config.amount))
+                cursor = current.endDate
+                current = cursor untilExclusive cursor.plusDays(periodDays)
             }
         }
     }
@@ -141,16 +139,14 @@ object QuickSetBudgetPlanner {
         span: HalfOpenDateSpan,
     ): List<QuickSetSegment> {
         val periodDays = ((config.endDayOfWeek.value - config.startDayOfWeek.value + 7) % 7 + 1).toLong()
-        var cursor = span.startDate.nextOrSame(config.startDayOfWeek)
 
         return buildList {
-            while (cursor < span.endDate) {
-                val end = minOf(cursor.plusDays(periodDays), span.endDate)
-                // TODO: 最后一段不足一个完整星期区间时暂时直接丢弃，待用户规则确定后再决定是否保留或折算
-                if ((cursor countDaysTo end) < periodDays) break
-
-                add(QuickSetSegment(cursor untilExclusive end, config.amount))
+            var cursor = span.startDate.nextOrSame(config.startDayOfWeek)
+            var current = cursor untilExclusive cursor.plusDays(periodDays)
+            while ((current intersect span).length >= periodDays / 2) {
+                add(QuickSetSegment(current, config.amount))
                 cursor = cursor.plusDays(7)
+                current = cursor untilExclusive cursor.plusDays(periodDays)
             }
         }
     }

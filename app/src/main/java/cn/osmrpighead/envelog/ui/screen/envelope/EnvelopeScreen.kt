@@ -20,7 +20,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
-import cn.osmrpighead.envelog.ui.screen.envelope.component.QuickSetBudgetModalBottomSheet
+import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
 import java.time.LocalDate
 import java.time.YearMonth
