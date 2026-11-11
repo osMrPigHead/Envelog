@@ -66,6 +66,7 @@ class EnvelopeScreenInstrumentedTest {
     private var clearSubmissionErrorCalls = 0
     private var openQuickSetCalls = 0
     private var dismissQuickSetCalls = 0
+    private var clearQuickSetCalls = 0
     private var applyQuickSetCalls = 0
     private var confirmQuickSetOverwriteCalls = 0
     private var cancelQuickSetOverwriteCalls = 0
@@ -125,6 +126,14 @@ class EnvelopeScreenInstrumentedTest {
         }
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_range_label)).assertExists()
         composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_amount_daily_label)).assertExists()
+
+        composeRule.onNode(
+            hasText(context.getString(R.string.common_action_cancel)) and hasClickAction() and hasButtonRole(),
+        ).performClick()
+
+        composeRule.runOnIdle { assertEquals(1, dismissQuickSetCalls) }
+        composeRule.waitUntil(timeoutMillis = 5_000) { clearQuickSetCalls == 1 }
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_quick_set_mode_label)).assertDoesNotExist()
     }
 
     @Test
@@ -336,6 +345,17 @@ class EnvelopeScreenInstrumentedTest {
                     },
                     dismissQuickSet = {
                         dismissQuickSetCalls++
+                        val current = state.value as EnvelopeUiState.Success
+                        state.value = current.copy(
+                            quickSet = current.quickSet.copy(
+                                complete = true,
+                                conflict = null,
+                                error = null,
+                            ),
+                        )
+                    },
+                    clearQuickSet = {
+                        clearQuickSetCalls++
                         val current = state.value as EnvelopeUiState.Success
                         state.value = current.copy(quickSet = QuickSetUiState())
                     },

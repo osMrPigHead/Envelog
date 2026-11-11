@@ -194,8 +194,13 @@ class EnvelopeViewModelTest {
             assertTrue(state.budgets.values.all { it.envelopeId == envelope.id })
             assertEquals(LocalDate.of(2026, 10, 20), state.budgets.values.minOf { it.dateSpan.startDate })
             assertEquals(LocalDate.of(2026, 10, 31), state.budgets.values.maxOf { it.dateSpan.startDate })
-            assertFalse(state.quickSet.open)
+            assertTrue(state.quickSet.open)
+            assertTrue(state.quickSet.complete)
             assertTrue(newRepository.replaceRequests.isEmpty())
+
+            newViewModel.clearQuickSet()
+            val cleared = newViewModel.uiState.value as EnvelopeUiState.Success
+            assertFalse(cleared.quickSet.open)
         } finally {
             newViewModel.viewModelScope.cancel()
         }
@@ -218,6 +223,7 @@ class EnvelopeViewModelTest {
 
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
             assertTrue(state.quickSet.open)
+            assertFalse(state.quickSet.complete)
             assertNotNull(state.quickSet.conflict)
             assertEquals(12, state.quickSet.conflict!!.conflicts.size)
             assertEquals(12, state.budgets.size)
@@ -228,7 +234,7 @@ class EnvelopeViewModelTest {
     }
 
     @Test
-    fun confirmQuickSetOverwrite_replacesBudgetsAndClosesSheet() = runTest {
+    fun confirmQuickSetOverwrite_replacesBudgetsAndRequestsClose() = runTest {
         val newRepository = FakeRepository(
             envelope = Envelope(EnvelopeId.generate(), "新信封", true, false),
             budget = budget,
@@ -244,7 +250,8 @@ class EnvelopeViewModelTest {
             newViewModel.confirmQuickSetOverwrite()
 
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
-            assertFalse(state.quickSet.open)
+            assertTrue(state.quickSet.open)
+            assertTrue(state.quickSet.complete)
             assertNull(state.quickSet.conflict)
             assertEquals(1, state.budgets.size)
             val budget = state.budgets.values.single()
@@ -252,6 +259,10 @@ class EnvelopeViewModelTest {
             assertEquals(LocalDate.of(2026, 10, 1), budget.dateSpan.startDate)
             assertEquals(LocalDate.of(2026, 11, 1), budget.dateSpan.endDate)
             assertTrue(newRepository.replaceRequests.isEmpty())
+
+            newViewModel.clearQuickSet()
+            val cleared = newViewModel.uiState.value as EnvelopeUiState.Success
+            assertFalse(cleared.quickSet.open)
         } finally {
             newViewModel.viewModelScope.cancel()
         }
@@ -275,6 +286,7 @@ class EnvelopeViewModelTest {
 
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
             assertTrue(state.quickSet.open)
+            assertFalse(state.quickSet.complete)
             assertNull(state.quickSet.conflict)
             assertEquals(12, state.budgets.size)
         } finally {
@@ -296,7 +308,8 @@ class EnvelopeViewModelTest {
         assertTrue(request.deleteBudgetIds.isEmpty())
         assertEquals(12, request.budgets.size)
         assertEquals(13, state.budgets.size)
-        assertFalse(state.quickSet.open)
+        assertTrue(state.quickSet.open)
+        assertTrue(state.quickSet.complete)
     }
 
     @Test
@@ -315,6 +328,7 @@ class EnvelopeViewModelTest {
 
             val state = archivedViewModel.uiState.value as EnvelopeUiState.Success
             assertTrue(state.quickSet.open)
+            assertFalse(state.quickSet.complete)
             assertEquals(QuickSetError.EnvelopeArchived, state.quickSet.error)
             assertNull(state.quickSet.conflict)
             assertEquals(1, state.budgets.size)
@@ -324,16 +338,25 @@ class EnvelopeViewModelTest {
     }
 
     @Test
-    fun dismissQuickSet_clearsState() = runTest {
+    fun dismissQuickSet_requestsHideThenClearClearsState() = runTest {
         awaitSuccess()
 
         viewModel.openQuickSet()
         viewModel.dismissQuickSet()
 
-        val state = viewModel.uiState.value as EnvelopeUiState.Success
-        assertFalse(state.quickSet.open)
-        assertNull(state.quickSet.conflict)
-        assertNull(state.quickSet.error)
+        val closing = viewModel.uiState.value as EnvelopeUiState.Success
+        assertTrue(closing.quickSet.open)
+        assertTrue(closing.quickSet.complete)
+        assertNull(closing.quickSet.conflict)
+        assertNull(closing.quickSet.error)
+
+        viewModel.clearQuickSet()
+
+        val cleared = viewModel.uiState.value as EnvelopeUiState.Success
+        assertFalse(cleared.quickSet.open)
+        assertFalse(cleared.quickSet.complete)
+        assertNull(cleared.quickSet.conflict)
+        assertNull(cleared.quickSet.error)
     }
 
     private suspend fun awaitSuccess(): EnvelopeUiState.Success =

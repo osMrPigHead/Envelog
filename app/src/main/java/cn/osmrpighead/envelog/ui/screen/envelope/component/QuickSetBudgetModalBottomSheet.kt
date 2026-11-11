@@ -1,8 +1,8 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -110,9 +110,11 @@ private fun QuickSetModeField(
 fun QuickSetBudgetModalBottomSheet(
     yearMonth: YearMonth,
     today: LocalDate,
+    complete: Boolean,
     conflict: QuickSetBudgetPlan?,
     error: QuickSetError?,
-    onDismiss: () -> Unit,
+    onDismissRequest: () -> Unit,
+    onDismissed: () -> Unit,
     onApply: (QuickSetMode, Long) -> Unit,
     onConfirmOverwrite: () -> Unit,
     onCancelOverwrite: () -> Unit,
@@ -137,9 +139,17 @@ fun QuickSetBudgetModalBottomSheet(
         if (sheetState.currentValue == PartiallyExpanded) numKeypadHost.cancel()
     }
 
-    LaunchedEffect(numKeypadHost.isOpen) {
+    LaunchedEffect(numKeypadHost.isOpen, complete) {
+        if (complete) return@LaunchedEffect
         if (numKeypadHost.isOpen) sheetState.expand()
         else sheetState.partialExpand()
+    }
+
+    LaunchedEffect(complete) {
+        if (!complete) return@LaunchedEffect
+        numKeypadHost.cancel()
+        sheetState.hide()
+        onDismissed()
     }
 
     val span = remember(mode, yearMonth, today) {
@@ -150,7 +160,7 @@ fun QuickSetBudgetModalBottomSheet(
     ModalBottomSheet(
         onDismissRequest = {
             numKeypadHost.cancel()
-            onDismiss()
+            onDismissRequest()
         },
         sheetState = sheetState,
     ) {
@@ -250,22 +260,23 @@ fun QuickSetBudgetModalBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(
                             onClick = {
                                 numKeypadHost.cancel()
-                                onDismiss()
+                                onDismissRequest()
                             },
+                            enabled = !complete,
                         ) {
                             Text(text = stringResource(R.string.common_action_cancel))
                         }
-                        Spacer(modifier = Modifier.weight(1f))
                         Button(
                             onClick = {
                                 if (numKeypadHost.isOpen) numKeypadHost.confirm()
                                 if (!numKeypadHost.isOpen) onApply(mode, amount.value)
                             },
-                            enabled = amount.value > 0 && total != null,
+                            enabled = !complete && amount.value > 0 && total != null,
                         ) {
                             Text(text = stringResource(R.string.common_action_ok))
                         }
@@ -274,7 +285,7 @@ fun QuickSetBudgetModalBottomSheet(
             }
         }
 
-        if (conflict != null) {
+        if (conflict != null && !complete) {
             val conflictTotal = conflict.conflicts.sumOf { it.amount }
             AlertDialog(
                 onDismissRequest = onCancelOverwrite,

@@ -43,6 +43,7 @@ private fun Success(
     applyQuickSet: (QuickSetMode, Long) -> Unit,
     confirmQuickSetOverwrite: () -> Unit,
     cancelQuickSetOverwrite: () -> Unit,
+    clearQuickSet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BackHandler { saveAndBack() }
@@ -123,9 +124,11 @@ private fun Success(
         if (uiState.quickSet.open) QuickSetBudgetModalBottomSheet(
             yearMonth = uiState.yearMonth,
             today = uiState.today,
+            complete = uiState.quickSet.complete,
             conflict = uiState.quickSet.conflict,
             error = uiState.quickSet.error,
-            onDismiss = dismissQuickSet,
+            onDismissRequest = dismissQuickSet,
+            onDismissed = clearQuickSet,
             onApply = applyQuickSet,
             onConfirmOverwrite = confirmQuickSetOverwrite,
             onCancelOverwrite = cancelQuickSetOverwrite,
@@ -157,6 +160,7 @@ fun EnvelopeScreen(
     applyQuickSet: (QuickSetMode, Long) -> Unit,
     confirmQuickSetOverwrite: () -> Unit,
     cancelQuickSetOverwrite: () -> Unit,
+    clearQuickSet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -189,6 +193,7 @@ fun EnvelopeScreen(
             applyQuickSet,
             confirmQuickSetOverwrite,
             cancelQuickSetOverwrite,
+            clearQuickSet,
             modifier,
         )
     }

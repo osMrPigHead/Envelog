@@ -295,6 +295,19 @@ class EnvelopeViewModel @AssistedInject constructor(
 
     fun dismissQuickSet() {
         _uiState.update {
+            if (it !is EnvelopeUiState.Success || !it.quickSet.open) return@update it
+            it.copy(
+                quickSet = it.quickSet.copy(
+                    complete = true,
+                    conflict = null,
+                    error = null,
+                ),
+            )
+        }
+    }
+
+    fun clearQuickSet() {
+        _uiState.update {
             if (it !is EnvelopeUiState.Success) return@update it
             it.copy(quickSet = QuickSetUiState())
         }
@@ -362,6 +375,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 if (result != Success) {
                     _uiState.update {
                         if (it !is EnvelopeUiState.Success) return@update it
+                        if (!it.quickSet.open || it.quickSet.complete) return@update it
                         it.copy(
                             quickSet = it.quickSet.copy(
                                 conflict = null,
@@ -382,7 +396,15 @@ class EnvelopeViewModel @AssistedInject constructor(
                 val removed = plan.conflicts.map { conflict -> conflict.id }.toSet()
                 it.copy(
                     budgets = (it.budgets - removed) + plan.budgets.associateBy { budget -> budget.id },
-                    quickSet = QuickSetUiState(),
+                    quickSet = if (it.quickSet.open) {
+                        it.quickSet.copy(
+                            complete = true,
+                            conflict = null,
+                            error = null,
+                        )
+                    } else {
+                        it.quickSet
+                    },
                 )
             }
         }

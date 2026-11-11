@@ -32,6 +32,7 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
             applyQuickSet = viewModel::applyQuickSet,
             confirmQuickSetOverwrite = viewModel::confirmQuickSetOverwrite,
             cancelQuickSetOverwrite = viewModel::cancelQuickSetOverwrite,
+            clearQuickSet = viewModel::clearQuickSet,
         )
     }
 }

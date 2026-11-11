@@ -26,6 +26,7 @@ enum class QuickSetError {
 
 data class QuickSetUiState(
     val open: Boolean = false,
+    val complete: Boolean = false,
     val conflict: QuickSetBudgetPlan? = null,
     val error: QuickSetError? = null,
 )
