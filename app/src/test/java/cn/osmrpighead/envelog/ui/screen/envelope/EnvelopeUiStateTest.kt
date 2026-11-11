@@ -30,11 +30,13 @@ class EnvelopeUiStateTest {
         allocations: List<DailyAllocationSummary>,
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
         envelope = Envelope(envelopeId, "餐饮", true, false),
+        isNew = false,
         yearMonth = month,
         today = RoomTestData.today,
         budgets = budgets.associateBy { it.id },
         amountFieldId = Any(),
         allocations = allocations,
+        allocationsWithInfo = emptyList(),
         activeItem = ActiveItem(budget = null, isNew = false, error = null, complete = true),
         envelopeSubmissionError = null,
     )

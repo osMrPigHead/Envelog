@@ -36,14 +36,14 @@ private fun DateRangePickerFieldPreview() {
             DateRangePickerFieldSample("Default") {
                 DateRangePickerField(
                     span = span,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(DateRangePickerConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             DateRangePickerFieldSample("Label + supporting text") {
                 DateRangePickerField(
                     span = span,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(DateRangePickerConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Period") },
                     supportingText = { Text("Tap to pick a date range") },
@@ -74,7 +74,7 @@ private fun DateRangePickerFieldStatePreview() {
                 }
                 DateRangePickerField(
                     span = span,
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default { span = it }),
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(DateRangePickerConfirmEventHandler.Default { span = it }),
                     modifier = Modifier.fillMaxWidth(),
                     supportingText = { Text("End date must be after the start date") },
                     isError = true,
@@ -83,7 +83,7 @@ private fun DateRangePickerFieldStatePreview() {
             DateRangePickerFieldSample("Disabled") {
                 DateRangePickerField(
                     span = LocalDate.of(2026, 9, 1) untilInclusive LocalDate.of(2026, 9, 30),
-                    dialogBuilder = DateRangePickerDialogBuilder.Default(ConfirmEventHandler.Default {}),
+                    dialogBuilder = DateRangePickerDialogBuilder.Default(DateRangePickerConfirmEventHandler.Default {}),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false,
                 )

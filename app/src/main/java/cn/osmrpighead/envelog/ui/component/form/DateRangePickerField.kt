@@ -31,15 +31,15 @@ import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.core.time.toUtcMillis
 import java.time.LocalDate
 
-sealed interface ConfirmEventHandler {
+sealed interface DateRangePickerConfirmEventHandler {
     fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit)
 
-    class Custom(private val handler: (LocalDate?, LocalDate?, hideDialog: () -> Unit) -> Unit) : ConfirmEventHandler {
+    class Custom(private val handler: (LocalDate?, LocalDate?, hideDialog: () -> Unit) -> Unit) : DateRangePickerConfirmEventHandler {
         override fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit) =
             handler(start, end, hideDialog)
     }
 
-    class Default(private val onSpanChange: (ClosedDateSpan) -> Unit) : ConfirmEventHandler {
+    class Default(private val onSpanChange: (ClosedDateSpan) -> Unit) : DateRangePickerConfirmEventHandler {
         override fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit) {
             if (start == null || end == null) return
             onSpanChange(ClosedDateSpan(start, end))
@@ -58,7 +58,7 @@ sealed interface DateRangePickerDialogBuilder {
     }
 
     class Default(
-        private val confirmEventHandler: ConfirmEventHandler,
+        private val confirmEventHandler: DateRangePickerConfirmEventHandler,
         private val onDismiss: (hideDialog: () -> Unit) -> Unit = { it() },
         private val dismissButton: (@Composable (hideDialog: () -> Unit) -> Unit)? = {
             TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) }

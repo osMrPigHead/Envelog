@@ -39,10 +39,26 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val yearMonth = appState.yearMonth
     fun selectMonth(yearMonth: YearMonth) {
         appState.selectMonth(yearMonth)
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        if (!uiState.isNew) fetchEnvelope()
+        else _uiState.update {
+            if (it !is EnvelopeUiState.Success) return@update it
+            it.copy(
+                yearMonth = yearMonth,
+                activeItem = ActiveItem(
+                    budget = null,
+                    isNew = false,
+                    error = null,
+                    complete = true,
+                ),
+            )
+        }
     }
 
-    private val isNew = route.id is NavigationTarget.New
-    private val _uiState = MutableStateFlow(if (isNew) EnvelopeUiState.IsNew else EnvelopeUiState.Loading)
+    private val _uiState = MutableStateFlow(
+        if (route.id is NavigationTarget.New) EnvelopeUiState.IsNew else EnvelopeUiState.Loading,
+    )
     val uiState = _uiState.asStateFlow()
     private val fieldId = Any()
     private var job: Job? = null
@@ -68,6 +84,13 @@ class EnvelopeViewModel @AssistedInject constructor(
     } else flowOf()
 
     @OptIn(ExperimentalCoroutinesApi::class)
+    private val monthlyAllocations: Flow<List<AllocationWithInfo>> =
+        if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
+            repository.observeAllocations(route.id.value, yearMonth.toHalfOpenDateSpan())
+                .map { allocations -> allocations.sortedBy { it.expenditure.happenedAt } }
+        } else flowOf(emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val activeAllocations: Flow<List<AllocationWithInfo>> =
         if (route.id is NavigationTarget.Existing) _uiState
             .map { (it as? EnvelopeUiState.Success)?.activeItem?.budget?.dateSpan }
@@ -82,11 +105,13 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun initializeForNew(envelope: Envelope) {
         _uiState.value = EnvelopeUiState.Success(
             envelope = envelope,
+            isNew = true,
             yearMonth = yearMonth.value,
             today = appState.today.value,
             budgets = emptyMap(),
             amountFieldId = fieldId,
             allocations = emptyList(),
+            allocationsWithInfo = emptyList(),
             activeItem = ActiveItem(
                 budget = null,
                 isNew = false,
@@ -97,28 +122,23 @@ class EnvelopeViewModel @AssistedInject constructor(
         )
     }
 
-    init {
+    fun fetchEnvelope() {
         viewModelScope.launch {
-            appState.today.collect { today ->
-                _uiState.update {
-                    if (it !is EnvelopeUiState.Success) return@update it
-                    it.copy(today = today)
-                }
-            }
-        }
-        if (route.id is NavigationTarget.Existing) {
-            viewModelScope.launch {
-                val (envelope, budgets, allocations) =
-                    combine(savedEnvelope, savedBudgets, allocations) { envelope, budgets, allocations ->
-                        Triple(envelope, budgets, allocations)
-                    }.first()
-                _uiState.value = EnvelopeUiState.Success(
+            val success = combine(
+                savedEnvelope,
+                savedBudgets,
+                allocations,
+                monthlyAllocations,
+            ) { envelope, budgets, allocations, allocationsWithInfo ->
+                EnvelopeUiState.Success(
                     envelope = envelope,
+                    isNew = false,
                     yearMonth = yearMonth.value,
                     today = appState.today.value,
                     budgets = budgets,
                     amountFieldId = fieldId,
                     allocations = allocations,
+                    allocationsWithInfo = allocationsWithInfo,
                     activeItem = ActiveItem(
                         budget = null,
                         isNew = false,
@@ -127,7 +147,14 @@ class EnvelopeViewModel @AssistedInject constructor(
                     ),
                     envelopeSubmissionError = null,
                 )
-            }
+            }.first()
+            _uiState.value = success
+        }
+    }
+
+    init {
+        if (route.id is NavigationTarget.Existing) {
+            fetchEnvelope()
             viewModelScope.launch {
                 activeAllocations.collect { allocations ->
                     _uiState.update {
@@ -185,6 +212,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun updateActiveBudget(budget: Budget) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
+            if (it.activeItem.budget?.id != budget.id) return@update it
             it.copy(
                 activeItem = it.activeItem.copy(
                     budget = budget,
@@ -224,7 +252,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         }
 
         job = viewModelScope.launch {
-            val result = if (!isNew) {
+            val result = if (!uiState.isNew) {
                 if (uiState.activeItem.isNew) repository.insertBudget(budget)
                 else repository.updateBudget(budget)
             } else null
@@ -243,7 +271,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 }
                 return@launch
             }
-            val updatedBudgets = if (!isNew) savedBudgets.first() else null
+            val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
@@ -261,8 +289,8 @@ class EnvelopeViewModel @AssistedInject constructor(
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeItem.budget ?: return
         job = viewModelScope.launch {
-            if (!isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
-            val updatedBudgets = if (!isNew) savedBudgets.first() else null
+            if (!uiState.isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
+            val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
@@ -416,7 +444,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         job = viewModelScope.launch {
-            if (!isNew) {
+            if (!uiState.isNew) {
                 repository.updateEnvelope(uiState.envelope)
                 back()
                 return@launch
@@ -437,6 +465,17 @@ class EnvelopeViewModel @AssistedInject constructor(
         _uiState.update {
             require(it is EnvelopeUiState.Success)
             it.copy(envelopeSubmissionError = null)
+        }
+    }
+
+    fun archiveAndBack() {
+        if (job?.isActive == true) return
+
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        job = viewModelScope.launch {
+            if (!uiState.isNew) repository.archiveEnvelope(uiState.envelope.id)
+            back()
         }
     }
 

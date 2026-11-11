@@ -42,11 +42,13 @@ data class ActiveItem(
 sealed interface EnvelopeUiState {
     data class Success(
         val envelope: Envelope,
+        val isNew: Boolean,
         val yearMonth: YearMonth,
         val today: LocalDate,
         val budgets: Map<BudgetId, Budget>,
         val amountFieldId: Any,
         val allocations: List<DailyAllocationSummary>,
+        val allocationsWithInfo: List<AllocationWithInfo>,
         val activeItem: ActiveItem,
         val envelopeSubmissionError: EnvelopeSubmissionError?,
         val quickSet: QuickSetUiState = QuickSetUiState(),

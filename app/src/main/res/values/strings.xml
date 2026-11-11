@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Envelog</string>
+    <string name="common_action_archive">Archive</string>
     <string name="common_action_back">Back</string>
     <string name="common_action_cancel">Cancel</string>
     <string name="common_action_delete">Delete</string>
@@ -12,11 +13,15 @@
     <string name="day_of_week_range_picker_label_end">End</string>
     <string name="day_of_week_range_picker_label_start">Start</string>
     <string name="day_of_week_range_picker_title">Select day range</string>
+    <string name="envelope_edit_action_archive">Archive Envelope</string>
     <string name="envelope_edit_budget_amount_label">Amount</string>
+    <string name="envelope_edit_budget_list_amount">Amount</string>
+    <string name="envelope_edit_budget_list_date_range">Date Range</string>
     <string name="envelope_edit_budget_range_label">Date Range</string>
     <string name="envelope_edit_budget_title">Budget</string>
     <string name="envelope_edit_default_name">New Envelope</string>
     <string name="envelope_edit_label_budgeted">Budgeted</string>
+    <string name="envelope_edit_msg_archive_confirm">Archiving hides the envelope from the overview and excludes its budgets from statistics. Its expenses still count toward the total.</string>
     <string name="envelope_edit_msg_archived">Edits on archived envelope are prohibited</string>
     <string name="envelope_edit_msg_budget_overlaps">Budget overlaps</string>
     <string name="envelope_edit_quick_set_title">Quick set budget</string>
@@ -39,6 +44,9 @@
     <string name="envelope_edit_quick_set_conflict_title">Overwrite existing budgets?</string>
     <string name="envelope_edit_quick_set_conflict_message">%1$d existing budgets (total %2$s) overlap the target range. Overwrite will delete and replace them.</string>
     <string name="envelope_edit_quick_set_conflict_confirm">Overwrite</string>
+    <string name="envelope_edit_tab_budget">Budget</string>
+    <string name="envelope_edit_tab_calendar">Calendar</string>
+    <string name="envelope_edit_tab_expenses">Expenses</string>
     <string name="envelope_edit_title">Edit Envelope</string>
     <string name="month_picker_label_month">Month</string>
     <string name="month_picker_label_year">Year</string>
@@ -66,6 +74,7 @@
     <string name="overview_summary_remaining_caption">Used: %1$s</string>
     <string name="overview_summary_remaining_title">Remaining</string>
     <string name="record_expense_title">Record an expense</string>
+    <string name="symbol_en_dash" translatable="false">\u2013</string>
     <string name="symbol_hair_space" translatable="false">\u200a</string>
     <string name="symbol_percent_nan" translatable="false">\u2014</string>
     <string name="symbol_space" translatable="false">\u0020</string>
@@ -77,6 +86,7 @@
     <string name="time_day_of_week_tuesday">Tue</string>
     <string name="time_day_of_week_wednesday">Wed</string>
     <string name="time_format_day_of_week_range">%1$s ~ %2$s</string>
+    <string name="time_format_day">%1$02d</string>
     <string name="time_format_month">%1$02d</string>
     <string name="time_format_within_days">within %1$dd</string>
     <string name="time_format_year">%1$04d</string>

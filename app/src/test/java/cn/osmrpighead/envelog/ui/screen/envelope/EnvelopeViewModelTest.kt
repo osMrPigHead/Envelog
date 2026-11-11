@@ -9,6 +9,7 @@ import cn.osmrpighead.envelog.core.navigation.NavigationTarget
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.TodayProvider
+import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
@@ -73,6 +74,7 @@ class EnvelopeViewModelTest {
     private val budgetId = BudgetId(UUID(0L, 0xD1))
     private val wholeMonth = ClosedDateSpan(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31))
     private val afterExistingBudget = ClosedDateSpan(LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 31))
+    private val monthSpan = month.toHalfOpenDateSpan()
     private val budgetSpan = LocalDate.of(2026, 10, 1) untilExclusive LocalDate.of(2026, 10, 8)
     private val nextBudgetSpan = LocalDate.of(2026, 10, 8) untilExclusive LocalDate.of(2026, 10, 15)
     private val budget = Budget(
@@ -89,6 +91,7 @@ class EnvelopeViewModelTest {
 
     private lateinit var repository: FakeRepository
     private lateinit var viewModel: EnvelopeViewModel
+    private var backCalls = 0
 
     @Before
     fun setUp() {
@@ -98,7 +101,7 @@ class EnvelopeViewModelTest {
             budget = budget,
             allocations = listOf(late, early, outside),
         )
-        viewModel = createViewModel(repository)
+        viewModel = createViewModel(repository) { backCalls++ }
     }
 
     @After
@@ -116,7 +119,7 @@ class EnvelopeViewModelTest {
         val allocations = awaitAllocations()
 
         assertEquals(setOf(early, late), allocations.toSet())
-        assertEquals(listOf(budgetSpan), repository.requestedSpans)
+        assertEquals(listOf(monthSpan, budgetSpan), repository.requestedSpans)
     }
 
     @Test
@@ -130,7 +133,7 @@ class EnvelopeViewModelTest {
         val allocations = awaitAllocations { it.contains(outside) && it.size == 1 }
 
         assertEquals(listOf(outside), allocations)
-        assertEquals(listOf(budgetSpan, nextBudgetSpan), repository.requestedSpans)
+        assertEquals(listOf(monthSpan, budgetSpan, nextBudgetSpan), repository.requestedSpans)
     }
 
     @Test
@@ -141,6 +144,14 @@ class EnvelopeViewModelTest {
         val allocations = awaitAllocations()
 
         assertEquals(listOf(early, late), allocations)
+    }
+
+    @Test
+    fun success_exposesMonthlyAllocationsChronologically() = runTest {
+        val state = awaitSuccess()
+
+        assertEquals(listOf(early, late, outside), state.allocationsWithInfo)
+        assertEquals(listOf(monthSpan), repository.requestedSpans)
     }
 
     @Test
@@ -155,7 +166,7 @@ class EnvelopeViewModelTest {
             .filterIsInstance<EnvelopeUiState.Success>()
             .first { it.activeItem.budget == null }
         assertEquals(emptyList<AllocationWithInfo>(), state.activeItem.allocations)
-        assertEquals(listOf(budgetSpan), repository.requestedSpans)
+        assertEquals(listOf(monthSpan, budgetSpan), repository.requestedSpans)
     }
 
     @Test
@@ -173,9 +184,36 @@ class EnvelopeViewModelTest {
             assertTrue(newRepository.requestedSpans.isEmpty())
             val state = newViewModel.uiState.value as EnvelopeUiState.Success
             assertEquals(emptyList<AllocationWithInfo>(), state.activeItem.allocations)
+            assertEquals(emptyList<AllocationWithInfo>(), state.allocationsWithInfo)
         } finally {
             newViewModel.viewModelScope.cancel()
         }
+    }
+
+    @Test
+    fun archiveAndBack_archivesEnvelopeThenBacks() = runTest {
+        awaitSuccess()
+
+        viewModel.archiveAndBack()
+
+        assertEquals(listOf(envelopeId), repository.archivedIds)
+        assertEquals(1, backCalls)
+    }
+
+    @Test
+    fun archiveAndBack_onNewEnvelopeBacksWithoutArchiving() = runTest {
+        var newBackCalls = 0
+
+        val newViewModel = createViewModel(repository, NavigationTarget.New()) { newBackCalls++ }
+        try {
+            newViewModel.initializeForNew(Envelope(EnvelopeId.generate(), "新信封", true, false))
+            newViewModel.archiveAndBack()
+        } finally {
+            newViewModel.viewModelScope.cancel()
+        }
+
+        assertTrue(repository.archivedIds.isEmpty())
+        assertEquals(1, newBackCalls)
     }
 
     @Test
@@ -406,9 +444,10 @@ class EnvelopeViewModelTest {
     private fun createViewModel(
         repository: FakeRepository,
         target: NavigationTarget<EnvelopeId> = NavigationTarget.Existing(envelopeId),
+        onBack: () -> Unit = {},
     ): EnvelopeViewModel = EnvelopeViewModel(
         route = AppRoute.Envelope(navId = NavId.generate(), id = target),
-        back = {},
+        back = onBack,
         appState = AppStateHolder(
             todayProvider = TodayProvider(ApplicationProvider.getApplicationContext(), clock),
             clock = clock,
@@ -443,6 +482,7 @@ class EnvelopeViewModelTest {
 
         val requestedSpans = mutableListOf<HalfOpenDateSpan>()
         val replaceRequests = mutableListOf<ReplaceRequest>()
+        val archivedIds = mutableListOf<EnvelopeId>()
 
         override fun observeOverview(
             today: LocalDate,
@@ -487,7 +527,10 @@ class EnvelopeViewModelTest {
             budgets: List<Budget>,
         ): BudgetWriteResult = throw NotImplementedError()
 
-        override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult = throw NotImplementedError()
+        override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult {
+            archivedIds += id
+            return ArchiveResult.Archived
+        }
 
         override suspend fun updateBudget(budget: Budget): BudgetWriteResult = throw NotImplementedError()
 

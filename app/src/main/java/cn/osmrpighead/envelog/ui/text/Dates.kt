@@ -24,6 +24,14 @@ fun yearMonthText(yearMonth: YearMonth): String = stringResource(
 )
 
 @Composable
+fun dayRangeText(start: LocalDate, endInclusive: LocalDate): String =
+    if (start != endInclusive)
+        stringResource(R.string.time_format_day, start.dayOfMonth) +
+                stringResource(R.string.symbol_en_dash) +
+                stringResource(R.string.time_format_day, endInclusive.dayOfMonth)
+    else stringResource(R.string.time_format_day, start.dayOfMonth)
+
+@Composable
 fun dayOfWeekText(dayOfWeek: DayOfWeek): String = stringResource(dayOfWeek.shortNameRes())
 
 @Composable

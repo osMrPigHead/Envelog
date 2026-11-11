@@ -1,11 +1,20 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -15,20 +24,38 @@ import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
+import cn.osmrpighead.envelog.ui.component.form.MonthPickerButton
+import cn.osmrpighead.envelog.ui.component.form.MonthPickerConfirmEventHandler
+import cn.osmrpighead.envelog.ui.component.form.MonthPickerSheetBuilder
 import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.screen.envelope.component.AllocationList
+import cn.osmrpighead.envelog.ui.screen.envelope.component.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
+import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
+import cn.osmrpighead.envelog.ui.theme.ButtonColor
+import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.time.LocalDate
 import java.time.YearMonth
+
+private enum class EnvelopeTab { Calendar, Budget, Allocation }
+
+private val EnvelopeTab.labelRes: Int
+    get() = when (this) {
+        EnvelopeTab.Calendar -> R.string.envelope_edit_tab_calendar
+        EnvelopeTab.Budget -> R.string.envelope_edit_tab_budget
+        EnvelopeTab.Allocation -> R.string.envelope_edit_tab_expenses
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Success(
     uiState: EnvelopeUiState.Success,
+    selectMonth: (YearMonth) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
     openActiveBudget: (BudgetId) -> Unit,
     newActiveBudget: (LocalDate) -> Unit,
@@ -38,6 +65,7 @@ private fun Success(
     deleteActiveBudget: () -> Unit,
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
+    archiveAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
     openQuickSet: () -> Unit,
     dismissQuickSet: () -> Unit,
@@ -48,6 +76,13 @@ private fun Success(
     modifier: Modifier = Modifier,
 ) {
     BackHandler { saveAndBack() }
+
+    var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
+    var showArchiveConfirmation by rememberSaveable { mutableStateOf(false) }
+    val visibleTabs =
+        if (uiState.envelope.isBudgeted) EnvelopeTab.entries
+        else EnvelopeTab.entries - EnvelopeTab.Budget
+    val activeTab = selectedTab.takeIf { it in visibleTabs } ?: visibleTabs.first()
 
     Scaffold(
         topBar = {
@@ -61,6 +96,13 @@ private fun Success(
                         )
                     }
                 },
+                actions = {
+                    MonthPickerButton(
+                        uiState.yearMonth,
+                        MonthPickerSheetBuilder.Default(MonthPickerConfirmEventHandler.Default(selectMonth)),
+                        modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingExtra)),
+                    )
+                },
             )
         },
         modifier = modifier,
@@ -68,48 +110,114 @@ private fun Success(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+                .fillMaxSize(),
         ) {
-
-            OutlinedTextField(
-                value = uiState.envelope.name,
-                onValueChange = { updateEnvelope(uiState.envelope.copy(name = it)) },
-                label = { Text(text = stringResource(R.string.common_label_name)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            LabeledSwitch(
-                checked = uiState.envelope.isBudgeted,
-                onCheckedChange = { updateEnvelope(uiState.envelope.copy(isBudgeted = it)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
-            ) {
-                Text(
-                    text = stringResource(R.string.envelope_edit_label_budgeted),
-                    style = MaterialTheme.typography.bodyLarge,
+            Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold))) {
+                OutlinedTextField(
+                    value = uiState.envelope.name,
+                    onValueChange = { updateEnvelope(uiState.envelope.copy(name = it)) },
+                    label = { Text(text = stringResource(R.string.common_label_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
+
+                LabeledSwitch(
+                    checked = uiState.envelope.isBudgeted,
+                    onCheckedChange = { updateEnvelope(uiState.envelope.copy(isBudgeted = it)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                ) {
+                    Text(
+                        text = stringResource(R.string.envelope_edit_label_budgeted),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+
+                if (uiState.envelope.isBudgeted) OutlinedButton(
+                    onClick = openQuickSet,
+                    enabled = uiState.yearMonth >= YearMonth.from(uiState.today),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                ) {
+                    Text(text = stringResource(R.string.envelope_edit_quick_set_title))
+                }
+
+                SecondaryTabRow(
+                    selectedTabIndex = visibleTabs.indexOf(activeTab),
+                    modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+                ) {
+                    for (tab in visibleTabs) Tab(
+                        selected = activeTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = { Text(text = stringResource(tab.labelRes)) },
+                    )
+                }
             }
 
-            if (uiState.envelope.isBudgeted) OutlinedButton(
-                onClick = openQuickSet,
-                enabled = uiState.yearMonth >= YearMonth.from(uiState.today),
+            Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                    .padding(top = dimensionResource(R.dimen.spacingMedium))
+                    .verticalScroll(rememberScrollState()),
             ) {
-                Text(text = stringResource(R.string.envelope_edit_quick_set_title))
+                AnimatedContent(
+                    targetState = activeTab,
+                    transitionSpec = {
+                        val direction = if (targetState.ordinal > initialState.ordinal) 1 else -1
+                        val enter = slideInHorizontally(
+                            animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
+                            initialOffsetX = { width -> direction * width / 4 },
+                        ) + fadeIn(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
+                        val exit = slideOutHorizontally(
+                            animationSpec = tween(durationMillis = MotionTokens.DurationSwitchSlide),
+                            targetOffsetX = { width -> -direction * width / 4 },
+                        ) + fadeOut(animationSpec = tween(durationMillis = MotionTokens.DurationSwitchFade))
+                        (enter togetherWith exit).using(null)
+                    },
+                    label = "EnvelopeTabContent",
+                ) { tab ->
+                    when (tab) {
+                        EnvelopeTab.Budget -> BudgetList(
+                            budgets = uiState.budgets.values,
+                            yearMonth = uiState.yearMonth,
+                            onBudgetClick = openActiveBudget,
+                            modifier = Modifier.padding(
+                                top = dimensionResource(R.dimen.spacingMedium),
+                                bottom = dimensionResource(R.dimen.spacingBold),
+                            ),
+                        )
+
+                        EnvelopeTab.Allocation -> AllocationList(
+                            allocations = uiState.allocationsWithInfo,
+                            modifier = Modifier.padding(
+                                top = dimensionResource(R.dimen.spacingMedium),
+                                bottom = dimensionResource(R.dimen.spacingBold),
+                            ),
+                        )
+
+                        EnvelopeTab.Calendar -> BudgetCalendar(
+                            model = uiState.calendar,
+                            onDateClick = newActiveBudget,
+                            onBudgetClick = openActiveBudget,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+                        )
+                    }
+                }
             }
 
-            BudgetCalendar(
-                model = uiState.calendar,
-                onDateClick = newActiveBudget,
-                onBudgetClick = openActiveBudget,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
-            )
+            if (!uiState.isNew)
+                Button(
+                    onClick = { showArchiveConfirmation = true },
+                    colors = ButtonColor.danger,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensionResource(R.dimen.spacingExtra)),
+                ) { Text(text = stringResource(R.string.envelope_edit_action_archive)) }
         }
 
         DatesModalBottomSheet(
@@ -138,12 +246,21 @@ private fun Success(
             error = uiState.envelopeSubmissionError,
             onDismiss = clearSubmissionError,
         )
+
+        if (showArchiveConfirmation) ArchiveEnvelopeConfirmationDialog(
+            onConfirm = {
+                showArchiveConfirmation = false
+                archiveAndBack()
+            },
+            onDismiss = { showArchiveConfirmation = false },
+        )
     }
 }
 
 @Composable
 fun EnvelopeScreen(
     uiState: EnvelopeUiState,
+    selectMonth: (YearMonth) -> Unit,
     initializeForNew: (Envelope) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
     openActiveBudget: (BudgetId) -> Unit,
@@ -154,6 +271,7 @@ fun EnvelopeScreen(
     deleteActiveBudget: () -> Unit,
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
+    archiveAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
     openQuickSet: () -> Unit,
     dismissQuickSet: () -> Unit,
@@ -178,6 +296,7 @@ fun EnvelopeScreen(
 
         is EnvelopeUiState.Success -> Success(
             uiState,
+            selectMonth,
             updateEnvelope,
             openActiveBudget,
             newActiveBudget,
@@ -187,6 +306,7 @@ fun EnvelopeScreen(
             deleteActiveBudget,
             clearActiveBudget,
             saveAndBack,
+            archiveAndBack,
             clearSubmissionError,
             openQuickSet,
             dismissQuickSet,
