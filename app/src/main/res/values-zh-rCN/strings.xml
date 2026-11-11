@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">信封记</string>
+    <string name="common_action_archive">归档</string>
     <string name="common_action_back">返回</string>
     <string name="common_action_cancel">取消</string>
     <string name="common_action_delete">删除</string>
@@ -10,6 +11,7 @@
     <string name="common_msg_amount_positive">金额必须为正数</string>
     <string name="currency_cny_prefix">\u200b</string>
     <string name="currency_cny_suffix">\u200a元</string>
+    <string name="envelope_edit_action_archive">归档信封</string>
     <string name="envelope_edit_budget_amount_label">限额</string>
     <string name="envelope_edit_budget_list_amount">限额</string>
     <string name="envelope_edit_budget_list_date_range">日期区间</string>
@@ -17,6 +19,7 @@
     <string name="envelope_edit_budget_title">预算</string>
     <string name="envelope_edit_default_name">新建信封</string>
     <string name="envelope_edit_label_budgeted">启用预算</string>
+    <string name="envelope_edit_msg_archive_confirm">归档后信封将从主界面隐藏，预算不再参与统计，支出仍计入总计。</string>
     <string name="envelope_edit_msg_archived">不可编辑已归档的信封</string>
     <string name="envelope_edit_msg_budget_overlaps">预算区间重叠</string>
     <string name="envelope_edit_tab_budget">预算</string>

@@ -1,22 +1,11 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import android.util.Log
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
+import androidx.compose.material3.*
 import androidx.compose.material3.SheetValue.PartiallyExpanded
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -35,9 +24,9 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
-import cn.osmrpighead.envelog.ui.screen.envelope.ActiveItem
 import cn.osmrpighead.envelog.ui.screen.envelope.ActiveBudgetError
 import cn.osmrpighead.envelog.ui.screen.envelope.ActiveBudgetError.*
+import cn.osmrpighead.envelog.ui.screen.envelope.ActiveItem
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
@@ -162,7 +151,6 @@ fun DatesModalBottomSheet(
 
         ModalBottomSheet(
             onDismissRequest = {
-                numKeypadHost.confirm()
                 if (activeItem.isNew && activeItem.error != null) close()
                 else save()
             },

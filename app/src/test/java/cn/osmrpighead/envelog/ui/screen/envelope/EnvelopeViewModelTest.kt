@@ -83,6 +83,7 @@ class EnvelopeViewModelTest {
 
     private lateinit var repository: FakeRepository
     private lateinit var viewModel: EnvelopeViewModel
+    private var backCalls = 0
 
     @Before
     fun setUp() {
@@ -92,7 +93,7 @@ class EnvelopeViewModelTest {
             budget = budget,
             allocations = listOf(late, early, outside),
         )
-        viewModel = createViewModel(repository)
+        viewModel = createViewModel(repository) { backCalls++ }
     }
 
     @After
@@ -181,6 +182,32 @@ class EnvelopeViewModelTest {
         }
     }
 
+    @Test
+    fun archiveAndBack_archivesEnvelopeThenBacks() = runTest {
+        awaitSuccess()
+
+        viewModel.archiveAndBack()
+
+        assertEquals(listOf(envelopeId), repository.archivedIds)
+        assertEquals(1, backCalls)
+    }
+
+    @Test
+    fun archiveAndBack_onNewEnvelopeBacksWithoutArchiving() = runTest {
+        var newBackCalls = 0
+
+        val newViewModel = createViewModel(repository, NavigationTarget.New()) { newBackCalls++ }
+        try {
+            newViewModel.initializeForNew(Envelope(EnvelopeId.generate(), "新信封", true, false))
+            newViewModel.archiveAndBack()
+        } finally {
+            newViewModel.viewModelScope.cancel()
+        }
+
+        assertTrue(repository.archivedIds.isEmpty())
+        assertEquals(1, newBackCalls)
+    }
+
     private suspend fun awaitSuccess(): EnvelopeUiState.Success =
         viewModel.uiState.filterIsInstance<EnvelopeUiState.Success>().first()
 
@@ -194,9 +221,10 @@ class EnvelopeViewModelTest {
     private fun createViewModel(
         repository: FakeRepository,
         target: NavigationTarget<EnvelopeId> = NavigationTarget.Existing(envelopeId),
+        onBack: () -> Unit = {},
     ): EnvelopeViewModel = EnvelopeViewModel(
         route = AppRoute.Envelope(navId = NavId.generate(), id = target),
-        back = {},
+        back = onBack,
         appState = AppStateHolder(
             todayProvider = TodayProvider(ApplicationProvider.getApplicationContext(), clock),
             clock = clock,
@@ -222,6 +250,7 @@ class EnvelopeViewModelTest {
         private val allocations: List<AllocationWithInfo>,
     ) : EnvelogRepository {
         val requestedSpans = mutableListOf<HalfOpenDateSpan>()
+        val archivedIds = mutableListOf<EnvelopeId>()
 
         override fun observeOverview(
             today: LocalDate,
@@ -266,7 +295,10 @@ class EnvelopeViewModelTest {
             budgets: List<Budget>,
         ): BudgetWriteResult = throw NotImplementedError()
 
-        override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult = throw NotImplementedError()
+        override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult {
+            archivedIds += id
+            return ArchiveResult.Archived
+        }
 
         override suspend fun updateBudget(budget: Budget): BudgetWriteResult = throw NotImplementedError()
 

@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
@@ -37,8 +38,9 @@ class EnvelopeViewModel @AssistedInject constructor(
         appState.selectMonth(yearMonth)
     }
 
-    private val isNew = route.id is NavigationTarget.New
-    private val _uiState = MutableStateFlow(if (isNew) EnvelopeUiState.IsNew else EnvelopeUiState.Loading)
+    private val _uiState = MutableStateFlow(
+        if (route.id is NavigationTarget.New) EnvelopeUiState.IsNew else EnvelopeUiState.Loading,
+    )
     val uiState = _uiState.asStateFlow()
     private val fieldId = Any()
     private var job: Job? = null
@@ -85,6 +87,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun initializeForNew(envelope: Envelope) {
         _uiState.value = EnvelopeUiState.Success(
             envelope = envelope,
+            isNew = true,
             yearMonth = yearMonth.value,
             budgets = emptyMap(),
             amountFieldId = fieldId,
@@ -111,6 +114,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 ) { envelope, budgets, allocations, allocationsWithInfo ->
                     EnvelopeUiState.Success(
                         envelope = envelope,
+                        isNew = false,
                         yearMonth = yearMonth.value,
                         budgets = budgets,
                         amountFieldId = fieldId,
@@ -184,6 +188,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun updateActiveBudget(budget: Budget) {
         _uiState.update {
             require(it is EnvelopeUiState.Success)
+            if (it.activeItem.budget?.id != budget.id) return@update it
             it.copy(
                 activeItem = it.activeItem.copy(
                     budget = budget,
@@ -223,7 +228,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         }
 
         job = viewModelScope.launch {
-            val result = if (!isNew) {
+            val result = if (!uiState.isNew) {
                 if (uiState.activeItem.isNew) repository.insertBudget(budget)
                 else repository.updateBudget(budget)
             } else null
@@ -242,7 +247,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 }
                 return@launch
             }
-            val updatedBudgets = if (!isNew) savedBudgets.first() else null
+            val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
@@ -260,8 +265,8 @@ class EnvelopeViewModel @AssistedInject constructor(
         require(uiState is EnvelopeUiState.Success)
         val budget = uiState.activeItem.budget ?: return
         job = viewModelScope.launch {
-            if (!isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
-            val updatedBudgets = if (!isNew) savedBudgets.first() else null
+            if (!uiState.isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
+            val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
@@ -292,7 +297,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         val uiState = _uiState.value
         require(uiState is EnvelopeUiState.Success)
         job = viewModelScope.launch {
-            if (!isNew) {
+            if (!uiState.isNew) {
                 repository.updateEnvelope(uiState.envelope)
                 back()
                 return@launch
@@ -313,6 +318,17 @@ class EnvelopeViewModel @AssistedInject constructor(
         _uiState.update {
             require(it is EnvelopeUiState.Success)
             it.copy(envelopeSubmissionError = null)
+        }
+    }
+
+    fun archiveAndBack() {
+        if (job?.isActive == true) return
+
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        job = viewModelScope.launch {
+            if (!uiState.isNew) repository.archiveEnvelope(uiState.envelope.id)
+            back()
         }
     }
 

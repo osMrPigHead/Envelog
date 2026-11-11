@@ -29,6 +29,7 @@ data class ActiveItem(
 sealed interface EnvelopeUiState {
     data class Success(
         val envelope: Envelope,
+        val isNew: Boolean,
         val yearMonth: YearMonth,
         val budgets: Map<BudgetId, Budget>,
         val amountFieldId: Any,

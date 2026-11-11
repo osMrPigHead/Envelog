@@ -26,10 +26,12 @@ import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.envelope.component.AllocationList
+import cn.osmrpighead.envelog.ui.screen.envelope.component.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
+import cn.osmrpighead.envelog.ui.theme.ButtonColor
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.time.LocalDate
 
@@ -55,12 +57,14 @@ private fun Success(
     deleteActiveBudget: () -> Unit,
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
+    archiveAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BackHandler { saveAndBack() }
 
     var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
+    var showArchiveConfirmation by rememberSaveable { mutableStateOf(false) }
     val visibleTabs =
         if (uiState.envelope.isBudgeted) EnvelopeTab.entries
         else EnvelopeTab.entries - EnvelopeTab.Budget
@@ -174,6 +178,15 @@ private fun Success(
                     }
                 }
             }
+
+            if (!uiState.isNew)
+                Button(
+                    onClick = { showArchiveConfirmation = true },
+                    colors = ButtonColor.danger,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensionResource(R.dimen.spacingExtra)),
+                ) { Text(text = stringResource(R.string.envelope_edit_action_archive)) }
         }
 
         DatesModalBottomSheet(
@@ -189,6 +202,14 @@ private fun Success(
         if (uiState.envelopeSubmissionError != null) EnvelopeSubmissionErrorDialog(
             error = uiState.envelopeSubmissionError,
             onDismiss = clearSubmissionError,
+        )
+
+        if (showArchiveConfirmation) ArchiveEnvelopeConfirmationDialog(
+            onConfirm = {
+                showArchiveConfirmation = false
+                archiveAndBack()
+            },
+            onDismiss = { showArchiveConfirmation = false },
         )
     }
 }
@@ -206,6 +227,7 @@ fun EnvelopeScreen(
     deleteActiveBudget: () -> Unit,
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
+    archiveAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -233,6 +255,7 @@ fun EnvelopeScreen(
             deleteActiveBudget,
             clearActiveBudget,
             saveAndBack,
+            archiveAndBack,
             clearSubmissionError,
             modifier,
         )

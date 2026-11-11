@@ -64,9 +64,12 @@ class EnvelopeScreenInstrumentedTest {
     private var deleteBudgetCalls = 0
     private var closeBudgetCalls = 0
     private var saveAndBackCalls = 0
+    private var archiveAndBackCalls = 0
     private var clearSubmissionErrorCalls = 0
 
     private val okText: String get() = context.getString(R.string.common_action_ok)
+    private val archiveText: String get() = context.getString(R.string.envelope_edit_action_archive)
+    private val archiveConfirmText: String get() = context.getString(R.string.common_action_archive)
 
     @Test
     fun envelope_editingNameReportsUpdate() {
@@ -271,6 +274,41 @@ class EnvelopeScreenInstrumentedTest {
     }
 
     @Test
+    fun envelope_archiveButtonShowsConfirmationDialog() {
+        setScreen()
+
+        clickArchiveButton()
+
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_archive_confirm))
+            .assertIsDisplayed()
+        composeRule.runOnIdle { assertEquals(0, archiveAndBackCalls) }
+    }
+
+    @Test
+    fun envelope_archiveConfirmationReportsArchiveAndBack() {
+        setScreen()
+        clickArchiveButton()
+
+        composeRule.onNode(hasText(archiveConfirmText) and hasClickAction() and hasButtonRole())
+            .performClick()
+
+        composeRule.runOnIdle { assertEquals(1, archiveAndBackCalls) }
+    }
+
+    @Test
+    fun envelope_archiveConfirmationCancelDismissesDialog() {
+        setScreen()
+        clickArchiveButton()
+
+        composeRule.onNode(hasText(context.getString(R.string.common_action_cancel)) and hasClickAction() and hasButtonRole())
+            .performClick()
+
+        composeRule.runOnIdle { assertEquals(0, archiveAndBackCalls) }
+        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_archive_confirm))
+            .assertDoesNotExist()
+    }
+
+    @Test
     fun envelope_topBarBackReportsSaveAndBack() {
         setScreen()
 
@@ -306,6 +344,10 @@ class EnvelopeScreenInstrumentedTest {
             composeRule.onAllNodesWithText(context.getString(R.string.envelope_edit_budget_range_label))
                 .fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun clickArchiveButton() {
+        composeRule.onNode(hasText(archiveText) and hasClickAction() and hasButtonRole()).performClick()
     }
 
     private fun selectTab(labelRes: Int) {
@@ -347,6 +389,7 @@ class EnvelopeScreenInstrumentedTest {
                     deleteActiveBudget = { deleteBudgetCalls++ },
                     clearActiveBudget = {},
                     saveAndBack = { saveAndBackCalls++ },
+                    archiveAndBack = { archiveAndBackCalls++ },
                     clearSubmissionError = {
                         clearSubmissionErrorCalls++
                         val current = state.value as EnvelopeUiState.Success
@@ -366,6 +409,7 @@ class EnvelopeScreenInstrumentedTest {
         envelopeSubmissionError: EnvelopeSubmissionError? = null,
     ): EnvelopeUiState.Success = EnvelopeUiState.Success(
         envelope = envelope,
+        isNew = false,
         yearMonth = InstrumentedTestData.month,
         budgets = budgets,
         amountFieldId = fieldId,

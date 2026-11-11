@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Envelog</string>
+    <string name="common_action_archive">Archive</string>
     <string name="common_action_back">Back</string>
     <string name="common_action_cancel">Cancel</string>
     <string name="common_action_delete">Delete</string>
@@ -9,6 +10,7 @@
     <string name="common_msg_amount_positive">Amount should be positive</string>
     <string name="currency_cny_prefix">¥\u2009</string>
     <string name="currency_cny_suffix">\u200b</string>
+    <string name="envelope_edit_action_archive">Archive Envelope</string>
     <string name="envelope_edit_budget_amount_label">Amount</string>
     <string name="envelope_edit_budget_list_amount">Amount</string>
     <string name="envelope_edit_budget_list_date_range">Date Range</string>
@@ -16,6 +18,7 @@
     <string name="envelope_edit_budget_title">Budget</string>
     <string name="envelope_edit_default_name">New Envelope</string>
     <string name="envelope_edit_label_budgeted">Budgeted</string>
+    <string name="envelope_edit_msg_archive_confirm">Archiving hides the envelope from the overview and excludes its budgets from statistics. Its expenses still count toward the total.</string>
     <string name="envelope_edit_msg_archived">Edits on archived envelope are prohibited</string>
     <string name="envelope_edit_msg_budget_overlaps">Budget overlaps</string>
     <string name="envelope_edit_tab_budget">Budget</string>
