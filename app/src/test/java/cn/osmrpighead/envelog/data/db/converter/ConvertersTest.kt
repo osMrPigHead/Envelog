@@ -2,7 +2,7 @@ package cn.osmrpighead.envelog.data.db.converter
 
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.Instant
@@ -62,9 +62,9 @@ class ConvertersTest {
     }
 
     @Test
-    fun idConverters_expenditureIdRoundTrips() {
-        val id = ExpenditureId(UUID.fromString("00000000-0000-0000-0000-0000000000c1"))
+    fun idConverters_expenseIdRoundTrips() {
+        val id = ExpenseId(UUID.fromString("00000000-0000-0000-0000-0000000000c1"))
 
-        assertEquals(id, idConverters.toExpenditureId(idConverters.fromExpenditureId(id)))
+        assertEquals(id, idConverters.toExpenseId(idConverters.fromExpenseId(id)))
     }
 }

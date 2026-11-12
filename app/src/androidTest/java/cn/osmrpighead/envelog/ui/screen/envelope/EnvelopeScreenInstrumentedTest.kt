@@ -27,8 +27,8 @@ import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
+import cn.osmrpighead.envelog.data.model.ExpenseId
+import cn.osmrpighead.envelog.data.model.ExpenseMetaInfo
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.testing.InstrumentedTestData
 import cn.osmrpighead.envelog.testing.hasButtonRole
@@ -279,8 +279,8 @@ class EnvelopeScreenInstrumentedTest {
         setScreen()
         selectTab(R.string.envelope_edit_tab_expenses)
 
-        val expenditure = allocation(0xC5, 5, 12_345).expenditure
-        val dateTime = expenditure.happenedAt.format(expenditure.happenedZone)
+        val expense = allocation(0xC5, 5, 12_345).expense
+        val dateTime = expense.happenedAt.format(expense.happenedZone)
         composeRule.onNodeWithText(dateTime).assertIsDisplayed()
         composeRule.onNodeWithText("123.45").assertIsDisplayed()
     }
@@ -332,8 +332,8 @@ class EnvelopeScreenInstrumentedTest {
     fun envelope_budgetSheetShowsAllocationDateTimeAndUnsignedAmount() {
         val budget = InstrumentedTestData.budget(0xD5)
         val allocation = AllocationWithInfo(
-            expenditure = ExpenditureMetaInfo(
-                id = ExpenditureId(UUID(0L, 0xC1)),
+            expense = ExpenseMetaInfo(
+                id = ExpenseId(UUID(0L, 0xC1)),
                 happenedAt = LocalDate.of(2026, 10, 5).atTime(12, 0)
                     .atZone(InstrumentedTestData.zone).toInstant(),
                 happenedDate = LocalDate.of(2026, 10, 5),
@@ -354,7 +354,7 @@ class EnvelopeScreenInstrumentedTest {
         setScreen()
         awaitBudgetSheet()
 
-        val dateTime = allocation.expenditure.happenedAt.format(allocation.expenditure.happenedZone)
+        val dateTime = allocation.expense.happenedAt.format(allocation.expense.happenedZone)
         composeRule.onNodeWithText(dateTime).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("123.45").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("+123.45").assertDoesNotExist()
@@ -463,8 +463,8 @@ class EnvelopeScreenInstrumentedTest {
 
     private fun allocation(value: Long, day: Int, amount: Long): AllocationWithInfo =
         AllocationWithInfo(
-            expenditure = ExpenditureMetaInfo(
-                id = ExpenditureId(UUID(0L, value)),
+            expense = ExpenseMetaInfo(
+                id = ExpenseId(UUID(0L, value)),
                 happenedAt = LocalDate.of(2026, 10, day).atTime(12, 0)
                     .atZone(InstrumentedTestData.zone).toInstant(),
                 happenedDate = LocalDate.of(2026, 10, day),

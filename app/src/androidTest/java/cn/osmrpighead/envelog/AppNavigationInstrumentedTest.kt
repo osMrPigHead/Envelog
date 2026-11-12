@@ -100,7 +100,7 @@ class AppNavigationInstrumentedTest {
     }
 
     @Test
-    fun recordFlow_recordsExpenditureAndRefreshesOverview() {
+    fun recordFlow_recordsExpenseAndRefreshesOverview() {
         waitForText(envelopeName)
         composeRule.onNodeWithText(envelopeName, substring = true).performClick()
         waitForKeypad()

@@ -11,7 +11,7 @@ import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
@@ -122,7 +122,7 @@ class OverviewViewModelTest {
     }
 
     @Test
-    fun archivedEnvelopeBudget_isExcludedFromSummaryButItsExpenditureCountsInTotal() = runTest {
+    fun archivedEnvelopeBudget_isExcludedFromSummaryButItsExpenseCountsInTotal() = runTest {
         val state = successState()
         val remaining = state.summaryItems.filterIsInstance<SummaryItem.Remaining>().single()
         val expenses = state.summaryItems.filterIsInstance<SummaryItem.Expenses>().single()
@@ -225,7 +225,7 @@ class OverviewViewModelTest {
         override suspend fun deleteBudget(id: BudgetId): DeleteResult =
             throw NotImplementedError()
 
-        override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) =
+        override suspend fun recordExpense(expense: ExpenseSubmission) =
             throw NotImplementedError()
     }
 }

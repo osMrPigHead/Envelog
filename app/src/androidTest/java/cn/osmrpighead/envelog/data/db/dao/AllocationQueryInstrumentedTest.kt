@@ -5,11 +5,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.db.row.AllocationWithInfoRow
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -39,7 +39,7 @@ class AllocationQueryInstrumentedTest {
     private val envelopeB = EnvelopeId(UUID(0L, 0xA2))
 
     private lateinit var database: EnvelogDatabase
-    private lateinit var dao: ExpenditureAllocationDao
+    private lateinit var dao: ExpenseAllocationDao
 
     @Before
     fun setUp() {
@@ -47,7 +47,7 @@ class AllocationQueryInstrumentedTest {
             ApplicationProvider.getApplicationContext(),
             EnvelogDatabase::class.java,
         ).build()
-        dao = database.expenditureAllocationDao()
+        dao = database.expenseAllocationDao()
     }
 
     @After
@@ -66,21 +66,21 @@ class AllocationQueryInstrumentedTest {
         date: LocalDate,
         vararg shares: Pair<EnvelopeId, Long>,
         deletedAt: Instant? = null,
-    ): Pair<ExpenditureEntity, List<ExpenditureAllocationEntity>> {
-        val id = ExpenditureId(UUID(0L, value))
-        val expenditure = ExpenditureEntity(
+    ): Pair<ExpenseEntity, List<ExpenseAllocationEntity>> {
+        val id = ExpenseId(UUID(0L, value))
+        val expense = ExpenseEntity(
             id = id,
             happenedAt = at(date),
             happenedDate = date,
             happenedZone = zone,
             deletedAt = deletedAt,
         )
-        return expenditure to shares.map { (envelopeId, amount) ->
-            ExpenditureAllocationEntity(id, envelopeId, amount)
+        return expense to shares.map { (envelopeId, amount) ->
+            ExpenseAllocationEntity(id, envelopeId, amount)
         }
     }
 
-    private suspend fun seed(records: List<Pair<ExpenditureEntity, List<ExpenditureAllocationEntity>>>) {
+    private suspend fun seed(records: List<Pair<ExpenseEntity, List<ExpenseAllocationEntity>>>) {
         val seedDao = database.seedDao()
         seedDao.insertEnvelopes(
             listOf(
@@ -88,7 +88,7 @@ class AllocationQueryInstrumentedTest {
                 envelope(envelopeB, "购物", isBudgeted = false),
             ),
         )
-        seedDao.insertExpenditures(records.map { it.first })
+        seedDao.insertExpenses(records.map { it.first })
         seedDao.insertAllocations(records.flatMap { it.second })
     }
 
@@ -99,7 +99,7 @@ class AllocationQueryInstrumentedTest {
         dao.observeDailySummaries(envelopeA, monthStart, monthEnd).first()
 
     @Test
-    fun allocations_filterEnvelopeAndSpanAndCarryExpenditureInfo() = runBlocking {
+    fun allocations_filterEnvelopeAndSpanAndCarryExpenseInfo() = runBlocking {
         seed(
             listOf(
                 record(0xB1, LocalDate.of(2026, 10, 1), envelopeA to 2_000),
@@ -116,7 +116,7 @@ class AllocationQueryInstrumentedTest {
         assertEquals(
             setOf(
                 AllocationWithInfoRow(
-                    ExpenditureId(UUID(0L, 0xB1)),
+                    ExpenseId(UUID(0L, 0xB1)),
                     at(LocalDate.of(2026, 10, 1)),
                     LocalDate.of(2026, 10, 1),
                     zone,
@@ -124,7 +124,7 @@ class AllocationQueryInstrumentedTest {
                     2_000,
                 ),
                 AllocationWithInfoRow(
-                    ExpenditureId(UUID(0L, 0xB2)),
+                    ExpenseId(UUID(0L, 0xB2)),
                     at(LocalDate.of(2026, 10, 5)),
                     LocalDate.of(2026, 10, 5),
                     zone,
@@ -132,7 +132,7 @@ class AllocationQueryInstrumentedTest {
                     6_000,
                 ),
                 AllocationWithInfoRow(
-                    ExpenditureId(UUID(0L, 0xB3)),
+                    ExpenseId(UUID(0L, 0xB3)),
                     at(LocalDate.of(2026, 10, 31)),
                     LocalDate.of(2026, 10, 31),
                     zone,
@@ -171,7 +171,7 @@ class AllocationQueryInstrumentedTest {
     }
 
     @Test
-    fun allocationsAndDailySummaries_excludeSoftDeletedExpenditures() = runBlocking {
+    fun allocationsAndDailySummaries_excludeSoftDeletedExpenses() = runBlocking {
         val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
         seed(
             listOf(

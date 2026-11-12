@@ -5,7 +5,7 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.model.Budget
-import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
+import cn.osmrpighead.envelog.data.model.ExpenseMetaInfo
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.data.repository.room.RoomEnvelogRepository
@@ -46,7 +46,7 @@ class RoomEnvelogRepositoryQueryTest {
     }
 
     @Test
-    fun observeAllocations_mapsExpenditureInfoAndFiltersEnvelopeAndSpan() = runTest {
+    fun observeAllocations_mapsExpenseInfoAndFiltersEnvelopeAndSpan() = runTest {
         val (inside, insideShares) = RoomTestData.record(
             0xB1,
             LocalDate.of(2026, 10, 5),
@@ -64,15 +64,15 @@ class RoomEnvelogRepositoryQueryTest {
                 RoomTestData.envelope(RoomTestData.envelopeA),
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
-            expenditures = listOf(inside, outsideSpan),
+            expenses = listOf(inside, outsideSpan),
             allocations = insideShares + outsideSpanShares,
         )
 
         assertEquals(
             listOf(
                 AllocationWithInfo(
-                    expenditure = ExpenditureMetaInfo(
-                        id = RoomTestData.expenditureId(0xB1),
+                    expense = ExpenseMetaInfo(
+                        id = RoomTestData.expenseId(0xB1),
                         happenedAt = RoomTestData.at(LocalDate.of(2026, 10, 5)),
                         happenedDate = LocalDate.of(2026, 10, 5),
                         happenedZone = RoomTestData.zone,
@@ -286,7 +286,7 @@ class RoomEnvelogRepositoryQueryTest {
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(first, second, lastDay, nextMonth),
+            expenses = listOf(first, second, lastDay, nextMonth),
             allocations = firstShares + secondShares + lastDayShares + nextMonthShares,
         )
 

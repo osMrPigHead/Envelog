@@ -570,7 +570,7 @@ class RoomEnvelogRepositoryWriteTest {
                     deletedAt = deletedAt,
                 ),
             ),
-            expenditures = listOf(
+            expenses = listOf(
                 garbageOfA.first.copy(deletedAt = deletedAt),
                 garbageOfB.first.copy(deletedAt = deletedAt),
             ),
@@ -589,7 +589,7 @@ class RoomEnvelogRepositoryWriteTest {
         assertEquals(
             "信封 B 的软删除分摊不应被顺带清理",
             1,
-            database.expenditureAllocationDao().clean(RoomTestData.envelopeB),
+            database.expenseAllocationDao().clean(RoomTestData.envelopeB),
         )
     }
 
@@ -627,7 +627,7 @@ class RoomEnvelogRepositoryWriteTest {
         database.seed(
             envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")),
             budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
-            expenditures = listOf(alive.first),
+            expenses = listOf(alive.first),
             allocations = alive.second,
         )
 
@@ -669,7 +669,7 @@ class RoomEnvelogRepositoryWriteTest {
                 RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt),
                 RoomTestData.budget(id = RoomTestData.budgetC, envelopeId = RoomTestData.envelopeB, deletedAt = deletedAt),
             ),
-            expenditures = listOf(
+            expenses = listOf(
                 garbageOfA.first.copy(deletedAt = deletedAt),
                 garbageOfB.first.copy(deletedAt = deletedAt),
             ),
@@ -701,7 +701,7 @@ class RoomEnvelogRepositoryWriteTest {
         database.seed(
             envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")),
             budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
-            expenditures = listOf(alive.first),
+            expenses = listOf(alive.first),
             allocations = alive.second,
         )
 

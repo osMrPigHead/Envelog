@@ -21,14 +21,14 @@ import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
-class ExpenditureAllocationDaoTest {
+class ExpenseAllocationDaoTest {
     private lateinit var database: EnvelogDatabase
-    private lateinit var dao: ExpenditureAllocationDao
+    private lateinit var dao: ExpenseAllocationDao
 
     @Before
     fun setUp() {
         database = RoomTestData.createDatabase()
-        dao = database.expenditureAllocationDao()
+        dao = database.expenseAllocationDao()
     }
 
     @After
@@ -91,7 +91,7 @@ class ExpenditureAllocationDaoTest {
                 RoomTestData.envelope(RoomTestData.envelopeA),
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
-            expenditures = listOf(
+            expenses = listOf(
                 firstDay,
                 sameDay,
                 anotherSameDay,
@@ -115,7 +115,7 @@ class ExpenditureAllocationDaoTest {
         assertEquals(
             setOf(
                 AllocationWithInfoRow(
-                    expenditureId = RoomTestData.expenditureId(0xB1),
+                    expenseId = RoomTestData.expenseId(0xB1),
                     happenedAt = RoomTestData.at(LocalDate.of(2026, 10, 1)),
                     happenedDate = LocalDate.of(2026, 10, 1),
                     happenedZone = RoomTestData.zone,
@@ -123,7 +123,7 @@ class ExpenditureAllocationDaoTest {
                     amount = 2_000,
                 ),
                 AllocationWithInfoRow(
-                    expenditureId = RoomTestData.expenditureId(0xB2),
+                    expenseId = RoomTestData.expenseId(0xB2),
                     happenedAt = RoomTestData.at(LocalDate.of(2026, 10, 5)),
                     happenedDate = LocalDate.of(2026, 10, 5),
                     happenedZone = RoomTestData.zone,
@@ -131,7 +131,7 @@ class ExpenditureAllocationDaoTest {
                     amount = 6_000,
                 ),
                 AllocationWithInfoRow(
-                    expenditureId = RoomTestData.expenditureId(0xB3),
+                    expenseId = RoomTestData.expenseId(0xB3),
                     happenedAt = RoomTestData.at(LocalDate.of(2026, 10, 5)),
                     happenedDate = LocalDate.of(2026, 10, 5),
                     happenedZone = RoomTestData.zone,
@@ -139,7 +139,7 @@ class ExpenditureAllocationDaoTest {
                     amount = 1_000,
                 ),
                 AllocationWithInfoRow(
-                    expenditureId = RoomTestData.expenditureId(0xB4),
+                    expenseId = RoomTestData.expenseId(0xB4),
                     happenedAt = RoomTestData.at(LocalDate.of(2026, 10, 31)),
                     happenedDate = LocalDate.of(2026, 10, 31),
                     happenedZone = RoomTestData.zone,
@@ -190,7 +190,7 @@ class ExpenditureAllocationDaoTest {
     }
 
     @Test
-    fun observeAllocations_excludesSoftDeletedExpenditures() = runTest {
+    fun observeAllocations_excludesSoftDeletedExpenses() = runTest {
         seedMixedRecords()
 
         assertEquals(
@@ -198,12 +198,12 @@ class ExpenditureAllocationDaoTest {
             allocations().size,
         )
         assertTrue(
-            allocations().none { it.expenditureId == RoomTestData.expenditureId(0xB7) },
+            allocations().none { it.expenseId == RoomTestData.expenseId(0xB7) },
         )
     }
 
     @Test
-    fun observeDailyAllocationSummaries_excludesSoftDeletedExpenditures() = runTest {
+    fun observeDailyAllocationSummaries_excludesSoftDeletedExpenses() = runTest {
         seedMixedRecords()
 
         assertEquals(
@@ -213,7 +213,7 @@ class ExpenditureAllocationDaoTest {
     }
 
     @Test
-    fun clean_deletesEnvelopeAllocationsOfSoftDeletedExpenditures() = runTest {
+    fun clean_deletesEnvelopeAllocationsOfSoftDeletedExpenses() = runTest {
         seedMixedRecords()
 
         assertEquals(1, dao.clean(RoomTestData.envelopeA))
@@ -222,7 +222,7 @@ class ExpenditureAllocationDaoTest {
     }
 
     @Test
-    fun clean_keepsOtherEnvelopesAllocationsOfSoftDeletedExpenditures() = runTest {
+    fun clean_keepsOtherEnvelopesAllocationsOfSoftDeletedExpenses() = runTest {
         val (shared, sharedShares) = RoomTestData.record(
             0xB8,
             LocalDate.of(2026, 10, 5),
@@ -235,7 +235,7 @@ class ExpenditureAllocationDaoTest {
                 RoomTestData.envelope(RoomTestData.envelopeA),
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
-            expenditures = listOf(shared.copy(deletedAt = Instant.parse("2026-10-19T04:00:00Z"))),
+            expenses = listOf(shared.copy(deletedAt = Instant.parse("2026-10-19T04:00:00Z"))),
             allocations = sharedShares,
         )
 
@@ -244,7 +244,7 @@ class ExpenditureAllocationDaoTest {
     }
 
     @Test
-    fun clean_returnsZeroWhenEveryAllocationBelongsToALiveExpenditure() = runTest {
+    fun clean_returnsZeroWhenEveryAllocationBelongsToALiveExpense() = runTest {
         val (alive, aliveShares) = RoomTestData.record(
             0xB1,
             LocalDate.of(2026, 10, 5),
@@ -253,7 +253,7 @@ class ExpenditureAllocationDaoTest {
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(alive),
+            expenses = listOf(alive),
             allocations = aliveShares,
         )
 

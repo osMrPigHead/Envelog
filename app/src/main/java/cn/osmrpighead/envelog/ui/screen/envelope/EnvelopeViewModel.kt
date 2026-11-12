@@ -93,7 +93,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val monthlyAllocations: Flow<List<AllocationWithInfo>> =
         if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
             repository.observeAllocations(route.id.value, yearMonth.toHalfOpenDateSpan())
-                .map { allocations -> allocations.sortedBy { it.expenditure.happenedAt } }
+                .map { allocations -> allocations.sortedBy { it.expense.happenedAt } }
         } else flowOf(emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -104,7 +104,7 @@ class EnvelopeViewModel @AssistedInject constructor(
             .flatMapLatest { span ->
                 if (span == null) flowOf(emptyList())
                 else repository.observeAllocations(route.id.value, span)
-                    .map { allocations -> allocations.sortedBy { it.expenditure.happenedAt } }
+                    .map { allocations -> allocations.sortedBy { it.expense.happenedAt } }
             }
         else flowOf(emptyList())
 

@@ -5,8 +5,8 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 
 @Dao
 interface SeedDao {
@@ -20,8 +20,8 @@ interface SeedDao {
     suspend fun insertBudgets(entities: List<BudgetEntity>)
 
     @Insert
-    suspend fun insertExpenditures(entities: List<ExpenditureEntity>)
+    suspend fun insertExpenses(entities: List<ExpenseEntity>)
 
     @Insert
-    suspend fun insertAllocations(entities: List<ExpenditureAllocationEntity>)
+    suspend fun insertAllocations(entities: List<ExpenseAllocationEntity>)
 }

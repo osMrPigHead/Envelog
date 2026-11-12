@@ -1,10 +1,10 @@
 package cn.osmrpighead.envelog.data.query
 
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
+import cn.osmrpighead.envelog.data.model.ExpenseMetaInfo
 
 data class AllocationWithInfo(
-    val expenditure: ExpenditureMetaInfo,
+    val expense: ExpenseMetaInfo,
     val envelopeId: EnvelopeId,
     val amount: Long,
 )

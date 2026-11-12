@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "9e49fc7a309f7c8bcc04636dc73224e6",
+    "identityHash": "7d3863c0c9cfd5da07e216ef658e0e22",
     "entities": [
       {
         "tableName": "envelope",
@@ -117,7 +117,7 @@
         ]
       },
       {
-        "tableName": "expenditure",
+        "tableName": "expense",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `happenedAt` TEXT NOT NULL, `happenedDate` TEXT NOT NULL, `happenedZone` TEXT NOT NULL, `deletedAt` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
@@ -158,12 +158,12 @@
         }
       },
       {
-        "tableName": "expenditureAllocation",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`expenditureId` TEXT NOT NULL, `envelopeId` TEXT NOT NULL, `amount` INTEGER NOT NULL, PRIMARY KEY(`expenditureId`, `envelopeId`), FOREIGN KEY(`expenditureId`) REFERENCES `expenditure`(`id`) ON UPDATE CASCADE ON DELETE CASCADE , FOREIGN KEY(`envelopeId`) REFERENCES `envelope`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT )",
+        "tableName": "expenseAllocation",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`expenseId` TEXT NOT NULL, `envelopeId` TEXT NOT NULL, `amount` INTEGER NOT NULL, PRIMARY KEY(`expenseId`, `envelopeId`), FOREIGN KEY(`expenseId`) REFERENCES `expense`(`id`) ON UPDATE CASCADE ON DELETE CASCADE , FOREIGN KEY(`envelopeId`) REFERENCES `envelope`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT )",
         "fields": [
           {
-            "fieldPath": "expenditureId",
-            "columnName": "expenditureId",
+            "fieldPath": "expenseId",
+            "columnName": "expenseId",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -183,28 +183,28 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "expenditureId",
+            "expenseId",
             "envelopeId"
           ]
         },
         "indices": [
           {
-            "name": "index_expenditureAllocation_envelopeId",
+            "name": "index_expenseAllocation_envelopeId",
             "unique": false,
             "columnNames": [
               "envelopeId"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_expenditureAllocation_envelopeId` ON `${TABLE_NAME}` (`envelopeId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_expenseAllocation_envelopeId` ON `${TABLE_NAME}` (`envelopeId`)"
           }
         ],
         "foreignKeys": [
           {
-            "table": "expenditure",
+            "table": "expense",
             "onDelete": "CASCADE",
             "onUpdate": "CASCADE",
             "columns": [
-              "expenditureId"
+              "expenseId"
             ],
             "referencedColumns": [
               "id"
@@ -226,7 +226,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9e49fc7a309f7c8bcc04636dc73224e6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7d3863c0c9cfd5da07e216ef658e0e22')"
     ]
   }
 }

@@ -34,8 +34,8 @@ private fun AllocationRow(
             content = StatItemContent(
                 title = StatItemSlot.Empty,
                 value = StatItemSlot.Text("XXX"),
-                caption = allocation.expenditure.happenedAt
-                    .format(allocation.expenditure.happenedZone)
+                caption = allocation.expense.happenedAt
+                    .format(allocation.expense.happenedZone)
                     .asSlot(),
             ),
             modifier = Modifier.weight(1f),

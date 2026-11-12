@@ -15,9 +15,9 @@ import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseId
+import cn.osmrpighead.envelog.data.model.ExpenseMetaInfo
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
@@ -497,8 +497,8 @@ class EnvelopeViewModelTest {
 
     private fun allocation(value: Long, date: LocalDate, amount: Long): AllocationWithInfo =
         AllocationWithInfo(
-            expenditure = ExpenditureMetaInfo(
-                id = ExpenditureId(UUID(0L, value)),
+            expense = ExpenseMetaInfo(
+                id = ExpenseId(UUID(0L, value)),
                 happenedAt = date.atTime(12, 0).atZone(zone).toInstant(),
                 happenedDate = date,
                 happenedZone = zone,
@@ -539,7 +539,7 @@ class EnvelopeViewModelTest {
             requestedSpans += dateSpan
             return flowOf(
                 allocations.filter {
-                    it.envelopeId == envelopeId && it.expenditure.happenedDate in dateSpan
+                    it.envelopeId == envelopeId && it.expense.happenedDate in dateSpan
                 },
             )
         }
@@ -597,7 +597,7 @@ class EnvelopeViewModelTest {
             return DeleteResult.Deleted
         }
 
-        override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) =
+        override suspend fun recordExpense(expense: ExpenseSubmission) =
             throw NotImplementedError()
     }
 }

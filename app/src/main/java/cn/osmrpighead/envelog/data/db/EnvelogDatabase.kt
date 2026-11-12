@@ -7,20 +7,20 @@ import cn.osmrpighead.envelog.data.db.converter.IdConverters
 import cn.osmrpighead.envelog.data.db.converter.TimeConverters
 import cn.osmrpighead.envelog.data.db.dao.BudgetDao
 import cn.osmrpighead.envelog.data.db.dao.EnvelopeDao
-import cn.osmrpighead.envelog.data.db.dao.ExpenditureAllocationDao
-import cn.osmrpighead.envelog.data.db.dao.ExpenditureDao
+import cn.osmrpighead.envelog.data.db.dao.ExpenseAllocationDao
+import cn.osmrpighead.envelog.data.db.dao.ExpenseDao
 import cn.osmrpighead.envelog.data.db.dao.SeedDao
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 
 @Database(
     entities = [
         EnvelopeEntity::class,
         BudgetEntity::class,
-        ExpenditureEntity::class,
-        ExpenditureAllocationEntity::class,
+        ExpenseEntity::class,
+        ExpenseAllocationEntity::class,
     ],
     version = 1,
     exportSchema = true,
@@ -29,7 +29,7 @@ import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 abstract class EnvelogDatabase : RoomDatabase() {
     abstract fun envelopeDao(): EnvelopeDao
     abstract fun budgetDao(): BudgetDao
-    abstract fun expenditureDao(): ExpenditureDao
-    abstract fun expenditureAllocationDao(): ExpenditureAllocationDao
+    abstract fun expenseDao(): ExpenseDao
+    abstract fun expenseAllocationDao(): ExpenseAllocationDao
     abstract fun seedDao(): SeedDao
 }

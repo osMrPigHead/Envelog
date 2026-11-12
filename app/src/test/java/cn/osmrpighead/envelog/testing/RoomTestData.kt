@@ -6,11 +6,11 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -42,7 +42,7 @@ object RoomTestData {
 
     fun envelopeId(value: Long): EnvelopeId = EnvelopeId(uuid(value))
     fun budgetId(value: Long): BudgetId = BudgetId(uuid(value))
-    fun expenditureId(value: Long): ExpenditureId = ExpenditureId(uuid(value))
+    fun expenseId(value: Long): ExpenseId = ExpenseId(uuid(value))
 
     fun createDatabase(): EnvelogDatabase = Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext(),
@@ -81,11 +81,11 @@ object RoomTestData {
         deletedAt = deletedAt,
     )
 
-    fun expenditure(
-        id: ExpenditureId = expenditureId(0xC1),
+    fun expense(
+        id: ExpenseId = expenseId(0xC1),
         date: LocalDate = monthStart.plusDays(4),
         deletedAt: Instant? = null,
-    ): ExpenditureEntity = ExpenditureEntity(
+    ): ExpenseEntity = ExpenseEntity(
         id = id,
         happenedAt = at(date),
         happenedDate = date,
@@ -94,11 +94,11 @@ object RoomTestData {
     )
 
     fun allocation(
-        expenditureId: ExpenditureId,
+        expenseId: ExpenseId,
         envelopeId: EnvelopeId = envelopeA,
         amount: Long = 10_000,
-    ): ExpenditureAllocationEntity = ExpenditureAllocationEntity(
-        expenditureId = expenditureId,
+    ): ExpenseAllocationEntity = ExpenseAllocationEntity(
+        expenseId = expenseId,
         envelopeId = envelopeId,
         amount = amount,
     )
@@ -110,9 +110,9 @@ object RoomTestData {
         value: Long,
         date: LocalDate,
         vararg shares: Pair<EnvelopeId, Long>,
-    ): Pair<ExpenditureEntity, List<ExpenditureAllocationEntity>> {
-        val id = expenditureId(value)
-        return expenditure(id, date) to shares.map { (envelopeId, amount) ->
+    ): Pair<ExpenseEntity, List<ExpenseAllocationEntity>> {
+        val id = expenseId(value)
+        return expense(id, date) to shares.map { (envelopeId, amount) ->
             allocation(id, envelopeId, amount)
         }
     }
@@ -125,12 +125,12 @@ object RoomTestData {
 suspend fun EnvelogDatabase.seed(
     envelopes: List<EnvelopeEntity> = emptyList(),
     budgets: List<BudgetEntity> = emptyList(),
-    expenditures: List<ExpenditureEntity> = emptyList(),
-    allocations: List<ExpenditureAllocationEntity> = emptyList(),
+    expenses: List<ExpenseEntity> = emptyList(),
+    allocations: List<ExpenseAllocationEntity> = emptyList(),
 ) {
     val dao = seedDao()
     if (envelopes.isNotEmpty()) dao.insertEnvelopes(envelopes)
     if (budgets.isNotEmpty()) dao.insertBudgets(budgets)
-    if (expenditures.isNotEmpty()) dao.insertExpenditures(expenditures)
+    if (expenses.isNotEmpty()) dao.insertExpenses(expenses)
     if (allocations.isNotEmpty()) dao.insertAllocations(allocations)
 }

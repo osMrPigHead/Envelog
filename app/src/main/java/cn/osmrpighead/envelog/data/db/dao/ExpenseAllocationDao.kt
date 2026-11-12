@@ -3,7 +3,7 @@ package cn.osmrpighead.envelog.data.db.dao
 import androidx.room3.Dao
 import androidx.room3.Insert
 import androidx.room3.Query
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
 import cn.osmrpighead.envelog.data.db.row.AllocationWithInfoRow
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
@@ -11,18 +11,18 @@ import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 @Dao
-interface ExpenditureAllocationDao {
+interface ExpenseAllocationDao {
     @Insert
-    suspend fun insert(entities: List<ExpenditureAllocationEntity>)
+    suspend fun insert(entities: List<ExpenseAllocationEntity>)
 
     @Query(
         """
-            SELECT ea.expenditureId, ea.envelopeId, ea.amount,
+            SELECT ea.expenseId, ea.envelopeId, ea.amount,
                    ex.happenedAt, ex.happenedDate, ex.happenedZone
-            FROM expenditureAllocation ea
-            JOIN expenditure ex
+            FROM expenseAllocation ea
+            JOIN expense ex
               ON ex.deletedAt IS NULL
-             AND ea.expenditureId = ex.id
+             AND ea.expenseId = ex.id
              AND ex.happenedDate >= :spanStart
              AND ex.happenedDate < :spanEnd
             WHERE ea.envelopeId = :envelopeId
@@ -37,10 +37,10 @@ interface ExpenditureAllocationDao {
     @Query(
         """
             SELECT ea.envelopeId, ex.happenedDate, SUM(ea.amount) as amount
-            FROM expenditureAllocation ea
-            JOIN expenditure ex
+            FROM expenseAllocation ea
+            JOIN expense ex
               ON ex.deletedAt IS NULL
-             AND ea.expenditureId = ex.id
+             AND ea.expenseId = ex.id
              AND ex.happenedDate >= :spanStart
              AND ex.happenedDate < :spanEnd
             WHERE ea.envelopeId = :envelopeId
@@ -55,10 +55,10 @@ interface ExpenditureAllocationDao {
 
     @Query(
         """
-            DELETE FROM expenditureAllocation
+            DELETE FROM expenseAllocation
             WHERE envelopeId = :envelopeId
-              AND expenditureId IN (
-                  SELECT id FROM expenditure WHERE deletedAt IS NOT NULL
+              AND expenseId IN (
+                  SELECT id FROM expense WHERE deletedAt IS NOT NULL
               )
         """,
     )

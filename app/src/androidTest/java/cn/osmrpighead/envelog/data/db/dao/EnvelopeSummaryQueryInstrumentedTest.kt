@@ -7,11 +7,11 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -88,28 +88,28 @@ class EnvelopeSummaryQueryInstrumentedTest {
         date: LocalDate,
         amount: Long,
         deletedAt: java.time.Instant? = null,
-    ): Pair<ExpenditureEntity, ExpenditureAllocationEntity> {
-        val id = ExpenditureId(UUID(0L, value))
-        val expenditure = ExpenditureEntity(
+    ): Pair<ExpenseEntity, ExpenseAllocationEntity> {
+        val id = ExpenseId(UUID(0L, value))
+        val expense = ExpenseEntity(
             id = id,
             happenedAt = at(date),
             happenedDate = date,
             happenedZone = zone,
             deletedAt = deletedAt,
         )
-        return expenditure to ExpenditureAllocationEntity(id, envelopeId, amount)
+        return expense to ExpenseAllocationEntity(id, envelopeId, amount)
     }
 
     private suspend fun seed(
         envelopes: List<EnvelopeEntity> = emptyList(),
         budgets: List<BudgetEntity> = emptyList(),
-        entries: List<Pair<ExpenditureEntity, ExpenditureAllocationEntity>> = emptyList(),
+        entries: List<Pair<ExpenseEntity, ExpenseAllocationEntity>> = emptyList(),
     ) {
         val seedDao = database.seedDao()
         if (envelopes.isNotEmpty()) seedDao.insertEnvelopes(envelopes)
         if (budgets.isNotEmpty()) seedDao.insertBudgets(budgets)
         if (entries.isNotEmpty()) {
-            seedDao.insertExpenditures(entries.map { it.first })
+            seedDao.insertExpenses(entries.map { it.first })
             seedDao.insertAllocations(entries.map { it.second })
         }
     }

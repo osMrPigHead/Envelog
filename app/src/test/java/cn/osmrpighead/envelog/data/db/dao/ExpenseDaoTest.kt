@@ -18,16 +18,16 @@ import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
-class ExpenditureDaoTest {
+class ExpenseDaoTest {
     private lateinit var database: EnvelogDatabase
-    private lateinit var dao: ExpenditureDao
-    private lateinit var allocationDao: ExpenditureAllocationDao
+    private lateinit var dao: ExpenseDao
+    private lateinit var allocationDao: ExpenseAllocationDao
 
     @Before
     fun setUp() {
         database = RoomTestData.createDatabase()
-        dao = database.expenditureDao()
-        allocationDao = database.expenditureAllocationDao()
+        dao = database.expenseDao()
+        allocationDao = database.expenseAllocationDao()
     }
 
     @After
@@ -69,19 +69,19 @@ class ExpenditureDaoTest {
                 RoomTestData.envelope(RoomTestData.envelopeA),
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
-            expenditures = listOf(
+            expenses = listOf(
                 onlyA.copy(deletedAt = deletedAt),
                 bothEnvelopes.copy(deletedAt = deletedAt),
                 alive,
                 onlyB.copy(deletedAt = deletedAt),
-                RoomTestData.expenditure(RoomTestData.expenditureId(0xB5), deletedAt = deletedAt),
+                RoomTestData.expense(RoomTestData.expenseId(0xB5), deletedAt = deletedAt),
             ),
             allocations = onlyAShares + bothShares + aliveShares + onlyBShares,
         )
     }
 
     @Test
-    fun clean_deletesSoftDeletedExpenditureWhoseAllocationsAllBelongToTheEnvelope() = runTest {
+    fun clean_deletesSoftDeletedExpenseWhoseAllocationsAllBelongToTheEnvelope() = runTest {
         seedMixedRecords()
 
         assertEquals(1, dao.clean(RoomTestData.envelopeA))
@@ -89,7 +89,7 @@ class ExpenditureDaoTest {
     }
 
     @Test
-    fun clean_keepsSoftDeletedExpenditureSharedWithOtherEnvelopes() = runTest {
+    fun clean_keepsSoftDeletedExpenseSharedWithOtherEnvelopes() = runTest {
         seedMixedRecords()
 
         dao.clean(RoomTestData.envelopeA)
@@ -98,7 +98,7 @@ class ExpenditureDaoTest {
     }
 
     @Test
-    fun clean_cascadesToTheDeletedExpendituresAllocations() = runTest {
+    fun clean_cascadesToTheDeletedExpensesAllocations() = runTest {
         seedMixedRecords()
 
         assertEquals(1, dao.clean(RoomTestData.envelopeA))
@@ -118,7 +118,7 @@ class ExpenditureDaoTest {
     }
 
     @Test
-    fun clean_keepsLiveExpendituresAndTheirAllocations() = runTest {
+    fun clean_keepsLiveExpensesAndTheirAllocations() = runTest {
         seedMixedRecords()
 
         dao.clean(RoomTestData.envelopeA)
@@ -133,7 +133,7 @@ class ExpenditureDaoTest {
     }
 
     @Test
-    fun clean_returnsZeroWhenTheEnvelopeHasNoExpenditure() = runTest {
+    fun clean_returnsZeroWhenTheEnvelopeHasNoExpense() = runTest {
         seedMixedRecords()
 
         assertEquals(0, dao.clean(RoomTestData.envelopeId(0xEE)))

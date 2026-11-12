@@ -7,13 +7,13 @@ import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
-import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseAllocation
+import cn.osmrpighead.envelog.data.model.ExpenseId
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.repository.ArchiveResult
 import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult
 import kotlinx.coroutines.flow.first
@@ -49,7 +49,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
     private val envelopeA = EnvelopeId(UUID(0L, 0xA1))
     private val envelopeB = EnvelopeId(UUID(0L, 0xA2))
     private val unknownEnvelope = EnvelopeId(UUID(0L, 0xEE))
-    private val expenditureId = ExpenditureId(UUID(0L, 0xC1))
+    private val expenseId = ExpenseId(UUID(0L, 0xC1))
 
     private lateinit var database: EnvelogDatabase
     private lateinit var repository: RoomEnvelogRepository
@@ -98,38 +98,38 @@ class RoomEnvelogRepositoryInstrumentedTest {
         envelopeId: EnvelopeId,
         amount: Long,
         softDeletedAt: Instant? = deletedAt,
-    ): Pair<ExpenditureEntity, ExpenditureAllocationEntity> {
-        val id = ExpenditureId(UUID(0L, value))
-        return ExpenditureEntity(
+    ): Pair<ExpenseEntity, ExpenseAllocationEntity> {
+        val id = ExpenseId(UUID(0L, value))
+        return ExpenseEntity(
             id = id,
             happenedAt = at(happenedDate),
             happenedDate = happenedDate,
             happenedZone = zone,
             deletedAt = softDeletedAt,
-        ) to ExpenditureAllocationEntity(id, envelopeId, amount)
+        ) to ExpenseAllocationEntity(id, envelopeId, amount)
     }
 
     @Test
-    fun recordExpenditure_persistsAllocationsForEveryEnvelope() = runBlocking {
+    fun recordExpense_persistsAllocationsForEveryEnvelope() = runBlocking {
         seedEnvelopes()
-        val submission = ExpenditureSubmission(
-            id = expenditureId,
+        val submission = ExpenseSubmission(
+            id = expenseId,
             happenedAt = at(happenedDate),
             happenedZone = zone,
             allocations = listOf(
-                ExpenditureAllocation(expenditureId, envelopeA, 6_000),
-                ExpenditureAllocation(expenditureId, envelopeB, 4_000),
+                ExpenseAllocation(expenseId, envelopeA, 6_000),
+                ExpenseAllocation(expenseId, envelopeB, 4_000),
             ),
         )
 
-        repository.recordExpenditure(submission)
+        repository.recordExpense(submission)
 
         val span = month.toHalfOpenDateSpan()
         val ofA = repository.observeAllocations(envelopeA, span).first()
         val ofB = repository.observeAllocations(envelopeB, span).first()
         assertEquals(1, ofA.size)
         assertEquals(6_000L, ofA.single().amount)
-        assertEquals(happenedDate, ofA.single().expenditure.happenedDate)
+        assertEquals(happenedDate, ofA.single().expense.happenedDate)
         assertEquals(1, ofB.size)
         assertEquals(4_000L, ofB.single().amount)
     }
@@ -149,7 +149,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         database.seedDao().insertBudgets(listOf(budget(0xD1, envelopeA, deletedAt), budget(0xD2, envelopeB, deletedAt)))
         val garbageOfA = garbage(0xC1, envelopeA, 6_000)
         val garbageOfB = garbage(0xC2, envelopeB, 4_000)
-        database.seedDao().insertExpenditures(listOf(garbageOfA.first, garbageOfB.first))
+        database.seedDao().insertExpenses(listOf(garbageOfA.first, garbageOfB.first))
         database.seedDao().insertAllocations(listOf(garbageOfA.second, garbageOfB.second))
 
         assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(envelopeA))
@@ -157,20 +157,20 @@ class RoomEnvelogRepositoryInstrumentedTest {
         assertNull(database.envelopeDao().get(envelopeA))
         assertNotNull("其他信封应保持存活", database.envelopeDao().get(envelopeB))
         assertEquals("信封 B 的软删除预算不应被顺带清理", 1, database.budgetDao().clean(envelopeB))
-        assertEquals("信封 B 的软删除分摊不应被顺带清理", 1, database.expenditureAllocationDao().clean(envelopeB))
+        assertEquals("信封 B 的软删除分摊不应被顺带清理", 1, database.expenseAllocationDao().clean(envelopeB))
     }
 
     @Test
     fun deleteEnvelope_reportsNotFoundWithoutTouchingAnyTable() = runBlocking {
         seedEnvelopes()
         val garbageOfA = garbage(0xC1, envelopeA, 6_000)
-        database.seedDao().insertExpenditures(listOf(garbageOfA.first))
+        database.seedDao().insertExpenses(listOf(garbageOfA.first))
         database.seedDao().insertAllocations(listOf(garbageOfA.second))
 
         assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(unknownEnvelope))
 
         assertNotNull(database.envelopeDao().get(envelopeA))
-        assertEquals(1, database.expenditureAllocationDao().clean(envelopeA))
+        assertEquals(1, database.expenseAllocationDao().clean(envelopeA))
     }
 
     @Test
@@ -189,7 +189,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         seedEnvelopes()
         database.seedDao().insertBudgets(listOf(budget(0xD1, envelopeA, deletedAt)))
         val alive = garbage(0xC1, envelopeA, 6_000, softDeletedAt = null)
-        database.seedDao().insertExpenditures(listOf(alive.first))
+        database.seedDao().insertExpenses(listOf(alive.first))
         database.seedDao().insertAllocations(listOf(alive.second))
 
         assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(envelopeA))
@@ -203,7 +203,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         seedEnvelopes()
         database.seedDao().insertBudgets(listOf(budget(0xD1, envelopeA, deletedAt)))
         val garbageOfA = garbage(0xC1, envelopeA, 6_000)
-        database.seedDao().insertExpenditures(listOf(garbageOfA.first))
+        database.seedDao().insertExpenses(listOf(garbageOfA.first))
         database.seedDao().insertAllocations(listOf(garbageOfA.second))
 
         assertTrue(repository.canDeleteEnvelope(envelopeA))
@@ -223,7 +223,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
     fun canDeleteEnvelope_agreesWithConstraintWhenLiveAllocationRemains() = runBlocking {
         seedEnvelopes()
         val alive = garbage(0xC1, envelopeA, 6_000, softDeletedAt = null)
-        database.seedDao().insertExpenditures(listOf(alive.first))
+        database.seedDao().insertExpenses(listOf(alive.first))
         database.seedDao().insertAllocations(listOf(alive.second))
 
         assertFalse(repository.canDeleteEnvelope(envelopeA))

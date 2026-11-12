@@ -8,11 +8,11 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -54,8 +54,8 @@ class EnvelopeDeleteInstrumentedTest {
     private lateinit var seedDao: SeedDao
     private lateinit var envelopeDao: EnvelopeDao
     private lateinit var budgetDao: BudgetDao
-    private lateinit var expenditureDao: ExpenditureDao
-    private lateinit var allocationDao: ExpenditureAllocationDao
+    private lateinit var expenseDao: ExpenseDao
+    private lateinit var allocationDao: ExpenseAllocationDao
 
     @Before
     fun setUp() {
@@ -66,8 +66,8 @@ class EnvelopeDeleteInstrumentedTest {
         seedDao = database.seedDao()
         envelopeDao = database.envelopeDao()
         budgetDao = database.budgetDao()
-        expenditureDao = database.expenditureDao()
-        allocationDao = database.expenditureAllocationDao()
+        expenseDao = database.expenseDao()
+        allocationDao = database.expenseAllocationDao()
     }
 
     @After
@@ -99,17 +99,17 @@ class EnvelopeDeleteInstrumentedTest {
         date: LocalDate,
         vararg shares: Pair<EnvelopeId, Long>,
         deletedAt: Instant? = null,
-    ): Pair<ExpenditureEntity, List<ExpenditureAllocationEntity>> {
-        val id = ExpenditureId(UUID(0L, value))
-        val expenditure = ExpenditureEntity(
+    ): Pair<ExpenseEntity, List<ExpenseAllocationEntity>> {
+        val id = ExpenseId(UUID(0L, value))
+        val expense = ExpenseEntity(
             id = id,
             happenedAt = at(date),
             happenedDate = date,
             happenedZone = zone,
             deletedAt = deletedAt,
         )
-        return expenditure to shares.map { (envelopeId, amount) ->
-            ExpenditureAllocationEntity(id, envelopeId, amount)
+        return expense to shares.map { (envelopeId, amount) ->
+            ExpenseAllocationEntity(id, envelopeId, amount)
         }
     }
 
@@ -138,7 +138,7 @@ class EnvelopeDeleteInstrumentedTest {
         val (alive, aliveShares) = record(0xB3, LocalDate.of(2026, 10, 5), envelopeA to 1_000, envelopeB to 2_000)
         val (onlyB, onlyBShares) = record(0xB4, LocalDate.of(2026, 10, 6), envelopeB to 3_000, deletedAt = deletedAt)
 
-        seedDao.insertExpenditures(
+        seedDao.insertExpenses(
             listOf(onlyA, bothEnvelopes, alive, onlyB, record(0xB5, LocalDate.of(2026, 10, 7), deletedAt = deletedAt).first),
         )
         seedDao.insertAllocations(onlyAShares + bothShares + aliveShares + onlyBShares)
@@ -173,10 +173,10 @@ class EnvelopeDeleteInstrumentedTest {
         seedDao.insertBudgets(listOf(budget(0xD1, deletedAt = deletedAt), budget(0xD2, envelopeB, deletedAt)))
         val (garbageOfA, sharesOfA) = record(0xB1, LocalDate.of(2026, 10, 5), envelopeA to 6_000, deletedAt = deletedAt)
         val (garbageOfB, sharesOfB) = record(0xB2, LocalDate.of(2026, 10, 6), envelopeB to 3_000, deletedAt = deletedAt)
-        seedDao.insertExpenditures(listOf(garbageOfA, garbageOfB))
+        seedDao.insertExpenses(listOf(garbageOfA, garbageOfB))
         seedDao.insertAllocations(sharesOfA + sharesOfB)
 
-        assertEquals(1, expenditureDao.clean(envelopeA))
+        assertEquals(1, expenseDao.clean(envelopeA))
         assertEquals("支出行被删除时分摊应随 CASCADE 一并消失", 0, allocationDao.clean(envelopeA))
         assertEquals(1, budgetDao.clean(envelopeA))
         assertEquals(1, envelopeDao.delete(envelopeA))
@@ -210,28 +210,28 @@ class EnvelopeDeleteInstrumentedTest {
     }
 
     @Test
-    fun expenditureClean_deletesOnlyOrphansOfTheEnvelopeAndCascadesAllocations() = runBlocking {
+    fun expenseClean_deletesOnlyOrphansOfTheEnvelopeAndCascadesAllocations() = runBlocking {
         seedMixedRecords()
 
-        assertEquals(1, expenditureDao.clean(envelopeA))
+        assertEquals(1, expenseDao.clean(envelopeA))
         assertEquals("B1 的分摊应随支出级联删除，只剩 B2 在 A 上的分摊", 1, allocationDao.clean(envelopeA))
     }
 
     @Test
-    fun expenditureClean_keepsRecordsSharedWithOtherEnvelopes() = runBlocking {
+    fun expenseClean_keepsRecordsSharedWithOtherEnvelopes() = runBlocking {
         seedMixedRecords()
 
-        expenditureDao.clean(envelopeA)
-        assertEquals("同时分摊到 A 与 B 的软删除支出应由 B 的清理负责", 1, expenditureDao.clean(envelopeB))
-        assertEquals(0, expenditureDao.clean(envelopeB))
+        expenseDao.clean(envelopeA)
+        assertEquals("同时分摊到 A 与 B 的软删除支出应由 B 的清理负责", 1, expenseDao.clean(envelopeB))
+        assertEquals(0, expenseDao.clean(envelopeB))
     }
 
     @Test
-    fun expenditureClean_findsNoCandidateOnceAllocationsWereCleanedFirst() = runBlocking {
+    fun expenseClean_findsNoCandidateOnceAllocationsWereCleanedFirst() = runBlocking {
         seedMixedRecords()
 
         assertEquals(2, allocationDao.clean(envelopeA))
-        assertEquals("分摊行先被删除后真实 SQLite 也无法再判定孤儿支出", 0, expenditureDao.clean(envelopeA))
+        assertEquals("分摊行先被删除后真实 SQLite 也无法再判定孤儿支出", 0, expenseDao.clean(envelopeA))
     }
 
     /**
@@ -276,17 +276,17 @@ class EnvelopeDeleteInstrumentedTest {
     }
 
     @Test
-    fun isDeletable_ignoresSoftDeletedBudgetsAndExpenditures() = runBlocking {
+    fun isDeletable_ignoresSoftDeletedBudgetsAndExpenses() = runBlocking {
         seedEnvelopes()
         seedDao.insertBudgets(listOf(budget(0xD1, deletedAt = deletedAt)))
         val (garbage, garbageShares) = record(0xB1, LocalDate.of(2026, 10, 5), envelopeA to 6_000, deletedAt = deletedAt)
-        seedDao.insertExpenditures(listOf(garbage))
+        seedDao.insertExpenses(listOf(garbage))
         seedDao.insertAllocations(garbageShares)
 
         assertTrue("垃圾行不构成 RESTRICT 阻挡", envelopeDao.isDeletable(envelopeA))
         assertEquals("汇总查询同样只认存活引用", mapOf(envelopeA to true, envelopeB to true), canDeleteByEnvelope())
 
-        assertEquals(1, expenditureDao.clean(envelopeA))
+        assertEquals(1, expenseDao.clean(envelopeA))
         assertEquals(0, allocationDao.clean(envelopeA))
         assertEquals(1, budgetDao.clean(envelopeA))
         assertEquals(1, envelopeDao.delete(envelopeA))
@@ -296,7 +296,7 @@ class EnvelopeDeleteInstrumentedTest {
     fun isDeletable_staysFalseAfterGarbageCleanupWhileALiveAllocationRemains() = runBlocking {
         seedMixedRecords()
 
-        assertEquals(1, expenditureDao.clean(envelopeA))
+        assertEquals(1, expenseDao.clean(envelopeA))
         assertEquals(1, allocationDao.clean(envelopeA))
 
         assertFalse("清掉 B1、B2 的分摊后 B3 仍挡住删除", envelopeDao.isDeletable(envelopeA))
@@ -307,7 +307,7 @@ class EnvelopeDeleteInstrumentedTest {
         seedEnvelopes()
         seedDao.insertBudgets(listOf(budget(0xD1, envelopeB, deletedAt = deletedAt)))
         val (garbage, garbageShares) = record(0xB1, LocalDate.of(2026, 10, 6), envelopeB to 3_000, deletedAt = deletedAt)
-        seedDao.insertExpenditures(listOf(garbage))
+        seedDao.insertExpenses(listOf(garbage))
         seedDao.insertAllocations(garbageShares)
 
         assertTrue(envelopeDao.isDeletable(envelopeA))

@@ -44,23 +44,23 @@ interface EnvelopeDao {
             ),
             allocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
-                FROM expenditureAllocation ea
+                FROM expenseAllocation ea
                 LEFT JOIN budgetAgg ba ON ea.envelopeId = ba.envelopeId
-                JOIN expenditure ex
+                JOIN expense ex
                   ON ex.deletedAt IS NULL
-                 AND ea.expenditureId = ex.id
+                 AND ea.expenseId = ex.id
                  AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :spanStart), :spanStart)
                  AND ex.happenedDate < COALESCE(MAX(ba.maxEnd, :spanEnd), :spanEnd)
                 GROUP BY ea.envelopeId
             ),
             currentAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
-                FROM expenditureAllocation ea
+                FROM expenseAllocation ea
                 LEFT JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
                 JOIN envelope ev ON ev.id = ea.envelopeId
-                JOIN expenditure ex
+                JOIN expense ex
                   ON ex.deletedAt IS NULL
-                 AND ea.expenditureId = ex.id
+                 AND ea.expenseId = ex.id
                  AND (
                         -- today 落在某个预算区间内：统计该区间内的全部分摊
                         (ex.happenedDate >= cb.startDate AND ex.happenedDate < cb.endDate)
@@ -71,12 +71,12 @@ interface EnvelopeDao {
             ),
             priorAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
-                FROM expenditureAllocation ea
+                FROM expenseAllocation ea
                 LEFT JOIN budgetAgg ba ON ea.envelopeId = ba.envelopeId
                 LEFT JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
-                JOIN expenditure ex
+                JOIN expense ex
                   ON ex.deletedAt IS NULL
-                 AND ea.expenditureId = ex.id
+                 AND ea.expenseId = ex.id
                  AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :spanStart), :spanStart)
                  AND ex.happenedDate < COALESCE(cb.startDate, :today)
                 GROUP BY ea.envelopeId
@@ -92,10 +92,10 @@ interface EnvelopeDao {
                       AND deletedAt IS NULL
                 ) AND NOT EXISTS (
                     SELECT 1
-                    FROM expenditureAllocation ea
-                    JOIN expenditure ex
+                    FROM expenseAllocation ea
+                    JOIN expense ex
                       ON ex.deletedAt IS NULL
-                     AND ea.expenditureId = ex.id
+                     AND ea.expenseId = ex.id
                     WHERE ea.envelopeId = ev.id
                 ) AS canDelete,
                 ac.total AS allocated,
@@ -137,7 +137,7 @@ interface EnvelopeDao {
     @Query("DELETE FROM envelope WHERE id = :id")
     suspend fun delete(id: EnvelopeId): Int
 
-    // budget 与 expenditureAllocation 对 envelope 的外键均为 RESTRICT：
+    // budget 与 expenseAllocation 对 envelope 的外键均为 RESTRICT：
     // 只有存活预算、以及指向存活支出的分摊会真正挡住删除，故软删除行不计入引用。
     @Query(
         """
@@ -149,10 +149,10 @@ interface EnvelopeDao {
                    )
                AND NOT EXISTS (
                        SELECT 1
-                       FROM expenditureAllocation ea
-                       JOIN expenditure ex
+                       FROM expenseAllocation ea
+                       JOIN expense ex
                          ON ex.deletedAt IS NULL
-                        AND ea.expenditureId = ex.id
+                        AND ea.expenseId = ex.id
                        WHERE ea.envelopeId = :id
                    )
         """,

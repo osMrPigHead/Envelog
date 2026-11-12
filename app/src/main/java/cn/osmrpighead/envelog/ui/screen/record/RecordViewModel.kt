@@ -5,9 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
-import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
-import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseAllocation
+import cn.osmrpighead.envelog.data.model.ExpenseId
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
@@ -33,7 +33,7 @@ class RecordViewModel @AssistedInject constructor(
     private val zone = clock.zone
     private val instant = clock.instant()
 
-    private val expenditureId = ExpenditureId.generate()
+    private val expenseId = ExpenseId.generate()
     private var submission: Job? = null
 
     private val host = NumKeypadHostState()
@@ -63,14 +63,14 @@ class RecordViewModel @AssistedInject constructor(
     fun submit(amount: Long) {
         if (submission?.isActive == true || submission?.isCompleted == true) return
         submission = viewModelScope.launch {
-            repository.recordExpenditure(
-                ExpenditureSubmission(
-                    id = expenditureId,
+            repository.recordExpense(
+                ExpenseSubmission(
+                    id = expenseId,
                     happenedAt = instant, // TODO: User select
                     happenedZone = zone,
                     allocations = listOf(
-                        ExpenditureAllocation(
-                            expenditureId = expenditureId,
+                        ExpenseAllocation(
+                            expenseId = expenseId,
                             envelopeId = envelopeId,
                             amount = amount,
                         ),

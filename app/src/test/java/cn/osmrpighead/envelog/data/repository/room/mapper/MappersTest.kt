@@ -10,10 +10,10 @@ import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
-import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.model.ExpenditureMetaInfo
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseAllocation
+import cn.osmrpighead.envelog.data.model.ExpenseId
+import cn.osmrpighead.envelog.data.model.ExpenseMetaInfo
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import org.junit.Assert.assertEquals
@@ -30,16 +30,16 @@ class MappersTest {
     private val zone: ZoneId = ZoneId.of("Asia/Shanghai")
     private val envelopeId = EnvelopeId(UUID(0L, 0xA1))
     private val budgetId = BudgetId(UUID(0L, 0xD1))
-    private val expenditureId = ExpenditureId(UUID(0L, 0xC1))
+    private val expenseId = ExpenseId(UUID(0L, 0xC1))
     private val start = LocalDate.of(2026, 10, 1)
     private val end = LocalDate.of(2026, 11, 1)
     private val happenedAt = Instant.parse("2026-10-20T04:00:00Z")
-    private val expenditure = ExpenditureSubmission(
-        id = expenditureId,
+    private val expense = ExpenseSubmission(
+        id = expenseId,
         happenedAt = happenedAt,
         happenedZone = zone,
         allocations = listOf(
-            ExpenditureAllocation(expenditureId, envelopeId, 12_345),
+            ExpenseAllocation(expenseId, envelopeId, 12_345),
         ),
     )
 
@@ -94,34 +94,34 @@ class MappersTest {
     }
 
     @Test
-    fun expenditureSubmissionToEntity_copiesEntryFields() {
-        val entity = expenditure.toEntity()
+    fun expenseSubmissionToEntity_copiesEntryFields() {
+        val entity = expense.toEntity()
 
-        assertEquals(expenditureId, entity.id)
-        assertEquals(expenditure.happenedAt, entity.happenedAt)
-        assertEquals(expenditure.happenedDate, entity.happenedDate)
+        assertEquals(expenseId, entity.id)
+        assertEquals(expense.happenedAt, entity.happenedAt)
+        assertEquals(expense.happenedDate, entity.happenedDate)
         assertEquals(zone, entity.happenedZone)
     }
 
     @Test
-    fun expenditureSubmissionToEntity_startsNotDeleted() {
-        assertNull(expenditure.toEntity().deletedAt)
+    fun expenseSubmissionToEntity_startsNotDeleted() {
+        assertNull(expense.toEntity().deletedAt)
     }
 
     @Test
-    fun expenditureAllocationToEntity_copiesReferencesAndAmount() {
-        val entity = expenditure.allocations.single().toEntity()
+    fun expenseAllocationToEntity_copiesReferencesAndAmount() {
+        val entity = expense.allocations.single().toEntity()
 
-        assertEquals(expenditureId, entity.expenditureId)
+        assertEquals(expenseId, entity.expenseId)
         assertEquals(envelopeId, entity.envelopeId)
         assertEquals(12_345L, entity.amount)
     }
 
     @Test
-    fun expenditureAllocationToEntity_keepsAmountIndependentOfOtherAllocations() {
-        val other = ExpenditureAllocation(expenditureId, EnvelopeId(UUID(0L, 3L)), 1)
+    fun expenseAllocationToEntity_keepsAmountIndependentOfOtherAllocations() {
+        val other = ExpenseAllocation(expenseId, EnvelopeId(UUID(0L, 3L)), 1)
 
-        assertEquals(12_345L, expenditure.allocations.single().toEntity().amount)
+        assertEquals(12_345L, expense.allocations.single().toEntity().amount)
         assertEquals(1L, other.toEntity().amount)
     }
 
@@ -225,9 +225,9 @@ class MappersTest {
     }
 
     @Test
-    fun allocationRowToDomain_mapsExpenditureInfo() {
+    fun allocationRowToDomain_mapsExpenseInfo() {
         val row = AllocationWithInfoRow(
-            expenditureId = expenditureId,
+            expenseId = expenseId,
             happenedAt = happenedAt,
             happenedDate = LocalDate.of(2026, 10, 20),
             happenedZone = zone,
@@ -237,8 +237,8 @@ class MappersTest {
 
         assertEquals(
             AllocationWithInfo(
-                expenditure = ExpenditureMetaInfo(
-                    id = expenditureId,
+                expense = ExpenseMetaInfo(
+                    id = expenseId,
                     happenedAt = happenedAt,
                     happenedDate = LocalDate.of(2026, 10, 20),
                     happenedZone = zone,

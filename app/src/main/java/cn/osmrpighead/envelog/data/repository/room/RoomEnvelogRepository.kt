@@ -31,8 +31,8 @@ class RoomEnvelogRepository @Inject constructor(
 ) : EnvelogRepository {
     private val envelopeDao = db.envelopeDao()
     private val budgetDao = db.budgetDao()
-    private val expenditureDao = db.expenditureDao()
-    private val expenditureAllocationDao = db.expenditureAllocationDao()
+    private val expenseDao = db.expenseDao()
+    private val expenseAllocationDao = db.expenseAllocationDao()
 
     override fun observeOverview(
         today: LocalDate,
@@ -46,7 +46,7 @@ class RoomEnvelogRepository @Inject constructor(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<AllocationWithInfo>> =
-        expenditureAllocationDao.observe(envelopeId, dateSpan.startDate, dateSpan.endDate)
+        expenseAllocationDao.observe(envelopeId, dateSpan.startDate, dateSpan.endDate)
             .map { rows -> rows.map { it.toDomain() } }
 
     override fun observeBudgets(
@@ -65,7 +65,7 @@ class RoomEnvelogRepository @Inject constructor(
         envelopeId: EnvelopeId,
         dateSpan: HalfOpenDateSpan,
     ): Flow<List<DailyAllocationSummary>> =
-        expenditureAllocationDao.observeDailySummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
+        expenseAllocationDao.observeDailySummaries(envelopeId, dateSpan.startDate, dateSpan.endDate)
 
     override suspend fun getEnvelope(id: EnvelopeId): Envelope =
         envelopeDao.get(id)?.toDomain() ?: throw NoSuchElementException()
@@ -94,8 +94,8 @@ class RoomEnvelogRepository @Inject constructor(
     override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
         try {
             if (db.withWriteTransaction {
-                    expenditureDao.clean(id)
-                    expenditureAllocationDao.clean(id)
+                    expenseDao.clean(id)
+                    expenseAllocationDao.clean(id)
                     budgetDao.clean(id)
                     envelopeDao.delete(id)
                 } == 0
@@ -158,17 +158,17 @@ class RoomEnvelogRepository @Inject constructor(
             else -> DeleteResult.Deleted
         }
 
-    override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) {
+    override suspend fun recordExpense(expense: ExpenseSubmission) {
         db.withWriteTransaction {
-            require(expenditure.allocations.isNotEmpty())
-            require(expenditure.allocations.all { it.expenditureId == expenditure.id && it.amount > 0 })
-            val envelopeIds = expenditure.allocations.map { it.envelopeId }.toSetIfNonDuplicates()
+            require(expense.allocations.isNotEmpty())
+            require(expense.allocations.all { it.expenseId == expense.id && it.amount > 0 })
+            val envelopeIds = expense.allocations.map { it.envelopeId }.toSetIfNonDuplicates()
             requireNotNull(envelopeIds)
             val envelopes = envelopeDao.get(envelopeIds)
             require(envelopes.all { it.archivedAt == null })
 
-            expenditureDao.insert(expenditure.toEntity())
-            expenditureAllocationDao.insert(expenditure.allocations.map { it.toEntity() })
+            expenseDao.insert(expense.toEntity())
+            expenseAllocationDao.insert(expense.allocations.map { it.toEntity() })
         }
     }
 }

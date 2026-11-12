@@ -24,11 +24,11 @@ class DemoSeedDataTest {
         assertEquals(5, seed.envelopes.size)
         assertEquals(seed.envelopes.size, seed.envelopes.map { it.id }.toSet().size)
         assertEquals(seed.budgets.size, seed.budgets.map { it.id }.toSet().size)
-        assertEquals(seed.expenditures.size, seed.expenditures.map { it.id }.toSet().size)
+        assertEquals(seed.expenses.size, seed.expenses.map { it.id }.toSet().size)
 
         assertTrue(seed.budgets.all { budget -> seed.envelopes.any { it.id == budget.envelopeId } })
         assertTrue(seed.allocations.all { allocation ->
-            seed.expenditures.any { it.id == allocation.expenditureId } &&
+            seed.expenses.any { it.id == allocation.expenseId } &&
                 seed.envelopes.any { it.id == allocation.envelopeId }
         })
         assertTrue(seed.allocations.all { it.amount > 0 })
@@ -44,8 +44,8 @@ class DemoSeedDataTest {
             it.dateSpan.startDate >= today.withDayOfMonth(1) &&
                 it.dateSpan.endDate <= today.withDayOfMonth(1).plusMonths(1)
         })
-        assertTrue(seed.expenditures.all { it.happenedDate in today.withDayOfMonth(1)..today })
-        assertTrue(seed.expenditures.all {
+        assertTrue(seed.expenses.all { it.happenedDate in today.withDayOfMonth(1)..today })
+        assertTrue(seed.expenses.all {
             it.happenedAt == it.happenedDate.atTime(LocalTime.NOON).atZone(zone).toInstant()
         })
     }
@@ -87,7 +87,7 @@ class DemoSeedDataTest {
         val seed = buildSeed(today)
         val activeIds = seed.envelopes.filter { it.archivedAt == null }.map { it.id }.toSet()
 
-        assertTrue(seed.expenditures.all { it.happenedDate >= today })
+        assertTrue(seed.expenses.all { it.happenedDate >= today })
         assertEquals(
             68_000,
             seed.allocations.filter { it.envelopeId in activeIds }.sumOf { it.amount },

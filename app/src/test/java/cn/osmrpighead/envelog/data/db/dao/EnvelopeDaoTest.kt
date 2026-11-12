@@ -54,7 +54,7 @@ class EnvelopeDaoTest {
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(inside, lastDay, nextMonth, previousMonth),
+            expenses = listOf(inside, lastDay, nextMonth, previousMonth),
             allocations = insideShares + lastDayShares + nextMonthShares + previousMonthShares,
         )
 
@@ -88,7 +88,7 @@ class EnvelopeDaoTest {
                     amount = 60_000,
                 ),
             ),
-            expenditures = listOf(beforeMonth, beforeSpan, afterSpan, afterMonth),
+            expenses = listOf(beforeMonth, beforeSpan, afterSpan, afterMonth),
             allocations = beforeMonthShares + beforeSpanShares + afterSpanShares + afterMonthShares,
         )
 
@@ -130,7 +130,7 @@ class EnvelopeDaoTest {
                     amount = 80_000,
                 ),
             ),
-            expenditures = listOf(first, second, third),
+            expenses = listOf(first, second, third),
             allocations = firstShares + secondShares + thirdShares,
         )
 
@@ -169,7 +169,7 @@ class EnvelopeDaoTest {
                     amount = 80_000,
                 ),
             ),
-            expenditures = listOf(
+            expenses = listOf(
                 past,
                 today,
                 anotherToday,
@@ -196,7 +196,7 @@ class EnvelopeDaoTest {
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(past, today),
+            expenses = listOf(past, today),
             allocations = pastShares + todayShares,
         )
 
@@ -225,7 +225,7 @@ class EnvelopeDaoTest {
                     amount = 60_000,
                 ),
             ),
-            expenditures = listOf(earlier, today),
+            expenses = listOf(earlier, today),
             allocations = earlierShares + todayShares,
         )
 
@@ -245,7 +245,7 @@ class EnvelopeDaoTest {
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false)),
-            expenditures = listOf(today),
+            expenses = listOf(today),
             allocations = todayShares,
         )
 
@@ -257,7 +257,7 @@ class EnvelopeDaoTest {
     }
 
     @Test
-    fun observeEnvelopeSummaries_ignoresSoftDeletedBudgetsAndExpenditures() = runTest {
+    fun observeEnvelopeSummaries_ignoresSoftDeletedBudgetsAndExpenses() = runTest {
         val (live, liveShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 10), RoomTestData.envelopeA to 10_000)
         val (deleted, deletedShares) = RoomTestData.record(
             0xB2,
@@ -272,7 +272,7 @@ class EnvelopeDaoTest {
                 RoomTestData.budget(id = RoomTestData.budgetA, amount = 100_000),
                 RoomTestData.budget(id = RoomTestData.budgetB, amount = 50_000, deletedAt = deletedAt),
             ),
-            expenditures = listOf(live, deleted.copy(deletedAt = deletedAt)),
+            expenses = listOf(live, deleted.copy(deletedAt = deletedAt)),
             allocations = liveShares + deletedShares,
         )
 
@@ -288,7 +288,7 @@ class EnvelopeDaoTest {
 
     @Test
     fun observeEnvelopeSummaries_countsOnlyAttributedMonthInTotalBudget() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 10_000)
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 10_000)
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
@@ -298,7 +298,7 @@ class EnvelopeDaoTest {
                     attributedMonth = RoomTestData.month.minusMonths(1),
                 ),
             ),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
@@ -351,8 +351,8 @@ class EnvelopeDaoTest {
 
     @Test
     fun observeEnvelopeSummaries_returnsIndependentRowsPerEnvelope() = runTest {
-        val (aExpenditure, aShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
-        val (bExpenditure, bShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 25), RoomTestData.envelopeB to 4_000)
+        val (aExpense, aShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (bExpense, bShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 25), RoomTestData.envelopeB to 4_000)
 
         database.seed(
             envelopes = listOf(
@@ -360,7 +360,7 @@ class EnvelopeDaoTest {
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
             budgets = listOf(RoomTestData.budget(envelopeId = RoomTestData.envelopeA, amount = 100_000)),
-            expenditures = listOf(aExpenditure, bExpenditure),
+            expenses = listOf(aExpense, bExpense),
             allocations = aShares + bShares,
         )
 
@@ -545,11 +545,11 @@ class EnvelopeDaoTest {
     }
 
     @Test
-    fun isDeletable_falseWhenALiveExpenditureAllocatesToTheEnvelope() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+    fun isDeletable_falseWhenALiveExpenseAllocatesToTheEnvelope() = runTest {
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
@@ -558,13 +558,13 @@ class EnvelopeDaoTest {
     }
 
     @Test
-    fun isDeletable_trueWhenEveryAllocationPointsToASoftDeletedExpenditure() = runTest {
+    fun isDeletable_trueWhenEveryAllocationPointsToASoftDeletedExpense() = runTest {
         val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
         val (first, firstShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
         val (second, secondShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 6), RoomTestData.envelopeA to 3_000)
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(first.copy(deletedAt = deletedAt), second.copy(deletedAt = deletedAt)),
+            expenses = listOf(first.copy(deletedAt = deletedAt), second.copy(deletedAt = deletedAt)),
             allocations = firstShares + secondShares,
         )
 
@@ -574,7 +574,7 @@ class EnvelopeDaoTest {
 
     @Test
     fun isDeletable_ignoresAllocationsOfOtherEnvelopes() = runTest {
-        val (expenditure, shares) = RoomTestData.record(
+        val (expense, shares) = RoomTestData.record(
             0xB1,
             LocalDate.of(2026, 10, 5),
             RoomTestData.envelopeB to 6_000,
@@ -584,7 +584,7 @@ class EnvelopeDaoTest {
                 RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物"),
             ),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
@@ -603,7 +603,7 @@ class EnvelopeDaoTest {
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
             budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
-            expenditures = listOf(garbage.copy(deletedAt = deletedAt), alive),
+            expenses = listOf(garbage.copy(deletedAt = deletedAt), alive),
             allocations = garbageShares + aliveShares,
         )
 
@@ -618,12 +618,12 @@ class EnvelopeDaoTest {
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
             budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
-            expenditures = listOf(garbage.copy(deletedAt = deletedAt)),
+            expenses = listOf(garbage.copy(deletedAt = deletedAt)),
             allocations = garbageShares,
         )
 
-        database.expenditureDao().clean(RoomTestData.envelopeA)
-        database.expenditureAllocationDao().clean(RoomTestData.envelopeA)
+        database.expenseDao().clean(RoomTestData.envelopeA)
+        database.expenseAllocationDao().clean(RoomTestData.envelopeA)
         database.budgetDao().clean(RoomTestData.envelopeA)
 
         assertTrue("清理垃圾行后信封应可删除", dao.isDeletable(RoomTestData.envelopeA))

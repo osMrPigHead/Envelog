@@ -5,7 +5,7 @@ import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
@@ -40,5 +40,5 @@ interface EnvelogRepository {
 
     suspend fun deleteBudget(id: BudgetId): DeleteResult
 
-    suspend fun recordExpenditure(expenditure: ExpenditureSubmission)
+    suspend fun recordExpense(expense: ExpenseSubmission)
 }
