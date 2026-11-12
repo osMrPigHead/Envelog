@@ -508,6 +508,7 @@ class EnvelopeScreenInstrumentedTest {
                         archiveAndBackCalls++
                         backEvents.trySend(Unit)
                     },
+                    deleteAndBack = {},
                     clearSubmissionError = {
                         clearSubmissionErrorCalls++
                         val current = state.value as EnvelopeUiState.Success

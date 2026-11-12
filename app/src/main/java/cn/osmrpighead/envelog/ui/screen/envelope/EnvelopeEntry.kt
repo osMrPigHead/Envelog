@@ -30,6 +30,7 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
             clearActiveBudget = viewModel::clearActiveBudget,
             saveAndBack = viewModel::saveAndBack,
             archiveAndBack = viewModel::archiveAndBack,
+            deleteAndBack = viewModel::deleteAndBack,
             clearSubmissionError = viewModel::clearSubmissionError,
             openQuickSet = viewModel::openQuickSet,
             dismissQuickSet = viewModel::dismissQuickSet,

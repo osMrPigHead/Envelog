@@ -139,6 +139,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 EnvelopeUiState.Success(
                     envelope = envelope,
                     isNew = false,
+                    canDelete = repository.canDeleteEnvelope(envelope.id),
                     yearMonth = yearMonth.value,
                     today = appState.today.value,
                     budgets = budgets,
@@ -282,6 +283,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
                     budgets = updatedBudgets ?: (it.budgets + (budget.id to budget)),
+                    canDelete = false,
                     activeItem = it.activeItem.copy(complete = true),
                 )
             }
@@ -297,10 +299,13 @@ class EnvelopeViewModel @AssistedInject constructor(
         job = viewModelScope.launch {
             if (!uiState.isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
             val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
+            val canDelete =
+                if (!uiState.isNew) repository.canDeleteEnvelope(uiState.envelope.id) else uiState.canDelete
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
                     budgets = updatedBudgets ?: (it.budgets - budget.id),
+                    canDelete = canDelete,
                     activeItem = it.activeItem.copy(complete = true),
                 )
             }
@@ -430,6 +435,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 val removed = plan.conflicts.map { conflict -> conflict.id }.toSet()
                 it.copy(
                     budgets = (it.budgets - removed) + plan.budgets.associateBy { budget -> budget.id },
+                    canDelete = false,
                     quickSet = if (it.quickSet.open) {
                         it.quickSet.copy(
                             complete = true,
@@ -481,6 +487,18 @@ class EnvelopeViewModel @AssistedInject constructor(
         require(uiState is EnvelopeUiState.Success)
         job = viewModelScope.launch {
             if (!uiState.isNew) repository.archiveEnvelope(uiState.envelope.id)
+            sendBack()
+        }
+    }
+
+    fun deleteAndBack() {
+        if (job?.isActive == true) return
+
+        val uiState = _uiState.value
+        require(uiState is EnvelopeUiState.Success)
+        if (!uiState.canDelete) return
+        job = viewModelScope.launch {
+            repository.deleteEnvelope(uiState.envelope.id)
             sendBack()
         }
     }

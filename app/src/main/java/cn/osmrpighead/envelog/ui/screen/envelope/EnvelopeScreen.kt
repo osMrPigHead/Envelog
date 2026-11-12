@@ -61,6 +61,7 @@ private fun Success(
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
     archiveAndBack: () -> Unit,
+    deleteAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
     openQuickSet: () -> Unit,
     dismissQuickSet: () -> Unit,
@@ -75,6 +76,7 @@ private fun Success(
 
     var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
     var showArchiveConfirmation by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
     val visibleTabs =
         if (uiState.envelope.isBudgeted) EnvelopeTab.entries
         else EnvelopeTab.entries - EnvelopeTab.Budget
@@ -210,6 +212,10 @@ private fun Success(
                 HugeDangerButton(
                     onClick = back,
                 ) { Text(text = stringResource(R.string.common_action_cancel)) }
+            else if (uiState.canDelete)
+                HugeDangerButton(
+                    onClick = { showDeleteConfirmation = true },
+                ) { Text(text = stringResource(R.string.envelope_edit_action_delete)) }
             else
                 HugeDangerButton(
                     onClick = { showArchiveConfirmation = true },
@@ -250,6 +256,14 @@ private fun Success(
             },
             onDismiss = { showArchiveConfirmation = false },
         )
+
+        if (showDeleteConfirmation) DeleteEnvelopeConfirmationDialog(
+            onConfirm = {
+                showDeleteConfirmation = false
+                deleteAndBack()
+            },
+            onDismiss = { showDeleteConfirmation = false },
+        )
     }
 }
 
@@ -270,6 +284,7 @@ fun EnvelopeScreen(
     clearActiveBudget: () -> Unit,
     saveAndBack: () -> Unit,
     archiveAndBack: () -> Unit,
+    deleteAndBack: () -> Unit,
     clearSubmissionError: () -> Unit,
     openQuickSet: () -> Unit,
     dismissQuickSet: () -> Unit,
@@ -307,6 +322,7 @@ fun EnvelopeScreen(
             clearActiveBudget,
             saveAndBack,
             archiveAndBack,
+            deleteAndBack,
             clearSubmissionError,
             openQuickSet,
             dismissQuickSet,

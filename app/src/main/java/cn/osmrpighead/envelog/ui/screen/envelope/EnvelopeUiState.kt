@@ -43,6 +43,7 @@ sealed interface EnvelopeUiState {
     data class Success(
         val envelope: Envelope,
         val isNew: Boolean,
+        val canDelete: Boolean = false,
         val yearMonth: YearMonth,
         val today: LocalDate,
         val budgets: Map<BudgetId, Budget>,

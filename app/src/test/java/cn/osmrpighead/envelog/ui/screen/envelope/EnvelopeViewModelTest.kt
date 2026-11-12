@@ -382,6 +382,45 @@ class EnvelopeViewModelTest {
     }
 
     @Test
+    fun deleteActiveBudget_onExistingEnvelope_requeriesCanDelete() = runTest {
+        assertFalse(awaitSuccess().canDelete)
+        viewModel.openActiveBudget(budgetId)
+        repository.canDelete = true
+
+        viewModel.deleteActiveBudget()
+
+        val state = viewModel.uiState.value as EnvelopeUiState.Success
+        assertEquals(listOf(budgetId), repository.deletedBudgetIds)
+        assertTrue(state.canDelete)
+    }
+
+    @Test
+    fun applyQuickSet_onExistingEnvelope_marksEnvelopeNotDeletable() = runTest {
+        val deletableViewModel = createViewModel(
+            FakeRepository(
+                envelope = Envelope(envelopeId, "餐饮", true, false),
+                budget = budget,
+                allocations = emptyList(),
+                canDelete = true,
+            ),
+        )
+        try {
+            assertTrue(deletableViewModel.uiState.filterIsInstance<EnvelopeUiState.Success>().first().canDelete)
+
+            deletableViewModel.openQuickSet()
+            deletableViewModel.applyQuickSet(
+                QuickSetConfig.Daily(intervalDays = 1, amount = 1_000),
+                afterExistingBudget,
+            )
+
+            val state = deletableViewModel.uiState.value as EnvelopeUiState.Success
+            assertFalse(state.canDelete)
+        } finally {
+            deletableViewModel.viewModelScope.cancel()
+        }
+    }
+
+    @Test
     fun applyQuickSet_onExistingEnvelope_reportsArchivedError() = runTest {
         val archivedRepository = FakeRepository(
             envelope = Envelope(envelopeId, "餐饮", true, false),
@@ -474,6 +513,7 @@ class EnvelopeViewModelTest {
         private val allocations: List<AllocationWithInfo>,
         private val budgets: List<Budget> = listOf(budget),
         private val replaceResult: BudgetWriteResult = BudgetWriteResult.Success,
+        var canDelete: Boolean = false,
     ) : EnvelogRepository {
         data class ReplaceRequest(
             val envelopeId: EnvelopeId,
@@ -484,6 +524,7 @@ class EnvelopeViewModelTest {
         val requestedSpans = mutableListOf<HalfOpenDateSpan>()
         val replaceRequests = mutableListOf<ReplaceRequest>()
         val archivedIds = mutableListOf<EnvelopeId>()
+        val deletedBudgetIds = mutableListOf<BudgetId>()
 
         override fun observeOverview(
             today: LocalDate,
@@ -533,8 +574,7 @@ class EnvelopeViewModelTest {
             return ArchiveResult.Archived
         }
 
-        override suspend fun canDeleteEnvelope(id: EnvelopeId): Boolean =
-            throw NotImplementedError()
+        override suspend fun canDeleteEnvelope(id: EnvelopeId): Boolean = canDelete
 
         override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
             throw NotImplementedError()
@@ -552,7 +592,10 @@ class EnvelopeViewModelTest {
             return replaceResult
         }
 
-        override suspend fun deleteBudget(id: BudgetId): DeleteResult = throw NotImplementedError()
+        override suspend fun deleteBudget(id: BudgetId): DeleteResult {
+            deletedBudgetIds += id
+            return DeleteResult.Deleted
+        }
 
         override suspend fun recordExpenditure(expenditure: ExpenditureSubmission) =
             throw NotImplementedError()
