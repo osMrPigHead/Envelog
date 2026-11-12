@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,6 +40,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudg
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
+import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -55,6 +57,8 @@ private val EnvelopeTab.labelRes: Int
 @Composable
 private fun Success(
     uiState: EnvelopeUiState.Success,
+    back: () -> Unit,
+    backEvent: Flow<Unit>,
     selectMonth: (YearMonth) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
     openActiveBudget: (BudgetId) -> Unit,
@@ -75,6 +79,7 @@ private fun Success(
     clearQuickSet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(Unit) { backEvent.collect { back() } }
     BackHandler { saveAndBack() }
 
     var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
@@ -260,6 +265,8 @@ private fun Success(
 @Composable
 fun EnvelopeScreen(
     uiState: EnvelopeUiState,
+    back: () -> Unit,
+    backEvent: Flow<Unit>,
     selectMonth: (YearMonth) -> Unit,
     initializeForNew: (Envelope) -> Unit,
     updateEnvelope: (Envelope) -> Unit,
@@ -296,6 +303,8 @@ fun EnvelopeScreen(
 
         is EnvelopeUiState.Success -> Success(
             uiState,
+            back,
+            backEvent,
             selectMonth,
             updateEnvelope,
             openActiveBudget,

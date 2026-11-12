@@ -26,18 +26,22 @@ import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordScreen(
     uiState: RecordUiState,
     back: () -> Unit,
+    backEvent: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+        backEvent.collect { back() }
+
     }
 
     Scaffold(

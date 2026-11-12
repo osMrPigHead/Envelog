@@ -24,6 +24,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -32,7 +33,6 @@ import java.time.YearMonth
 @HiltViewModel(assistedFactory = EnvelopeViewModel.Factory::class)
 class EnvelopeViewModel @AssistedInject constructor(
     @Assisted route: AppRoute.Envelope,
-    @Assisted private val back: () -> Unit,
     private val appState: AppStateHolder,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
@@ -56,12 +56,18 @@ class EnvelopeViewModel @AssistedInject constructor(
         }
     }
 
+    private var job: Job? = null
     private val _uiState = MutableStateFlow(
         if (route.id is NavigationTarget.New) EnvelopeUiState.IsNew else EnvelopeUiState.Loading,
     )
-    val uiState = _uiState.asStateFlow()
+    private val _backEvent = Channel<Unit>(Channel.BUFFERED)
     private val fieldId = Any()
-    private var job: Job? = null
+    val uiState = _uiState.asStateFlow()
+    val backEvent = _backEvent.receiveAsFlow()
+
+    private suspend fun sendBack() {
+        _backEvent.send(Unit)
+    }
 
     private val savedEnvelope = flow {
         if (route.id is NavigationTarget.Existing) emit(repository.getEnvelope(route.id.value))
@@ -446,13 +452,13 @@ class EnvelopeViewModel @AssistedInject constructor(
         job = viewModelScope.launch {
             if (!uiState.isNew) {
                 repository.updateEnvelope(uiState.envelope)
-                back()
+                sendBack()
                 return@launch
             }
             val result = repository.insertEnvelope(uiState.envelope, uiState.budgets.values.toList())
             when (result) {
-                Success -> back()
-                EnvelopeArchived -> back()
+                Success -> sendBack()
+                EnvelopeArchived -> sendBack()
                 BudgetOverlaps -> _uiState.update {
                     if (it !is EnvelopeUiState.Success) return@update it
                     it.copy(envelopeSubmissionError = EnvelopeSubmissionError.BudgetOverlaps)
@@ -475,12 +481,12 @@ class EnvelopeViewModel @AssistedInject constructor(
         require(uiState is EnvelopeUiState.Success)
         job = viewModelScope.launch {
             if (!uiState.isNew) repository.archiveEnvelope(uiState.envelope.id)
-            back()
+            sendBack()
         }
     }
 
     @AssistedFactory
     interface Factory {
-        fun create(route: AppRoute.Envelope, back: () -> Unit): EnvelopeViewModel
+        fun create(route: AppRoute.Envelope): EnvelopeViewModel
     }
 }

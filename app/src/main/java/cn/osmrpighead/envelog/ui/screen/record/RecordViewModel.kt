@@ -16,6 +16,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.math.RoundingMode
 import java.time.Clock
@@ -23,7 +25,6 @@ import java.time.Clock
 @HiltViewModel(assistedFactory = RecordViewModel.Factory::class)
 class RecordViewModel @AssistedInject constructor(
     @Assisted route: AppRoute.Record,
-    @Assisted private val back: () -> Unit,
     clock: Clock,
     private val repository: EnvelogRepository,
 ) : ViewModel() {
@@ -37,7 +38,7 @@ class RecordViewModel @AssistedInject constructor(
 
     private val host = NumKeypadHostState()
     private val fieldId = Any()
-    private val consumer = AmountConsumer(2, RoundingMode.HALF_UP, ::submit, back)
+    private val consumer = AmountConsumer(2, RoundingMode.HALF_UP, ::submit, ::launchBack)
 
     private val _uiState = mutableStateOf(
         RecordUiState(
@@ -47,7 +48,17 @@ class RecordViewModel @AssistedInject constructor(
             fieldId = fieldId,
         ),
     )
+    private val _backEvent = Channel<Unit>(Channel.BUFFERED)
     val uiState: RecordUiState by _uiState
+    val backEvent = _backEvent.receiveAsFlow()
+
+    private suspend fun sendBack() {
+        _backEvent.send(Unit)
+    }
+
+    private fun launchBack() {
+        viewModelScope.launch { sendBack() }
+    }
 
     fun submit(amount: Long) {
         if (submission?.isActive == true || submission?.isCompleted == true) return
@@ -67,12 +78,12 @@ class RecordViewModel @AssistedInject constructor(
                 ),
             )
             _uiState.value = _uiState.value.copy(amount = amount)
-            back()
+            sendBack()
         }
     }
 
     @AssistedFactory
     interface Factory {
-        fun create(route: AppRoute.Record, back: () -> Unit): RecordViewModel
+        fun create(route: AppRoute.Record): RecordViewModel
     }
 }

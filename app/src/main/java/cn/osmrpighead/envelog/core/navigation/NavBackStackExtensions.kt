@@ -1,7 +1,6 @@
 package cn.osmrpighead.envelog.core.navigation
 
 import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavKey
 
 fun NavBackStack<AppRoute>.navigate(from: AppRoute, route: AppRoute) {
     if (lastOrNull()?.navId == from.navId) add(route)

@@ -11,11 +11,13 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
 ) {
     entry<AppRoute.Envelope> { key ->
         val viewModel: EnvelopeViewModel = hiltViewModel<EnvelopeViewModel, EnvelopeViewModel.Factory>(
-            creationCallback = { it.create(key) { back(key) } },
+            creationCallback = { it.create(key) },
         )
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         EnvelopeScreen(
             uiState = uiState,
+            back = { back(key) },
+            backEvent = viewModel.backEvent,
             selectMonth = viewModel::selectMonth,
             initializeForNew = viewModel::initializeForNew,
             updateEnvelope = viewModel::updateEnvelope,

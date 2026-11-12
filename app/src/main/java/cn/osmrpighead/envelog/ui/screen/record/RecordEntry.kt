@@ -9,11 +9,12 @@ fun EntryProviderScope<AppRoute>.recordEntry(
 ) {
     entry<AppRoute.Record> { key ->
         val viewModel: RecordViewModel = hiltViewModel<RecordViewModel, RecordViewModel.Factory>(
-            creationCallback = { it.create(key) { back(key) } },
+            creationCallback = { it.create(key) },
         )
         RecordScreen(
             uiState = viewModel.uiState,
             back = { back(key) },
+            backEvent = viewModel.backEvent,
         )
     }
 }
