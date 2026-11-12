@@ -16,6 +16,7 @@ import cn.osmrpighead.envelog.data.model.ExpenditureId
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -30,7 +31,8 @@ import java.time.ZoneId
 import java.util.UUID
 
 /**
- * 在真实设备的 SQLite 上复验信封删除路径：外键 RESTRICT 的拒绝时机、软删除清理的边界与级联。
+ * 在真实设备的 SQLite 上复验信封删除路径：外键 RESTRICT 的拒绝时机、软删除清理的边界与级联，
+ * 以及 `isDeletable` 的判断是否与 RESTRICT 的实际拒绝一致。
  */
 @RunWith(AndroidJUnit4::class)
 class EnvelopeDeleteInstrumentedTest {
@@ -228,5 +230,69 @@ class EnvelopeDeleteInstrumentedTest {
 
         assertEquals(2, allocationDao.clean(envelopeA))
         assertEquals("分摊行先被删除后真实 SQLite 也无法再判定孤儿支出", 0, expenditureDao.clean(envelopeA))
+    }
+
+    @Test
+    fun isDeletable_isTrueWhileNothingReferencesTheEnvelope() = runBlocking {
+        seedEnvelopes()
+
+        assertTrue(envelopeDao.isDeletable(envelopeA))
+        assertTrue(envelopeDao.isDeletable(envelopeB))
+        assertTrue("未知信封没有引用行，判断同样放行", envelopeDao.isDeletable(unknownEnvelope))
+    }
+
+    @Test
+    fun isDeletable_agreesWithTheForeignKeyWhenALiveBudgetRemains() = runBlocking {
+        seedEnvelopes()
+        seedDao.insertBudgets(listOf(budget(0xD1)))
+
+        assertFalse("存活预算会让 DELETE 命中 RESTRICT", envelopeDao.isDeletable(envelopeA))
+        assertTrue("A 的预算不挡住 B", envelopeDao.isDeletable(envelopeB))
+    }
+
+    @Test
+    fun isDeletable_agreesWithTheForeignKeyWhenALiveAllocationRemains() = runBlocking {
+        seedMixedRecords()
+
+        assertFalse("B3 存活且分摊到 A", envelopeDao.isDeletable(envelopeA))
+        assertFalse("B3 同样分摊到 B", envelopeDao.isDeletable(envelopeB))
+    }
+
+    @Test
+    fun isDeletable_ignoresSoftDeletedBudgetsAndExpenditures() = runBlocking {
+        seedEnvelopes()
+        seedDao.insertBudgets(listOf(budget(0xD1, deletedAt = deletedAt)))
+        val (garbage, garbageShares) = record(0xB1, LocalDate.of(2026, 10, 5), envelopeA to 6_000, deletedAt = deletedAt)
+        seedDao.insertExpenditures(listOf(garbage))
+        seedDao.insertAllocations(garbageShares)
+
+        assertTrue("垃圾行不构成 RESTRICT 阻挡", envelopeDao.isDeletable(envelopeA))
+
+        assertEquals(1, expenditureDao.clean(envelopeA))
+        assertEquals(0, allocationDao.clean(envelopeA))
+        assertEquals(1, budgetDao.clean(envelopeA))
+        assertEquals(1, envelopeDao.delete(envelopeA))
+    }
+
+    @Test
+    fun isDeletable_staysFalseAfterGarbageCleanupWhileALiveAllocationRemains() = runBlocking {
+        seedMixedRecords()
+
+        assertEquals(1, expenditureDao.clean(envelopeA))
+        assertEquals(1, allocationDao.clean(envelopeA))
+
+        assertFalse("清掉 B1、B2 的分摊后 B3 仍挡住删除", envelopeDao.isDeletable(envelopeA))
+    }
+
+    @Test
+    fun isDeletable_ignoresSoftDeletedRowsOfOtherEnvelopes() = runBlocking {
+        seedEnvelopes()
+        seedDao.insertBudgets(listOf(budget(0xD1, envelopeB, deletedAt = deletedAt)))
+        val (garbage, garbageShares) = record(0xB1, LocalDate.of(2026, 10, 6), envelopeB to 3_000, deletedAt = deletedAt)
+        seedDao.insertExpenditures(listOf(garbage))
+        seedDao.insertAllocations(garbageShares)
+
+        assertTrue(envelopeDao.isDeletable(envelopeA))
+        assertTrue(envelopeDao.isDeletable(envelopeB))
     }
 }

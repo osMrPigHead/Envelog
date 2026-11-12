@@ -123,6 +123,28 @@ interface EnvelopeDao {
     @Query("DELETE FROM envelope WHERE id = :id")
     suspend fun delete(id: EnvelopeId): Int
 
+    // budget 与 expenditureAllocation 对 envelope 的外键均为 RESTRICT：
+    // 只有存活预算、以及指向存活支出的分摊会真正挡住删除，故软删除行不计入引用。
+    @Query(
+        """
+            SELECT NOT EXISTS (
+                       SELECT 1
+                       FROM budget
+                       WHERE envelopeId = :id
+                         AND deletedAt IS NULL
+                   )
+               AND NOT EXISTS (
+                       SELECT 1
+                       FROM expenditureAllocation ea
+                       JOIN expenditure ex
+                         ON ex.deletedAt IS NULL
+                        AND ea.expenditureId = ex.id
+                       WHERE ea.envelopeId = :id
+                   )
+        """,
+    )
+    suspend fun isDeletable(id: EnvelopeId): Boolean
+
     @Update
     suspend fun update(entity: EnvelopeEntity): Int
 

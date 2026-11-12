@@ -533,6 +533,9 @@ class EnvelopeViewModelTest {
             return ArchiveResult.Archived
         }
 
+        override suspend fun canDeleteEnvelope(id: EnvelopeId): Boolean =
+            throw NotImplementedError()
+
         override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
             throw NotImplementedError()
 

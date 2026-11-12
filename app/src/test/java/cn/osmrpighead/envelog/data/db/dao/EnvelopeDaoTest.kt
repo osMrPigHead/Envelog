@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -483,5 +484,137 @@ class EnvelopeDaoTest {
     @Test
     fun deleteEnvelopeById_returnsZeroForMissingEnvelope() = runTest {
         assertEquals(0, dao.delete(RoomTestData.envelopeId(0xEE)))
+    }
+
+    @Test
+    fun isDeletable_trueWhenNoEnvelopeIsReferenced() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope()))
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun isDeletable_trueForUnknownEnvelope() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope()))
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeId(0xEE)))
+    }
+
+    @Test
+    fun isDeletable_falseWhenALiveBudgetReferencesTheEnvelope() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA)),
+        )
+
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun isDeletable_trueWhenEveryBudgetOfTheEnvelopeIsSoftDeleted() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt),
+                RoomTestData.budget(id = RoomTestData.budgetB, deletedAt = deletedAt),
+            ),
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun isDeletable_ignoresBudgetsOfOtherEnvelopes() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物"),
+            ),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, envelopeId = RoomTestData.envelopeB)),
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse("同一预算只挡住它所归属的信封", dao.isDeletable(RoomTestData.envelopeB))
+    }
+
+    @Test
+    fun isDeletable_falseWhenALiveExpenditureAllocatesToTheEnvelope() = runTest {
+        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenditures = listOf(expenditure),
+            allocations = shares,
+        )
+
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun isDeletable_trueWhenEveryAllocationPointsToASoftDeletedExpenditure() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        val (first, firstShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (second, secondShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 6), RoomTestData.envelopeA to 3_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenditures = listOf(first.copy(deletedAt = deletedAt), second.copy(deletedAt = deletedAt)),
+            allocations = firstShares + secondShares,
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun isDeletable_ignoresAllocationsOfOtherEnvelopes() = runTest {
+        val (expenditure, shares) = RoomTestData.record(
+            0xB1,
+            LocalDate.of(2026, 10, 5),
+            RoomTestData.envelopeB to 6_000,
+        )
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物"),
+            ),
+            expenditures = listOf(expenditure),
+            allocations = shares,
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse("同一笔支出只挡住它分摊到的信封", dao.isDeletable(RoomTestData.envelopeB))
+    }
+
+    @Test
+    fun isDeletable_falseWhenALiveReferenceRemainsAmongSoftDeletedRows() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        val (garbage, garbageShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (alive, aliveShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 6), RoomTestData.envelopeA to 3_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
+            expenditures = listOf(garbage.copy(deletedAt = deletedAt), alive),
+            allocations = garbageShares + aliveShares,
+        )
+
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun isDeletable_trueAfterSoftDeletedRowsAreCleaned() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        val (garbage, garbageShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
+            expenditures = listOf(garbage.copy(deletedAt = deletedAt)),
+            allocations = garbageShares,
+        )
+
+        database.expenditureDao().clean(RoomTestData.envelopeA)
+        database.expenditureAllocationDao().clean(RoomTestData.envelopeA)
+        database.budgetDao().clean(RoomTestData.envelopeA)
+
+        assertTrue("清理垃圾行后信封应可删除", dao.isDeletable(RoomTestData.envelopeA))
+        assertEquals(1, dao.delete(RoomTestData.envelopeA))
     }
 }

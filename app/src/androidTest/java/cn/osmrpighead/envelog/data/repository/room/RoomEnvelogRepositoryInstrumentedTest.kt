@@ -20,8 +20,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -194,5 +196,45 @@ class RoomEnvelogRepositoryInstrumentedTest {
 
         assertNotNull(database.envelopeDao().get(envelopeA))
         assertEquals("事务应整体回滚，已清理的软删除预算应仍存在", 1, database.budgetDao().clean(envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_agreesWithDeletedWhenOnlySoftDeletedRowsRemain() = runBlocking {
+        seedEnvelopes()
+        database.seedDao().insertBudgets(listOf(budget(0xD1, envelopeA, deletedAt)))
+        val garbageOfA = garbage(0xC1, envelopeA, 6_000)
+        database.seedDao().insertExpenditures(listOf(garbageOfA.first))
+        database.seedDao().insertAllocations(listOf(garbageOfA.second))
+
+        assertTrue(repository.canDeleteEnvelope(envelopeA))
+        assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_agreesWithConstraintWhenLiveBudgetRemains() = runBlocking {
+        seedEnvelopes()
+        database.seedDao().insertBudgets(listOf(budget(0xD1, envelopeA, deletedAt), budget(0xD2, envelopeA, null)))
+
+        assertFalse(repository.canDeleteEnvelope(envelopeA))
+        assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_agreesWithConstraintWhenLiveAllocationRemains() = runBlocking {
+        seedEnvelopes()
+        val alive = garbage(0xC1, envelopeA, 6_000, softDeletedAt = null)
+        database.seedDao().insertExpenditures(listOf(alive.first))
+        database.seedDao().insertAllocations(listOf(alive.second))
+
+        assertFalse(repository.canDeleteEnvelope(envelopeA))
+        assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_isTrueForUnknownEnvelope() = runBlocking {
+        seedEnvelopes()
+
+        assertTrue("判断只看引用，仓库不因信封不存在而拦截", repository.canDeleteEnvelope(unknownEnvelope))
+        assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(unknownEnvelope))
     }
 }

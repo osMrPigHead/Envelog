@@ -27,6 +27,7 @@ interface EnvelogRepository {
     suspend fun updateEnvelope(envelope: Envelope): EnvelopeUpdateResult
     suspend fun insertEnvelope(envelope: Envelope, budgets: List<Budget>): BudgetWriteResult
     suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult
+    suspend fun canDeleteEnvelope(id: EnvelopeId): Boolean
     suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult
 
     suspend fun updateBudget(budget: Budget): BudgetWriteResult

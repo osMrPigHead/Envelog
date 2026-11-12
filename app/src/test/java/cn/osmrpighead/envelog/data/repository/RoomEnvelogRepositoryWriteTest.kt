@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -644,6 +645,75 @@ class RoomEnvelogRepositoryWriteTest {
 
     @Test
     fun deleteEnvelope_returnsNotFoundForUnknownEnvelope() = runTest {
+        assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(RoomTestData.envelopeId(0xEE)))
+    }
+
+    @Test
+    fun canDeleteEnvelope_trueWhenTheEnvelopeHasNoRows() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")))
+
+        assertTrue(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_trueWhenOnlySoftDeletedRowsRemain() = runTest {
+        val garbageOfA = RoomTestData.record(0xB1, date(10, 5), RoomTestData.envelopeA to 6_000)
+        val garbageOfB = RoomTestData.record(0xB2, date(10, 6), RoomTestData.envelopeB to 3_000)
+
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+            budgets = listOf(
+                RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt),
+                RoomTestData.budget(id = RoomTestData.budgetC, envelopeId = RoomTestData.envelopeB, deletedAt = deletedAt),
+            ),
+            expenditures = listOf(
+                garbageOfA.first.copy(deletedAt = deletedAt),
+                garbageOfB.first.copy(deletedAt = deletedAt),
+            ),
+            allocations = garbageOfA.second + garbageOfB.second,
+        )
+
+        assertTrue(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_falseWhenLiveBudgetRemains() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")),
+            budgets = listOf(
+                RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt),
+                RoomTestData.budget(id = RoomTestData.budgetB),
+            ),
+        )
+
+        assertFalse(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_falseWhenLiveAllocationRemains() = runTest {
+        val alive = RoomTestData.record(0xB1, date(10, 5), RoomTestData.envelopeA to 6_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
+            expenditures = listOf(alive.first),
+            allocations = alive.second,
+        )
+
+        assertFalse(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun canDeleteEnvelope_trueForUnknownEnvelope() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")))
+
+        assertTrue("判断只统计引用，信封是否存在不影响结果", repository.canDeleteEnvelope(RoomTestData.envelopeId(0xEE)))
         assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(RoomTestData.envelopeId(0xEE)))
     }
 }
