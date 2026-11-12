@@ -52,4 +52,15 @@ interface ExpenditureAllocationDao {
         spanStart: LocalDate,
         spanEnd: LocalDate,
     ): Flow<List<DailyAllocationSummary>>
+
+    @Query(
+        """
+            DELETE FROM expenditureAllocation
+            WHERE envelopeId = :envelopeId
+              AND expenditureId IN (
+                  SELECT id FROM expenditure WHERE deletedAt IS NOT NULL
+              )
+        """,
+    )
+    suspend fun clean(envelopeId: EnvelopeId): Int
 }

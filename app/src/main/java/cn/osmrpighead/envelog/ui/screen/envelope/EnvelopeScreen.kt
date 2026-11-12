@@ -36,6 +36,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetList
 import cn.osmrpighead.envelog.ui.screen.envelope.component.DatesModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.component.EnvelopeSubmissionErrorDialog
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
+import cn.osmrpighead.envelog.ui.component.HugeDangerButton
 import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
@@ -215,13 +216,13 @@ private fun Success(
                 }
             }
 
-            if (!uiState.isNew)
-                Button(
+            if (uiState.isNew)
+                HugeDangerButton(
+                    onClick = back,
+                ) { Text(text = stringResource(R.string.common_action_cancel)) }
+            else
+                HugeDangerButton(
                     onClick = { showArchiveConfirmation = true },
-                    colors = ButtonColor.danger,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = dimensionResource(R.dimen.spacingExtra)),
                 ) { Text(text = stringResource(R.string.envelope_edit_action_archive)) }
         }
 

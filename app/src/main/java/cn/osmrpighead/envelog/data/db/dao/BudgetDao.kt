@@ -19,7 +19,7 @@ interface BudgetDao {
             SELECT COUNT(*)
             FROM budget
             WHERE deletedAt IS NULL
-              AND budget.id != :budgetId
+              AND budget.id <> :budgetId
               AND budget.envelopeId = :envelopeId
               AND budget.startDate < :spanEnd
               AND budget.endDate > :spanStart
@@ -95,6 +95,15 @@ interface BudgetDao {
         envelopeId: EnvelopeId,
         now: Instant,
     ): Int
+
+    @Query(
+        """
+            DELETE FROM budget
+            WHERE envelopeId = :envelopeId
+              AND deletedAt IS NOT NULL
+        """,
+    )
+    suspend fun clean(envelopeId: EnvelopeId): Int
 
     @Update
     suspend fun update(entity: BudgetEntity)

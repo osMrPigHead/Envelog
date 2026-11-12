@@ -120,6 +120,9 @@ interface EnvelopeDao {
     @Query("UPDATE envelope SET archivedAt = :now WHERE id = :id AND archivedAt IS NULL")
     suspend fun archive(id: EnvelopeId, now: Instant): Int
 
+    @Query("DELETE FROM envelope WHERE id = :id")
+    suspend fun delete(id: EnvelopeId): Int
+
     @Update
     suspend fun update(entity: EnvelopeEntity): Int
 
