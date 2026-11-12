@@ -145,12 +145,19 @@ private fun EnvelopeCardViewContent(
 
 @Composable
 private fun EnvelopeCardManageContent(
+    canDelete: Boolean,
     onArchiveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier) {
-        IconButton(onClick = onArchiveClick) {
+        if (canDelete) IconButton(onClick = onDeleteClick) {
+            Icon(
+                imageVector = Icon.Delete,
+                contentDescription = stringResource(R.string.overview_envelope_action_delete),
+            )
+        } else IconButton(onClick = onArchiveClick) {
             Icon(
                 imageVector = Icon.Inventory2,
                 contentDescription = stringResource(R.string.overview_envelope_action_archive),
@@ -173,6 +180,7 @@ fun EnvelopeCard(
     diffColor: @Composable (diffAmount: Long) -> Color,
     onClick: () -> Unit,
     onArchiveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -199,7 +207,9 @@ fun EnvelopeCard(
         ) { isManaging ->
             Box(contentAlignment = Alignment.CenterEnd) {
                 if (isManaging) EnvelopeCardManageContent(
+                    canDelete = model.canDelete,
                     onArchiveClick = onArchiveClick,
+                    onDeleteClick = onDeleteClick,
                     onEditClick = onEditClick,
                     modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingMedium)),
                 )

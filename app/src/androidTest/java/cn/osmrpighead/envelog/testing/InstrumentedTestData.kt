@@ -39,13 +39,14 @@ object InstrumentedTestData {
     fun budgetedEnvelope(
         id: EnvelopeId = envelopeA,
         name: String = "餐饮",
+        canDelete: Boolean = true,
     ): EnvelopeSummary.Budgeted = EnvelopeSummary.Budgeted(
         id = id,
         name = name,
         allocated = 200_000,
         currency = CurrencyType.CNY,
         archived = false,
-        canDelete = true,
+        canDelete = canDelete,
         totalBudget = 500_000,
         currentBudget = 180_000,
         currentSpan = HalfOpenDateSpan(monthStart, monthEnd),
@@ -57,13 +58,14 @@ object InstrumentedTestData {
     fun nonBudgetedEnvelope(
         id: EnvelopeId = envelopeB,
         name: String = "购物",
+        canDelete: Boolean = true,
     ): EnvelopeSummary.NonBudget = EnvelopeSummary.NonBudget(
         id = id,
         name = name,
         allocated = 30_000,
         currency = CurrencyType.CNY,
         archived = false,
-        canDelete = true,
+        canDelete = canDelete,
     )
 
     fun budget(

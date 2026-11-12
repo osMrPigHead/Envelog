@@ -60,6 +60,7 @@
     <string name="overview_action_manage_finish">完成管理</string>
     <string name="overview_action_new_envelope">新建信封</string>
     <string name="overview_envelope_action_archive">归档</string>
+    <string name="overview_envelope_action_delete">删除</string>
     <string name="overview_envelope_action_edit">编辑</string>
     <string name="overview_envelope_card_available_title">%1$s可用</string>
     <string name="overview_envelope_card_non_budget_caption">已用 %2$s%1$s%3$s</string>

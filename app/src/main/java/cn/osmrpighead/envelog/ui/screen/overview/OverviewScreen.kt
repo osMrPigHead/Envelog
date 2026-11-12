@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -19,6 +20,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.EnvelopeId
+import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
+import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.overview.component.EnvelopeCard
 import cn.osmrpighead.envelog.ui.screen.overview.component.PromptBar
@@ -29,6 +32,7 @@ import cn.osmrpighead.envelog.ui.theme.MotionTokens
 fun OverviewScreen(
     uiState: OverviewUiState,
     onArchiveClick: (EnvelopeId) -> Unit,
+    onDeleteClick: (EnvelopeId) -> Unit,
     onEditClick: (EnvelopeId) -> Unit,
     onNewClick: () -> Unit,
     onEnvelopeClick: (EnvelopeId) -> Unit,
@@ -36,7 +40,15 @@ fun OverviewScreen(
 ) {
     when (uiState) {
         OverviewUiState.Loading -> {}  // TODO: Loading page
-        is OverviewUiState.Success -> Success(uiState, onArchiveClick, onEditClick, onNewClick, onEnvelopeClick, modifier)
+        is OverviewUiState.Success -> Success(
+            uiState,
+            onArchiveClick,
+            onDeleteClick,
+            onEditClick,
+            onNewClick,
+            onEnvelopeClick,
+            modifier,
+        )
     }
 }
 
@@ -44,12 +56,15 @@ fun OverviewScreen(
 private fun Success(
     uiState: OverviewUiState.Success,
     onArchiveClick: (EnvelopeId) -> Unit,
+    onDeleteClick: (EnvelopeId) -> Unit,
     onEditClick: (EnvelopeId) -> Unit,
     onNewClick: () -> Unit,
     onEnvelopeClick: (EnvelopeId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var managing by rememberSaveable { mutableStateOf(false) }
+    var archiveTarget by remember { mutableStateOf<EnvelopeId?>(null) }
+    var deleteTarget by remember { mutableStateOf<EnvelopeId?>(null) }
     Scaffold(modifier = modifier) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             Summary(
@@ -82,7 +97,8 @@ private fun Success(
                             else MaterialTheme.colorScheme.primary
                         },  // TODO: User rule
                         onClick = { onEnvelopeClick(it.id) },
-                        onArchiveClick = { onArchiveClick(it.id) },
+                        onArchiveClick = { archiveTarget = it.id },
+                        onDeleteClick = { deleteTarget = it.id },
                         onEditClick = { onEditClick(it.id) },
                         modifier = cardModifier,
                     )
@@ -131,6 +147,26 @@ private fun Success(
                     }
                 }
             }
+        }
+
+        archiveTarget?.let { id ->
+            ArchiveEnvelopeConfirmationDialog(
+                onConfirm = {
+                    archiveTarget = null
+                    onArchiveClick(id)
+                },
+                onDismiss = { archiveTarget = null },
+            )
+        }
+
+        deleteTarget?.let { id ->
+            DeleteEnvelopeConfirmationDialog(
+                onConfirm = {
+                    deleteTarget = null
+                    onDeleteClick(id)
+                },
+                onDismiss = { deleteTarget = null },
+            )
         }
     }
 }

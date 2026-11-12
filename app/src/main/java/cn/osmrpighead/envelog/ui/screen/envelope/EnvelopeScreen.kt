@@ -22,6 +22,8 @@ import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.ui.component.HugeDangerButton
+import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
+import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.component.form.MonthPickerButton
 import cn.osmrpighead.envelog.ui.component.form.MonthPickerConfirmEventHandler

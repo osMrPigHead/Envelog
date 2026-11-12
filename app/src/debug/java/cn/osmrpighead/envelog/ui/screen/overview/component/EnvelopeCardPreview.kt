@@ -67,6 +67,7 @@ private fun EnvelopeCardSample(
         },
         onClick = {},
         onArchiveClick = {},
+        onDeleteClick = {},
         onEditClick = {},
         modifier = Modifier
             .fillMaxWidth()

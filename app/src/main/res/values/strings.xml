@@ -65,6 +65,7 @@
     <string name="overview_action_manage_finish">Finish managing</string>
     <string name="overview_action_new_envelope">New Envelope</string>
     <string name="overview_envelope_action_archive">Archive</string>
+    <string name="overview_envelope_action_delete">Delete</string>
     <string name="overview_envelope_action_edit">Edit</string>
     <string name="overview_envelope_card_available_title">Available %1$s</string>
     <string name="overview_envelope_card_budget_caption" translatable="false">%3$s%1$s\u2009/\u2009%2$s%4$s</string>

@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.screen.envelope.component
+package cn.osmrpighead.envelog.ui.component.dialog
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

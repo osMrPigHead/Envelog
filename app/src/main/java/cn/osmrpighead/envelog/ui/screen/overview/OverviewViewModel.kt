@@ -70,4 +70,6 @@ class OverviewViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), OverviewUiState.Loading)
 
     fun archiveEnvelope(id: EnvelopeId) = viewModelScope.launch { repository.archiveEnvelope(id) }
+
+    fun deleteEnvelope(id: EnvelopeId) = viewModelScope.launch { repository.deleteEnvelope(id) }
 }
