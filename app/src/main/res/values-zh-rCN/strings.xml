@@ -14,8 +14,8 @@
     <string name="day_of_week_range_picker_label_end">结束</string>
     <string name="day_of_week_range_picker_label_start">开始</string>
     <string name="day_of_week_range_picker_title">选择星期区间</string>
-    <string name="envelope_edit_action_archive">归档信封</string>
-    <string name="envelope_edit_action_delete">删除信封</string>
+    <string name="common_action_archive_envelope">归档信封</string>
+    <string name="common_action_delete_envelope">删除信封</string>
     <string name="envelope_edit_budget_amount_label">限额</string>
     <string name="envelope_edit_budget_list_amount">限额</string>
     <string name="envelope_edit_budget_list_date_range">日期区间</string>
@@ -23,10 +23,10 @@
     <string name="envelope_edit_budget_title">预算</string>
     <string name="envelope_edit_default_name">新建信封</string>
     <string name="envelope_edit_label_budgeted">启用预算</string>
-    <string name="envelope_edit_msg_archive_confirm">归档后信封将从主界面隐藏，预算不再参与统计，支出仍计入总计。</string>
+    <string name="common_msg_archive_envelope_confirm">归档后信封将从主界面隐藏，预算不再参与统计，支出仍计入总计。</string>
     <string name="envelope_edit_msg_archived">不可编辑已归档的信封</string>
     <string name="envelope_edit_msg_budget_overlaps">预算区间重叠</string>
-    <string name="envelope_edit_msg_delete_confirm">删除将连同该信封的预算与支出记录一并移除，且无法恢复。</string>
+    <string name="common_msg_delete_envelope_confirm">删除将连同该信封的预算与支出记录一并移除，且无法恢复。</string>
     <string name="envelope_edit_quick_set_title">快速设置预算</string>
     <string name="envelope_edit_quick_set_mode_daily_label">按日设置</string>
     <string name="envelope_edit_quick_set_mode_weekly_label">按周设置</string>

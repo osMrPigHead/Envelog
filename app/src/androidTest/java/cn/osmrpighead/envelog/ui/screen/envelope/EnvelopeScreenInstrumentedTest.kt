@@ -85,7 +85,7 @@ class EnvelopeScreenInstrumentedTest {
     private var cancelQuickSetOverwriteCalls = 0
 
     private val okText: String get() = context.getString(R.string.common_action_ok)
-    private val archiveText: String get() = context.getString(R.string.envelope_edit_action_archive)
+    private val archiveText: String get() = context.getString(R.string.common_action_archive_envelope)
     private val archiveConfirmText: String get() = context.getString(R.string.common_action_archive)
 
     @Test
@@ -382,7 +382,7 @@ class EnvelopeScreenInstrumentedTest {
 
         clickArchiveButton()
 
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_archive_confirm))
+        composeRule.onNodeWithText(context.getString(R.string.common_msg_archive_envelope_confirm))
             .assertIsDisplayed()
         composeRule.runOnIdle { assertEquals(0, archiveAndBackCalls) }
     }
@@ -408,7 +408,7 @@ class EnvelopeScreenInstrumentedTest {
             .performClick()
 
         composeRule.runOnIdle { assertEquals(0, archiveAndBackCalls) }
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_archive_confirm))
+        composeRule.onNodeWithText(context.getString(R.string.common_msg_archive_envelope_confirm))
             .assertDoesNotExist()
     }
 

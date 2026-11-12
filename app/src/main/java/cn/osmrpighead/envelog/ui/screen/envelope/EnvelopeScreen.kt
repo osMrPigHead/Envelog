@@ -227,11 +227,11 @@ private fun SuccessBody(
             else if (canDelete)
                 HugeDangerButton(
                     onClick = { showDeleteConfirmation = true },
-                ) { Text(text = stringResource(R.string.envelope_edit_action_delete)) }
+                ) { Text(text = stringResource(R.string.common_action_delete_envelope)) }
             else
                 HugeDangerButton(
                     onClick = { showArchiveConfirmation = true },
-                ) { Text(text = stringResource(R.string.envelope_edit_action_archive)) }
+                ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
         }
 
     if (showArchiveConfirmation) ArchiveEnvelopeConfirmationDialog(

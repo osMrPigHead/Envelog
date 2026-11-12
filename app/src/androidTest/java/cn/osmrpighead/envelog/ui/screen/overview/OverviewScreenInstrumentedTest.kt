@@ -80,7 +80,7 @@ class OverviewScreenInstrumentedTest {
             .onFirst()
             .performClick()
 
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_archive_confirm))
+        composeRule.onNodeWithText(context.getString(R.string.common_msg_archive_envelope_confirm))
             .assertIsDisplayed()
         assertEquals(emptyList<EnvelopeId>(), archived)
 
@@ -113,7 +113,7 @@ class OverviewScreenInstrumentedTest {
             .onFirst()
             .performClick()
 
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_delete_confirm))
+        composeRule.onNodeWithText(context.getString(R.string.common_msg_delete_envelope_confirm))
             .assertIsDisplayed()
         assertEquals(emptyList<EnvelopeId>(), deleted)
 
@@ -133,7 +133,7 @@ class OverviewScreenInstrumentedTest {
         confirmDialogButton(context.getString(R.string.common_action_cancel))
 
         assertEquals(emptyList<EnvelopeId>(), deleted)
-        composeRule.onNodeWithText(context.getString(R.string.envelope_edit_msg_delete_confirm))
+        composeRule.onNodeWithText(context.getString(R.string.common_msg_delete_envelope_confirm))
             .assertDoesNotExist()
     }
 

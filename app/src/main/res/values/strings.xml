@@ -13,8 +13,8 @@
     <string name="day_of_week_range_picker_label_end">End</string>
     <string name="day_of_week_range_picker_label_start">Start</string>
     <string name="day_of_week_range_picker_title">Select day range</string>
-    <string name="envelope_edit_action_archive">Archive Envelope</string>
-    <string name="envelope_edit_action_delete">Delete Envelope</string>
+    <string name="common_action_archive_envelope">Archive Envelope</string>
+    <string name="common_action_delete_envelope">Delete Envelope</string>
     <string name="envelope_edit_budget_amount_label">Amount</string>
     <string name="envelope_edit_budget_list_amount">Amount</string>
     <string name="envelope_edit_budget_list_date_range">Date Range</string>
@@ -22,10 +22,10 @@
     <string name="envelope_edit_budget_title">Budget</string>
     <string name="envelope_edit_default_name">New Envelope</string>
     <string name="envelope_edit_label_budgeted">Budgeted</string>
-    <string name="envelope_edit_msg_archive_confirm">Archiving hides the envelope from the overview and excludes its budgets from statistics. Its expenses still count toward the total.</string>
+    <string name="common_msg_archive_envelope_confirm">Archiving hides the envelope from the overview and excludes its budgets from statistics. Its expenses still count toward the total.</string>
     <string name="envelope_edit_msg_archived">Edits on archived envelope are prohibited</string>
     <string name="envelope_edit_msg_budget_overlaps">Budget overlaps</string>
-    <string name="envelope_edit_msg_delete_confirm">Deleting removes the envelope together with its budgets and expense records. This cannot be undone.</string>
+    <string name="common_msg_delete_envelope_confirm">Deleting removes the envelope together with its budgets and expense records. This cannot be undone.</string>
     <string name="envelope_edit_quick_set_title">Quick set budget</string>
     <string name="envelope_edit_quick_set_mode_daily_label">Daily</string>
     <string name="envelope_edit_quick_set_mode_weekly_label">Weekly</string>
