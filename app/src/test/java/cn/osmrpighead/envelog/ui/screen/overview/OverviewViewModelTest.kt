@@ -19,6 +19,7 @@ import cn.osmrpighead.envelog.data.repository.ArchiveResult
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
 import cn.osmrpighead.envelog.data.repository.DeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
 import kotlinx.coroutines.Dispatchers
@@ -198,6 +199,9 @@ class OverviewViewModelTest {
         ): BudgetWriteResult = throw NotImplementedError()
 
         override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =
+            throw NotImplementedError()
+
+        override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
             throw NotImplementedError()
 
         override suspend fun updateBudget(budget: Budget): BudgetWriteResult =

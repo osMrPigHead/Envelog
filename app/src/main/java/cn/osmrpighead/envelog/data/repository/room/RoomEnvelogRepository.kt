@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.data.repository.room
 
+import android.database.sqlite.SQLiteConstraintException
 import androidx.room3.withWriteTransaction
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.hasOverlap
@@ -12,6 +13,7 @@ import cn.osmrpighead.envelog.data.repository.ArchiveResult
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
 import cn.osmrpighead.envelog.data.repository.DeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelopeUpdateResult
 import cn.osmrpighead.envelog.data.repository.room.mapper.toDomain
 import cn.osmrpighead.envelog.data.repository.room.mapper.toEntity
@@ -85,6 +87,20 @@ class RoomEnvelogRepository @Inject constructor(
         when (envelopeDao.archive(id, clock.instant())) {
             0 -> ArchiveResult.NotFoundOrAlreadyArchived
             else -> ArchiveResult.Archived
+        }
+
+    override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
+        try {
+            if (db.withWriteTransaction {
+                    expenditureDao.clean(id)
+                    expenditureAllocationDao.clean(id)
+                    budgetDao.clean(id)
+                    envelopeDao.delete(id)
+                } == 0
+            ) EnvelopeDeleteResult.NotFound
+            else EnvelopeDeleteResult.Deleted
+        } catch (_: SQLiteConstraintException) {
+            EnvelopeDeleteResult.Constraint
         }
 
     private suspend fun budgetOverlaps(budget: Budget) =

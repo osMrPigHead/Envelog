@@ -4,6 +4,10 @@ enum class ArchiveResult {
     Archived, NotFoundOrAlreadyArchived,
 }
 
+enum class EnvelopeDeleteResult {
+    Deleted, NotFound, Constraint,
+}
+
 enum class DeleteResult {
     Deleted, NotFoundOrAlreadyDeleted,
 }

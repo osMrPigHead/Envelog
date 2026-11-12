@@ -211,4 +211,53 @@ class ExpenditureAllocationDaoTest {
             daily().single { it.happenedDate == LocalDate.of(2026, 10, 5) }.amount,
         )
     }
+
+    @Test
+    fun clean_deletesEnvelopeAllocationsOfSoftDeletedExpenditures() = runTest {
+        seedMixedRecords()
+
+        assertEquals(1, dao.clean(RoomTestData.envelopeA))
+        assertEquals("已清理的分摊行应被物理删除", 0, dao.clean(RoomTestData.envelopeA))
+        assertEquals(4, allocations().size)
+    }
+
+    @Test
+    fun clean_keepsOtherEnvelopesAllocationsOfSoftDeletedExpenditures() = runTest {
+        val (shared, sharedShares) = RoomTestData.record(
+            0xB8,
+            LocalDate.of(2026, 10, 5),
+            RoomTestData.envelopeA to 1_000,
+            RoomTestData.envelopeB to 2_000,
+        )
+
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+            expenditures = listOf(shared.copy(deletedAt = Instant.parse("2026-10-19T04:00:00Z"))),
+            allocations = sharedShares,
+        )
+
+        assertEquals(1, dao.clean(RoomTestData.envelopeA))
+        assertEquals("信封 B 的分摊应由 B 自己的清理负责", 1, dao.clean(RoomTestData.envelopeB))
+    }
+
+    @Test
+    fun clean_returnsZeroWhenEveryAllocationBelongsToALiveExpenditure() = runTest {
+        val (alive, aliveShares) = RoomTestData.record(
+            0xB1,
+            LocalDate.of(2026, 10, 5),
+            RoomTestData.envelopeA to 6_000,
+        )
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenditures = listOf(alive),
+            allocations = aliveShares,
+        )
+
+        assertEquals(0, dao.clean(RoomTestData.envelopeA))
+        assertEquals(1, allocations().size)
+    }
 }

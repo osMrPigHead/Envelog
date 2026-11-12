@@ -448,4 +448,40 @@ class EnvelopeDaoTest {
 
         assertNull(dao.get(RoomTestData.envelopeA))
     }
+
+    @Test
+    fun deleteEnvelopeById_removesTheRowAndKeepsOthers() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+        )
+
+        assertEquals(1, dao.delete(RoomTestData.envelopeA))
+
+        assertNull(dao.get(RoomTestData.envelopeA))
+        assertEquals("购物", dao.get(RoomTestData.envelopeB)?.name)
+    }
+
+    @Test
+    fun deleteEnvelopeById_removesArchivedEnvelope() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(
+                    RoomTestData.envelopeA,
+                    archivedAt = Instant.parse("2026-09-01T04:00:00Z"),
+                ),
+            ),
+        )
+
+        assertEquals(1, dao.delete(RoomTestData.envelopeA))
+
+        assertNull(dao.get(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun deleteEnvelopeById_returnsZeroForMissingEnvelope() = runTest {
+        assertEquals(0, dao.delete(RoomTestData.envelopeId(0xEE)))
+    }
 }

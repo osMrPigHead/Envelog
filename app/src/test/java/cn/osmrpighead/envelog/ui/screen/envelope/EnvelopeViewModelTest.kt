@@ -25,6 +25,7 @@ import cn.osmrpighead.envelog.data.repository.ArchiveResult
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
 import cn.osmrpighead.envelog.data.repository.DeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult
 import cn.osmrpighead.envelog.data.repository.EnvelopeUpdateResult
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
@@ -40,6 +41,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -91,7 +93,6 @@ class EnvelopeViewModelTest {
 
     private lateinit var repository: FakeRepository
     private lateinit var viewModel: EnvelopeViewModel
-    private var backCalls = 0
 
     @Before
     fun setUp() {
@@ -101,7 +102,7 @@ class EnvelopeViewModelTest {
             budget = budget,
             allocations = listOf(late, early, outside),
         )
-        viewModel = createViewModel(repository) { backCalls++ }
+        viewModel = createViewModel(repository)
     }
 
     @After
@@ -197,23 +198,22 @@ class EnvelopeViewModelTest {
         viewModel.archiveAndBack()
 
         assertEquals(listOf(envelopeId), repository.archivedIds)
-        assertEquals(1, backCalls)
+        awaitBack(viewModel)
     }
 
     @Test
     fun archiveAndBack_onNewEnvelopeBacksWithoutArchiving() = runTest {
-        var newBackCalls = 0
-
-        val newViewModel = createViewModel(repository, NavigationTarget.New()) { newBackCalls++ }
+        val newViewModel = createViewModel(repository, NavigationTarget.New())
         try {
             newViewModel.initializeForNew(Envelope(EnvelopeId.generate(), "新信封", true, false))
             newViewModel.archiveAndBack()
+
+            awaitBack(newViewModel)
         } finally {
             newViewModel.viewModelScope.cancel()
         }
 
         assertTrue(repository.archivedIds.isEmpty())
-        assertEquals(1, newBackCalls)
     }
 
     @Test
@@ -434,6 +434,9 @@ class EnvelopeViewModelTest {
     private suspend fun awaitSuccess(): EnvelopeUiState.Success =
         viewModel.uiState.filterIsInstance<EnvelopeUiState.Success>().first()
 
+    private suspend fun awaitBack(target: EnvelopeViewModel) =
+        withTimeout(1_000) { target.backEvent.first() }
+
     private suspend fun awaitAllocations(
         predicate: (List<AllocationWithInfo>) -> Boolean = { it.isNotEmpty() },
     ): List<AllocationWithInfo> = viewModel.uiState
@@ -444,10 +447,8 @@ class EnvelopeViewModelTest {
     private fun createViewModel(
         repository: FakeRepository,
         target: NavigationTarget<EnvelopeId> = NavigationTarget.Existing(envelopeId),
-        onBack: () -> Unit = {},
     ): EnvelopeViewModel = EnvelopeViewModel(
         route = AppRoute.Envelope(navId = NavId.generate(), id = target),
-        back = onBack,
         appState = AppStateHolder(
             todayProvider = TodayProvider(ApplicationProvider.getApplicationContext(), clock),
             clock = clock,
@@ -531,6 +532,9 @@ class EnvelopeViewModelTest {
             archivedIds += id
             return ArchiveResult.Archived
         }
+
+        override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
+            throw NotImplementedError()
 
         override suspend fun updateBudget(budget: Budget): BudgetWriteResult = throw NotImplementedError()
 

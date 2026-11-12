@@ -36,6 +36,8 @@ import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -60,6 +62,10 @@ class EnvelopeScreenInstrumentedTest {
         archived = false,
     )
     private val state = mutableStateOf<EnvelopeUiState>(successState())
+
+    // 生产环境中 ViewModel 在 saveAndBack / archiveAndBack 内发送 backEvent，屏幕收到事件后才调用 back
+    private val backEvents = Channel<Unit>(Channel.BUFFERED)
+    private var backCalls = 0
 
     private var updatedEnvelope: Envelope? = null
     private var selectedMonth: YearMonth? = null
@@ -390,6 +396,7 @@ class EnvelopeScreenInstrumentedTest {
             .performClick()
 
         composeRule.runOnIdle { assertEquals(1, archiveAndBackCalls) }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
     }
 
     @Test
@@ -412,6 +419,7 @@ class EnvelopeScreenInstrumentedTest {
         composeRule.onNodeWithContentDescription(context.getString(R.string.common_action_back)).performClick()
 
         composeRule.runOnIdle { assertEquals(1, saveAndBackCalls) }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
     }
 
     @Test
@@ -426,6 +434,7 @@ class EnvelopeScreenInstrumentedTest {
         }
 
         composeRule.waitUntil(timeoutMillis = 5_000) { saveAndBackCalls == 1 }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
     }
 
     private fun hasEnabledBackCallback(): Boolean {
@@ -470,6 +479,8 @@ class EnvelopeScreenInstrumentedTest {
             EnvelogTheme(dynamicColor = false) {
                 EnvelopeScreen(
                     uiState = state.value,
+                    back = { backCalls++ },
+                    backEvent = backEvents.receiveAsFlow(),
                     selectMonth = {
                         selectedMonth = it
                         state.value = (state.value as EnvelopeUiState.Success).copy(yearMonth = it)
@@ -489,8 +500,14 @@ class EnvelopeScreenInstrumentedTest {
                     saveActiveBudget = { saveBudgetCalls++ },
                     deleteActiveBudget = { deleteBudgetCalls++ },
                     clearActiveBudget = {},
-                    saveAndBack = { saveAndBackCalls++ },
-                    archiveAndBack = { archiveAndBackCalls++ },
+                    saveAndBack = {
+                        saveAndBackCalls++
+                        backEvents.trySend(Unit)
+                    },
+                    archiveAndBack = {
+                        archiveAndBackCalls++
+                        backEvents.trySend(Unit)
+                    },
                     clearSubmissionError = {
                         clearSubmissionErrorCalls++
                         val current = state.value as EnvelopeUiState.Success

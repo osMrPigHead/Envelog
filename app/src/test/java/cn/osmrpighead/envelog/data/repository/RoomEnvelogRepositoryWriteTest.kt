@@ -544,4 +544,106 @@ class RoomEnvelogRepositoryWriteTest {
         assertEquals(BudgetWriteResult.Success, repository.insertBudget(replacement))
         assertEquals(setOf(second, replacement), budgetsOf().toSet())
     }
+
+    private val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+
+    @Test
+    fun deleteEnvelope_deletesEnvelopeAndItsSoftDeletedRows() = runTest {
+        val garbageOfA = RoomTestData.record(0xB1, date(10, 5), RoomTestData.envelopeA to 6_000)
+        val garbageOfB = RoomTestData.record(0xB2, date(10, 6), RoomTestData.envelopeB to 3_000)
+
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    envelopeId = RoomTestData.envelopeA,
+                    deletedAt = deletedAt,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetC,
+                    envelopeId = RoomTestData.envelopeB,
+                    deletedAt = deletedAt,
+                ),
+            ),
+            expenditures = listOf(
+                garbageOfA.first.copy(deletedAt = deletedAt),
+                garbageOfB.first.copy(deletedAt = deletedAt),
+            ),
+            allocations = garbageOfA.second + garbageOfB.second,
+        )
+
+        assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(RoomTestData.envelopeA))
+
+        val error = runCatching { repository.getEnvelope(RoomTestData.envelopeA) }.exceptionOrNull()
+        assertTrue("删除后按 id 查询应抛 NoSuchElementException，实际为 $error", error is NoSuchElementException)
+        assertEquals(
+            Envelope(RoomTestData.envelopeB, "购物", false, false),
+            repository.getEnvelope(RoomTestData.envelopeB),
+        )
+        assertEquals("信封 B 的软删除预算不应被顺带清理", 1, database.budgetDao().clean(RoomTestData.envelopeB))
+        assertEquals(
+            "信封 B 的软删除分摊不应被顺带清理",
+            1,
+            database.expenditureAllocationDao().clean(RoomTestData.envelopeB),
+        )
+    }
+
+    @Test
+    fun deleteEnvelope_deletesEnvelopeWithoutAnyRows() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")))
+
+        assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(RoomTestData.envelopeA))
+
+        assertTrue(
+            runCatching { repository.getEnvelope(RoomTestData.envelopeA) }.exceptionOrNull() is NoSuchElementException,
+        )
+    }
+
+    @Test
+    fun deleteEnvelope_returnsContraintWhenLiveBudgetRemains() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")),
+            budgets = listOf(
+                RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt),
+                RoomTestData.budget(id = RoomTestData.budgetB),
+            ),
+        )
+
+        assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(RoomTestData.envelopeA))
+
+        assertEquals(envelope(), repository.getEnvelope(RoomTestData.envelopeA))
+        assertEquals("事务应整体回滚，已清理的软删除预算应仍存在", 1, database.budgetDao().clean(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun deleteEnvelope_returnsContraintWhenLiveAllocationRemains() = runTest {
+        val alive = RoomTestData.record(0xB1, date(10, 5), RoomTestData.envelopeA to 6_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
+            expenditures = listOf(alive.first),
+            allocations = alive.second,
+        )
+
+        assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(RoomTestData.envelopeA))
+
+        assertEquals(envelope(), repository.getEnvelope(RoomTestData.envelopeA))
+        assertEquals("事务应整体回滚，已清理的软删除预算应仍存在", 1, database.budgetDao().clean(RoomTestData.envelopeA))
+        assertEquals(
+            listOf(6_000L),
+            repository.observeAllocations(RoomTestData.envelopeA, HalfOpenDateSpan(date(10, 1), date(11, 1)))
+                .first()
+                .map { it.amount },
+        )
+    }
+
+    @Test
+    fun deleteEnvelope_returnsNotFoundForUnknownEnvelope() = runTest {
+        assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(RoomTestData.envelopeId(0xEE)))
+    }
 }

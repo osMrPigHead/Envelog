@@ -231,4 +231,61 @@ class BudgetDaoTest {
             attributedMonth(month = RoomTestData.month).isEmpty(),
         )
     }
+
+    @Test
+    fun clean_deletesSoftDeletedBudgetsOfTheEnvelopeOnly() = runTest {
+        val deletedOfA = RoomTestData.budget(
+            id = RoomTestData.budgetA,
+            envelopeId = RoomTestData.envelopeA,
+            deletedAt = Instant.parse("2026-10-19T04:00:00Z"),
+        )
+        val liveOfA = RoomTestData.budget(
+            id = RoomTestData.budgetB,
+            envelopeId = RoomTestData.envelopeA,
+        )
+        val deletedOfB = RoomTestData.budget(
+            id = RoomTestData.budgetC,
+            envelopeId = RoomTestData.envelopeB,
+            deletedAt = Instant.parse("2026-10-19T04:00:00Z"),
+        )
+
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+            budgets = listOf(deletedOfA, liveOfA, deletedOfB),
+        )
+
+        assertEquals(1, dao.clean(RoomTestData.envelopeA))
+        assertEquals("已清理的预算行应被物理删除", 0, dao.clean(RoomTestData.envelopeA))
+        assertEquals(1L, overlaps())
+        assertEquals("其他信封的软删除预算不受影响", 1, dao.clean(RoomTestData.envelopeB))
+    }
+
+    @Test
+    fun clean_returnsZeroWhenTheEnvelopeHasNoSoftDeletedBudget() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA)),
+        )
+
+        assertEquals(0, dao.clean(RoomTestData.envelopeA))
+        assertEquals(1L, overlaps())
+    }
+
+    @Test
+    fun clean_returnsZeroForUnknownEnvelope() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    deletedAt = Instant.parse("2026-10-19T04:00:00Z"),
+                ),
+            ),
+        )
+
+        assertEquals(0, dao.clean(RoomTestData.envelopeId(0xEE)))
+    }
 }

@@ -18,6 +18,8 @@ import cn.osmrpighead.envelog.testing.hasButtonRole
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -38,6 +40,10 @@ class RecordScreenInstrumentedTest {
     private var submitted: Long? = null
     private var cancelled = 0
 
+    // 生产环境中 ViewModel 在 submit / cancel 内发送 backEvent，屏幕收到事件后才调用 back
+    private val backEvents = Channel<Unit>(Channel.BUFFERED)
+    private var backCalls = 0
+
     private val okText: String get() = context.getString(R.string.common_action_ok)
     private val cancelText: String get() = context.getString(R.string.common_action_cancel)
 
@@ -51,8 +57,12 @@ class RecordScreenInstrumentedTest {
             submit = {
                 submitted = it
                 amountState.value = it
+                backEvents.trySend(Unit)
             },
-            cancel = { cancelled++ },
+            cancel = {
+                cancelled++
+                backEvents.trySend(Unit)
+            },
         )
         composeRule.setContent {
             EnvelogTheme(dynamicColor = false) {
@@ -63,7 +73,8 @@ class RecordScreenInstrumentedTest {
                         amountConsumer = consumer,
                         fieldId = fieldId,
                     ),
-                    back = {},
+                    back = { backCalls++ },
+                    backEvent = backEvents.receiveAsFlow(),
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -101,6 +112,7 @@ class RecordScreenInstrumentedTest {
             assertEquals(1235L, submitted)
             assertEquals(0, cancelled)
         }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
     }
 
     @Test
@@ -122,6 +134,7 @@ class RecordScreenInstrumentedTest {
             assertEquals(1, cancelled)
             assertNull(submitted)
         }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
     }
 
     private fun clickKey(text: String) {
