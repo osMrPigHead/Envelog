@@ -8,6 +8,7 @@ data class EnvelopeSummaryRow(
     val name: String,
     val isBudgeted: Boolean,
     val archived: Boolean,
+    val canDelete: Boolean,
     val allocated: Long,
     val totalBudget: Long?,
     val currentBudget: Long?,

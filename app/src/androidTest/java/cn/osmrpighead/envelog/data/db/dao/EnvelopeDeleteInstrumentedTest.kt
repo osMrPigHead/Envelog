@@ -13,6 +13,7 @@ import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.model.ExpenditureId
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -40,6 +41,7 @@ class EnvelopeDeleteInstrumentedTest {
     private val month: YearMonth = YearMonth.of(2026, 10)
     private val monthStart: LocalDate = LocalDate.of(2026, 10, 1)
     private val monthEnd: LocalDate = LocalDate.of(2026, 11, 1)
+    private val today: LocalDate = LocalDate.of(2026, 10, 20)
 
     private val deletedAt: Instant = Instant.parse("2026-10-19T04:00:00Z")
 
@@ -232,6 +234,14 @@ class EnvelopeDeleteInstrumentedTest {
         assertEquals("分摊行先被删除后真实 SQLite 也无法再判定孤儿支出", 0, expenditureDao.clean(envelopeA))
     }
 
+    /**
+     * 汇总查询里的 `canDelete` 列按信封给出，用于复验它与逐 id 的 `isDeletable` 判断口径一致。
+     */
+    private suspend fun canDeleteByEnvelope(): Map<EnvelopeId, Boolean> = envelopeDao
+        .observeSummaries(today = today, yearMonth = month, spanStart = monthStart, spanEnd = monthEnd)
+        .first()
+        .associate { it.id to it.canDelete }
+
     @Test
     fun isDeletable_isTrueWhileNothingReferencesTheEnvelope() = runBlocking {
         seedEnvelopes()
@@ -239,6 +249,11 @@ class EnvelopeDeleteInstrumentedTest {
         assertTrue(envelopeDao.isDeletable(envelopeA))
         assertTrue(envelopeDao.isDeletable(envelopeB))
         assertTrue("未知信封没有引用行，判断同样放行", envelopeDao.isDeletable(unknownEnvelope))
+        assertEquals(
+            "汇总查询的可删除列应与逐 id 判断一致",
+            mapOf(envelopeA to true, envelopeB to true),
+            canDeleteByEnvelope(),
+        )
     }
 
     @Test
@@ -248,6 +263,7 @@ class EnvelopeDeleteInstrumentedTest {
 
         assertFalse("存活预算会让 DELETE 命中 RESTRICT", envelopeDao.isDeletable(envelopeA))
         assertTrue("A 的预算不挡住 B", envelopeDao.isDeletable(envelopeB))
+        assertEquals(mapOf(envelopeA to false, envelopeB to true), canDeleteByEnvelope())
     }
 
     @Test
@@ -256,6 +272,7 @@ class EnvelopeDeleteInstrumentedTest {
 
         assertFalse("B3 存活且分摊到 A", envelopeDao.isDeletable(envelopeA))
         assertFalse("B3 同样分摊到 B", envelopeDao.isDeletable(envelopeB))
+        assertEquals(mapOf(envelopeA to false, envelopeB to false), canDeleteByEnvelope())
     }
 
     @Test
@@ -267,6 +284,7 @@ class EnvelopeDeleteInstrumentedTest {
         seedDao.insertAllocations(garbageShares)
 
         assertTrue("垃圾行不构成 RESTRICT 阻挡", envelopeDao.isDeletable(envelopeA))
+        assertEquals("汇总查询同样只认存活引用", mapOf(envelopeA to true, envelopeB to true), canDeleteByEnvelope())
 
         assertEquals(1, expenditureDao.clean(envelopeA))
         assertEquals(0, allocationDao.clean(envelopeA))

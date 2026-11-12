@@ -84,6 +84,20 @@ interface EnvelopeDao {
 
             SELECT
                 ev.id, ev.name, ev.isBudgeted, (ev.archivedAt IS NOT NULL) AS archived,
+                -- TODO 可能需要整理
+                NOT EXISTS (
+                    SELECT 1
+                    FROM budget
+                    WHERE envelopeId = ev.id
+                      AND deletedAt IS NULL
+                ) AND NOT EXISTS (
+                    SELECT 1
+                    FROM expenditureAllocation ea
+                    JOIN expenditure ex
+                      ON ex.deletedAt IS NULL
+                     AND ea.expenditureId = ex.id
+                    WHERE ea.envelopeId = ev.id
+                ) AS canDelete,
                 ac.total AS allocated,
                 ba.total AS totalBudget,
                 cb.amount AS currentBudget,

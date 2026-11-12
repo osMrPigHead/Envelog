@@ -11,6 +11,7 @@ sealed interface EnvelopeSummary {
     val allocated: Long
     val currency: CurrencyType
     val archived: Boolean
+    val canDelete: Boolean
 
     data class Budgeted(
         override val id: EnvelopeId,
@@ -18,6 +19,7 @@ sealed interface EnvelopeSummary {
         override val allocated: Long,
         override val currency: CurrencyType,
         override val archived: Boolean,
+        override val canDelete: Boolean,
         val totalBudget: Long,
         val currentBudget: Long?,
         val currentSpan: HalfOpenDateSpan?,
@@ -53,5 +55,6 @@ sealed interface EnvelopeSummary {
         override val allocated: Long,
         override val currency: CurrencyType,
         override val archived: Boolean,
+        override val canDelete: Boolean,
     ) : EnvelopeSummary
 }

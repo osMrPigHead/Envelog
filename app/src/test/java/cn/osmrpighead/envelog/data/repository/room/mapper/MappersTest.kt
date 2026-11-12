@@ -129,6 +129,7 @@ class MappersTest {
     fun summaryRowToDomain_mapsBudgetedRow() {
         val row = summaryRow(
             archived = true,
+            canDelete = true,
             allocated = 39_000,
             totalBudget = 180_000,
             currentBudget = 60_000,
@@ -146,6 +147,7 @@ class MappersTest {
                 allocated = 39_000,
                 currency = CurrencyType.CNY,
                 archived = true,
+                canDelete = true,
                 totalBudget = 180_000,
                 currentBudget = 60_000,
                 currentSpan = HalfOpenDateSpan(
@@ -203,13 +205,21 @@ class MappersTest {
         val row = summaryRow(
             isBudgeted = false,
             archived = true,
+            canDelete = true,
             allocated = 30_000,
             totalBudget = 100_000,
             currentBudget = 40_000,
         )
 
         assertEquals(
-            EnvelopeSummary.NonBudget(envelopeId, "餐饮", 30_000, CurrencyType.CNY, archived = true),
+            EnvelopeSummary.NonBudget(
+                envelopeId,
+                "餐饮",
+                30_000,
+                CurrencyType.CNY,
+                archived = true,
+                canDelete = true,
+            ),
             row.toDomain(),
         )
     }
@@ -243,6 +253,7 @@ class MappersTest {
     private fun summaryRow(
         isBudgeted: Boolean = true,
         archived: Boolean = false,
+        canDelete: Boolean = false,
         allocated: Long = 0,
         totalBudget: Long? = null,
         currentBudget: Long? = null,
@@ -256,6 +267,7 @@ class MappersTest {
         name = "餐饮",
         isBudgeted = isBudgeted,
         archived = archived,
+        canDelete = canDelete,
         allocated = allocated,
         totalBudget = totalBudget,
         currentBudget = currentBudget,

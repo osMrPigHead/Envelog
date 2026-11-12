@@ -491,6 +491,7 @@ class EnvelopeDaoTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(summaries().single().canDelete)
     }
 
     @Test
@@ -508,6 +509,7 @@ class EnvelopeDaoTest {
         )
 
         assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse(summaries().single().canDelete)
     }
 
     @Test
@@ -522,6 +524,7 @@ class EnvelopeDaoTest {
         )
 
         assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(summaries().single().canDelete)
     }
 
     @Test
@@ -536,6 +539,9 @@ class EnvelopeDaoTest {
 
         assertTrue(dao.isDeletable(RoomTestData.envelopeA))
         assertFalse("同一预算只挡住它所归属的信封", dao.isDeletable(RoomTestData.envelopeB))
+
+        val canDelete = summaries().associate { it.id to it.canDelete }
+        assertEquals(mapOf(RoomTestData.envelopeA to true, RoomTestData.envelopeB to false), canDelete)
     }
 
     @Test
@@ -548,6 +554,7 @@ class EnvelopeDaoTest {
         )
 
         assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse(summaries().single().canDelete)
     }
 
     @Test
@@ -562,6 +569,7 @@ class EnvelopeDaoTest {
         )
 
         assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(summaries().single().canDelete)
     }
 
     @Test
@@ -582,6 +590,9 @@ class EnvelopeDaoTest {
 
         assertTrue(dao.isDeletable(RoomTestData.envelopeA))
         assertFalse("同一笔支出只挡住它分摊到的信封", dao.isDeletable(RoomTestData.envelopeB))
+
+        val canDelete = summaries().associate { it.id to it.canDelete }
+        assertEquals(mapOf(RoomTestData.envelopeA to true, RoomTestData.envelopeB to false), canDelete)
     }
 
     @Test
@@ -597,6 +608,7 @@ class EnvelopeDaoTest {
         )
 
         assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse(summaries().single().canDelete)
     }
 
     @Test
@@ -615,6 +627,7 @@ class EnvelopeDaoTest {
         database.budgetDao().clean(RoomTestData.envelopeA)
 
         assertTrue("清理垃圾行后信封应可删除", dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(summaries().single().canDelete)
         assertEquals(1, dao.delete(RoomTestData.envelopeA))
     }
 }

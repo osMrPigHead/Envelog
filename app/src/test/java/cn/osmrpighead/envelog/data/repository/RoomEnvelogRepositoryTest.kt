@@ -156,6 +156,7 @@ class RoomEnvelogRepositoryTest {
                 allocated = 39_000,
                 currency = CurrencyType.CNY,
                 archived = false,
+                canDelete = false,
                 totalBudget = 180_000,
                 currentBudget = 60_000,
                 currentSpan = LocalDate.of(2026, 10, 15) untilExclusive LocalDate.of(2026, 10, 22),
@@ -190,7 +191,16 @@ class RoomEnvelogRepositoryTest {
         )
 
         assertEquals(
-            listOf(EnvelopeSummary.NonBudget(RoomTestData.envelopeA, "购物", 30_000, CurrencyType.CNY, false)),
+            listOf(
+                EnvelopeSummary.NonBudget(
+                    RoomTestData.envelopeA,
+                    "购物",
+                    30_000,
+                    CurrencyType.CNY,
+                    archived = false,
+                    canDelete = false,
+                ),
+            ),
             overview(),
         )
     }
@@ -216,6 +226,7 @@ class RoomEnvelogRepositoryTest {
         // 没有当前预算时，历史窗口的终点回退到 today，因此月初至今的支出都算历史支出
         assertEquals(5_000L, summary.priorAllocated)
         assertFalse(summary.usedProportion.isValid)
+        assertFalse("存活支出的分摊使该信封不可删除", summary.canDelete)
     }
 
     @Test

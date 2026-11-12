@@ -45,6 +45,7 @@ object InstrumentedTestData {
         allocated = 200_000,
         currency = CurrencyType.CNY,
         archived = false,
+        canDelete = true,
         totalBudget = 500_000,
         currentBudget = 180_000,
         currentSpan = HalfOpenDateSpan(monthStart, monthEnd),
@@ -62,6 +63,7 @@ object InstrumentedTestData {
         allocated = 30_000,
         currency = CurrencyType.CNY,
         archived = false,
+        canDelete = true,
     )
 
     fun budget(

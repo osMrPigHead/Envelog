@@ -10,12 +10,12 @@ import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 // TODO: CurrencyType
 fun EnvelopeSummaryRow.toDomain() = if (isBudgeted) {
     EnvelopeSummary.Budgeted(
-        id, name, allocated, CurrencyType.CNY, archived, totalBudget ?: 0, currentBudget,
+        id, name, allocated, CurrencyType.CNY, archived, canDelete, totalBudget ?: 0, currentBudget,
         currentSpanEndDate?.let { currentSpanStartDate?.untilExclusive(it) },
         currentSpanAllocated ?: 0,
         priorBudget ?: 0, priorAllocated ?: 0,
     )
-} else EnvelopeSummary.NonBudget(id, name, allocated, CurrencyType.CNY, archived)
+} else EnvelopeSummary.NonBudget(id, name, allocated, CurrencyType.CNY, archived, canDelete)
 
 fun EnvelopeEntity.toDomain() = Envelope(id, name, isBudgeted, archivedAt != null)
 fun Envelope.toEntity() =

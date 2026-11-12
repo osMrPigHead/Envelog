@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -242,6 +243,7 @@ class EnvelopeSummaryQueryInstrumentedTest {
         assertEquals(10_000L, row.allocated)
         assertEquals(100_000L, row.totalBudget)
         assertEquals(10_000L, row.currentSpanAllocated)
+        assertFalse("存活的预算与分摊使该信封不可删除", row.canDelete)
     }
 
     @Test
