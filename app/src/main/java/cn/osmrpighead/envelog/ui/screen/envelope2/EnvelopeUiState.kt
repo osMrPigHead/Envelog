@@ -11,6 +11,7 @@ import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
 import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.YearMonth
 
 data class EnvelopeForm(
@@ -96,5 +97,6 @@ sealed interface EnvelopeDetail {
 
 data class EnvelopeUiState(
     val yearMonth: YearMonth,
+    val today: LocalDate,
     val detail: EnvelopeDetail,
 )

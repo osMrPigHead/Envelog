@@ -5,12 +5,16 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
+import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormModalState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -61,9 +65,10 @@ internal class QuickSetSheetController(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun rememberQuickSetSheetController(
-    isCompleted: Boolean,
-    onDismissed: () -> Unit,
+    modalState: QuickSetFormModalState,
+    clear: () -> Unit,
 ): QuickSetSheetController {
+    val modalState by rememberUpdatedState(modalState)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val numKeypadHost = rememberNumKeypadHostState()
     val focusManager = LocalFocusManager.current
@@ -76,11 +81,10 @@ internal fun rememberQuickSetSheetController(
         sheetState.show()
     }
 
-    LaunchedEffect(isCompleted) {
-        if (!isCompleted) return@LaunchedEffect
-        numKeypadHost.cancel()
-        sheetState.hide()
-        onDismissed()
+    LaunchedEffect(modalState.state, modalState.dismissed) {
+        if (modalState.state != FormState.Completed && !modalState.dismissed) return@LaunchedEffect
+        if (sheetState.isVisible) sheetState.hide()
+        clear()
     }
 
     return controller

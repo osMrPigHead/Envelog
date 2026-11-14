@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.core.navigation.NavigationTarget
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
@@ -15,6 +16,12 @@ import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult.*
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeSubmissionError
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlanner
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
+import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
 import cn.osmrpighead.envelog.util.updateNotNull
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -34,6 +41,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val repository: EnvelogRepository,
 ) : ViewModel() {
     private val yearMonth = appState.yearMonth
+    private val today = appState.today
     fun selectMonth(yearMonth: YearMonth) = appState.selectMonth(yearMonth)
 
     private val isNew = route.id is NavigationTarget.New
@@ -102,12 +110,13 @@ class EnvelopeViewModel @AssistedInject constructor(
         if (envelopeForm == null) detailNotReady
         else EnvelopeDetail.Success(ledgerState, envelopeForm, detailModalState, quickSetFormModalState, isDeletable)
     }
-    val uiState = combine(yearMonth, detail) { yearMonth, detail -> EnvelopeUiState(yearMonth, detail) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = EnvelopeUiState(yearMonth.value, detailNotReady),
-        )
+    val uiState =
+        combine(yearMonth, today, detail) { yearMonth, today, detail -> EnvelopeUiState(yearMonth, today, detail) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = EnvelopeUiState(yearMonth.value, today.value, detailNotReady),
+            )
 
     init {
         if (route.id is NavigationTarget.Existing) viewModelScope.launch {
@@ -161,6 +170,7 @@ class EnvelopeViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             detailModalState.first { it?.budgetForm?.state != FormState.Busy }
+            quickSetFormModalState.first { it?.state != FormState.Busy }
             if (!isNew) {
                 repository.updateEnvelope(form.envelope)
                 releaseEnvelopeForm { it.copy(state = FormState.Completed) }
@@ -212,7 +222,7 @@ class EnvelopeViewModel @AssistedInject constructor(
 
     fun openDetailWithExistingBudget(id: BudgetId, date: LocalDate?) = detailModalState.update { state ->
         if (state != null && state.budgetForm.state == FormState.Busy) return@update state
-        val budget = budgets.value.find { it.id == id } ?: return
+        val budget = budgets.value.find { it.id == id } ?: return@update state
         val allocations =
             if (date == null) allocations.value.filter { it.expense.happenedDate in budget.dateSpan }
             else allocations.value.filter { it.expense.happenedDate == date }
@@ -347,6 +357,152 @@ class EnvelopeViewModel @AssistedInject constructor(
         detailModalState.value = null
     }
 
+    fun openQuickSet() = quickSetFormModalState.update { state ->
+        if (state != null && state.state == FormState.Busy) return@update state
+        QuickSetFormModalState(
+            state = FormState.Active(null),
+            config = QuickSetFormState(
+                mode = QuickSetMode.Daily,
+                dailyConfig = QuickSetConfig.Daily(1, 0),
+                weeklyConfig = QuickSetConfig.Weekly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, 0),
+                monthlyConfig = QuickSetConfig.MonthlyTotal(0),
+                targetSpan = yearMonth.value.toHalfOpenDateSpan().toClosed(),
+            ),
+            schedule = null,
+            dismissed = false,
+        )
+    }
+
+    fun updateQuickSet(config: QuickSetFormState) {
+        quickSetFormModalState.update {
+            if (it == null || it.dismissed || it.state !is FormState.Active) return@update it
+            val schedule = QuickSetBudgetPlanner.schedule(config.selectedConfig(), config.targetSpan, yearMonth.value)
+            it.copy(
+                state = FormState.Active(config.validate(schedule)),
+                config = config,
+                schedule = schedule,
+            )
+        }
+    }
+
+    private fun requestQuickSetForm(accepted: (QuickSetFormError?) -> Boolean): QuickSetFormModalState? {
+        val form = quickSetFormModalState.value ?: return null
+        var active = false
+        quickSetFormModalState.update {
+            val error = (it?.state as? FormState.Active)?.error
+            if (it == null || it.dismissed || it.state !is FormState.Active || !accepted(error)) return@update it
+            active = true
+            it.copy(state = FormState.Busy)
+        }
+        if (!active) return null
+        return form
+    }
+
+    private fun releaseQuickSetForm(function: (QuickSetFormModalState) -> QuickSetFormModalState) {
+        quickSetFormModalState.update {
+            if (it == null || it.dismissed || it.state !is FormState.Busy) return@update it
+            function(it)
+        }
+    }
+
+    fun cancelQuickSetOverwrite() {
+        quickSetFormModalState.update {
+            if (it == null || it.dismissed ||
+                (it.state as? FormState.Active)?.error !is QuickSetFormError.BudgetOverlaps
+            ) return@update it
+            it.copy(state = FormState.Active(it.config.validate(it.schedule)))
+        }
+    }
+
+    fun dismissQuickSet() {
+        quickSetFormModalState.update {
+            if (it == null) return@update it
+            it.copy(dismissed = true)
+        }
+    }
+
+    fun clearQuickSet() {
+        quickSetFormModalState.value = null
+    }
+
+    fun applyQuickSet(overwrite: Boolean) {
+        val form = requestQuickSetForm { it == null || it is QuickSetFormError.BudgetOverlaps } ?: return
+        viewModelScope.launch {
+            val config = form.config
+            val selected = config.selectedConfig()
+            val schedule = QuickSetBudgetPlanner.schedule(selected, config.targetSpan, yearMonth.value)
+            if (schedule == null) {
+                releaseQuickSetForm { it.copy(state = FormState.Active(QuickSetFormError.CannotGenerate)) }
+                return@launch
+            }
+
+            val plan = QuickSetBudgetPlanner.plan(
+                config = selected,
+                selection = config.targetSpan,
+                yearMonth = yearMonth.value,
+                envelopeId = envelopeId,
+                existing = readExisting(schedule.coveredSpan()),
+            )
+            if (plan == null) {
+                releaseQuickSetForm { it.copy(state = FormState.Active(QuickSetFormError.CannotGenerate)) }
+            } else if (plan.conflicts.isNotEmpty() && !overwrite) {
+                releaseQuickSetForm {
+                    it.copy(state = FormState.Active(QuickSetFormError.BudgetOverlaps(plan.conflicts)))
+                }
+            } else persistQuickSet(plan)
+        }
+    }
+
+    private suspend fun persistQuickSet(plan: QuickSetBudgetPlan) {
+        val conflictIds = plan.conflicts.map { it.id }
+
+        if (isNew) {
+            memoryBudgets.update { budgets -> budgets.filterNot { it.id in conflictIds } + plan.budgets }
+            releaseQuickSetForm { it.copy(state = FormState.Completed) }
+        } else {
+            val result = repository.replaceBudgets(
+                envelopeId = envelopeId,
+                deleteBudgetIds = conflictIds,
+                budgets = plan.budgets,
+            )
+            releaseQuickSetForm {
+                it.copy(
+                    state = when (result) {
+                        EnvelopeArchived -> FormState.Active(QuickSetFormError.EnvelopeArchived)
+                        BudgetOverlaps -> FormState.Active(QuickSetFormError.BudgetOverlaps(plan.conflicts))
+                        Success -> FormState.Completed
+                    },
+                )
+            }
+        }
+    }
+
+    private suspend fun readExisting(coveredSpan: HalfOpenDateSpan): List<Budget> =
+        if (isNew) memoryBudgets.value
+        else repository.observeBudgets(envelopeId = envelopeId, dateSpan = coveredSpan).first()
+
+    private fun QuickSetFormState.selectedConfig(): QuickSetConfig = when (mode) {
+        QuickSetMode.Daily -> dailyConfig
+        QuickSetMode.Weekly -> weeklyConfig
+        QuickSetMode.MonthlyTotal -> monthlyConfig
+    }
+
+    private fun QuickSetFormState.validate(schedule: QuickSetSchedule?): QuickSetFormError? = when {
+        mode == QuickSetMode.Daily &&
+            (dailyConfig.intervalDays < 1 || dailyConfig.intervalDays.toLong() > targetSpan.length) ->
+            QuickSetFormError.IntervalInvalid
+
+        selectedConfig().amount <= 0L -> QuickSetFormError.AmountNonPositive
+        schedule == null -> QuickSetFormError.CannotGenerate
+        else -> null
+    }
+
+    /** 末段预算按完整周期产出、不裁剪到显示月，冲突检测须按其实际覆盖的包络重读。 */
+    private fun QuickSetSchedule.coveredSpan(): HalfOpenDateSpan = HalfOpenDateSpan(
+        startDate = segments.minOf { it.span.startDate },
+        endDate = segments.maxOf { it.span.endDate },
+    )
+
     fun onEvent(event: EnvelopeEvent) = when (event) {
         is SelectMonth -> selectMonth(event.yearMonth)
 
@@ -364,6 +520,13 @@ class EnvelopeViewModel @AssistedInject constructor(
         DeleteBudget -> deleteBudget()
         DismissDetail -> dismissDetail()
         ClearDetail -> clearDetail()
+
+        OpenQuickSet -> openQuickSet()
+        is UpdateQuickSet -> updateQuickSet(event.config)
+        is ApplyQuickSet -> applyQuickSet(event.overwrite)
+        CancelOverwrite -> cancelQuickSetOverwrite()
+        DismissQuickSet -> dismissQuickSet()
+        ClearQuickSet -> clearQuickSet()
     }
 
     @AssistedFactory

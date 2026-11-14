@@ -3,6 +3,7 @@ package cn.osmrpighead.envelog.ui.screen.envelope2
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
+import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -24,3 +25,10 @@ data object SaveBudget : EnvelopeEvent
 data object DeleteBudget : EnvelopeEvent
 data object DismissDetail : EnvelopeEvent
 data object ClearDetail : EnvelopeEvent
+
+data object OpenQuickSet : EnvelopeEvent
+data class UpdateQuickSet(val config: QuickSetFormState) : EnvelopeEvent
+data class ApplyQuickSet(val overwrite: Boolean) : EnvelopeEvent
+data object CancelOverwrite : EnvelopeEvent
+data object DismissQuickSet : EnvelopeEvent
+data object ClearQuickSet : EnvelopeEvent

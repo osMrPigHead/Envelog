@@ -14,47 +14,39 @@ import java.time.YearMonth
 fun QuickSetBudgetModalBottomSheet(
     yearMonth: YearMonth,
     modalState: QuickSetFormModalState,
-    onUpdate: (QuickSetFormState) -> Unit,
-    onSubmit: () -> Unit,
-    onDismissRequest: () -> Unit,
-    onDismissed: () -> Unit,
-    onConfirmOverwrite: () -> Unit,
-    onCancelOverwrite: () -> Unit,
+    update: (QuickSetFormState) -> Unit,
+    apply: (Boolean) -> Unit,
+    dismiss: () -> Unit,
+    clear: () -> Unit,
+    cancelOverwrite: () -> Unit,
 ) {
-    val state = modalState.state
     val controller = rememberQuickSetSheetController(
-        isCompleted = state is FormState.Completed,
-        onDismissed = onDismissed,
+        modalState = modalState,
+        clear = clear,
     )
 
     ModalBottomSheet(
-        onDismissRequest = {
-            controller.onDismissRequest()
-            onDismissRequest()
-        },
+        onDismissRequest = dismiss,
         sheetState = controller.sheetState,
     ) {
         QuickSetSheetContent(
             yearMonth = yearMonth,
             modalState = modalState,
             controller = controller,
-            onUpdate = onUpdate,
-            onCancel = {
-                controller.onDismissRequest()
-                onDismissRequest()
-            },
+            onUpdate = update,
+            onCancel = dismiss,
             onApply = {
-                if (controller.requestApply(state is FormState.Busy)) {
+                if (controller.requestApply(modalState.state is FormState.Busy)) {
                     controller.onApply()
-                    onSubmit()
+                    apply(false)
                 }
             },
         )
-        val error = (state as? FormState.Active)?.error
-        if (error is QuickSetFormError.BudgetOverlaps) QuickSetConflictDialog(
-            conflicts = error.conflicts,
-            onConfirm = onConfirmOverwrite,
-            onCancel = onCancelOverwrite,
-        )
+        if (modalState.state is FormState.Active && modalState.state.error is QuickSetFormError.BudgetOverlaps)
+            QuickSetConflictDialog(
+                conflicts = modalState.state.error.conflicts,
+                onConfirm = { apply(true) },
+                onCancel = cancelOverwrite,
+            )
     }
 }

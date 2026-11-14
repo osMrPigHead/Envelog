@@ -2,10 +2,12 @@ package cn.osmrpighead.envelog.ui.screen.envelope2
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
@@ -31,10 +33,12 @@ import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeSubmissionError
 import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetOverlapsErrorDialog
+import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope2.component.DetailModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope2.component.EnvelopeForm
 import cn.osmrpighead.envelog.ui.screen.envelope2.component.EnvelopeTab
 import cn.osmrpighead.envelog.ui.screen.envelope2.component.Ledger
+import java.time.LocalDate
 import java.time.YearMonth
 
 private val EnvelopeDetail.saveAndQuit
@@ -84,6 +88,7 @@ private fun TopBar(
 @Composable
 private fun SuccessBody(
     yearMonth: YearMonth,
+    today: LocalDate,
     detail: EnvelopeDetail.Success,
     onEvent: (EnvelopeEvent) -> Unit,
     back: () -> Unit,
@@ -108,6 +113,14 @@ private fun SuccessBody(
                 form = detail.envelopeForm,
                 update = { onEvent(UpdateEnvelope(it)) },
             )
+
+            OutlinedButton(
+                onClick = { onEvent(OpenQuickSet) },
+                enabled = detail.envelopeForm.envelope.isBudgeted && yearMonth >= YearMonth.from(today),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
+            ) { Text(text = stringResource(R.string.envelope_edit_quick_set_title)) }
 
             SecondaryTabRow(
                 selectedTabIndex = visibleTabs.indexOf(activeTab),
@@ -163,6 +176,7 @@ private fun SuccessBody(
 @Composable
 private fun Body(
     yearMonth: YearMonth,
+    today: LocalDate,
     detail: EnvelopeDetail,
     onEvent: (EnvelopeEvent) -> Unit,
     back: () -> Unit,
@@ -170,7 +184,7 @@ private fun Body(
 ) {
     BackHandler { if (detail.saveAndQuit) onEvent(SaveEnvelope) else back() }
     when (detail) {
-        is EnvelopeDetail.Success -> SuccessBody(yearMonth, detail, onEvent, back, modifier)
+        is EnvelopeDetail.Success -> SuccessBody(yearMonth, today, detail, onEvent, back, modifier)
         EnvelopeDetail.Loading -> {}
         EnvelopeDetail.IsNew -> {
             val envelopeName = stringResource(R.string.envelope_edit_default_name)
@@ -194,6 +208,16 @@ private fun Overlays(
         save = { onEvent(SaveBudget) },
         delete = { onEvent(DeleteBudget) },
         clear = { onEvent(ClearDetail) },
+    )
+
+    if (detail.quickSetFormModalState != null) QuickSetBudgetModalBottomSheet(
+        yearMonth = yearMonth,
+        modalState = detail.quickSetFormModalState,
+        update = { onEvent(UpdateQuickSet(it)) },
+        apply = { onEvent(ApplyQuickSet(it)) },
+        dismiss = { onEvent(DismissQuickSet) },
+        clear = { onEvent(ClearQuickSet) },
+        cancelOverwrite = { onEvent(CancelOverwrite) },
     )
 
     if (detail.envelopeForm.state is FormState.Active) when (detail.envelopeForm.state.error) {
@@ -223,6 +247,7 @@ fun EnvelopeScreen(
     ) { innerPadding ->
         Body(
             yearMonth = uiState.yearMonth,
+            today = uiState.today,
             detail = uiState.detail,
             onEvent = onEvent,
             back = back,
