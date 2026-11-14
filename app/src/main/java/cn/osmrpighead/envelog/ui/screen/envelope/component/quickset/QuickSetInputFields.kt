@@ -40,40 +40,42 @@ private fun QuickSetAffix(
 }
 
 /**
- * 只接受纯数字输入，符号一律拒绝。
- * 输入为空（退格清空）时回到 0，光标位于 0 之后；超出目标区间天数的输入同样拒绝。
+ * 只接受纯数字输入，符号一律拒绝；超出目标区间天数的输入同样拒绝。
+ * 返回 null 表示本次输入无效，应保持原值。
  */
-private fun TextFieldValue.sanitizeIntervalInput(maxDays: Int): TextFieldValue? {
-    if (text.isEmpty()) return TextFieldValue("0", selection = TextRange(1))
+private fun TextFieldValue.sanitizedIntervalDays(maxDays: Int): Int? {
+    if (text.isEmpty()) return 0
     if (text.any { it !in '0'..'9' }) return null
 
-    val normalized = text.trimStart('0').ifEmpty { "0" }
-    val days = normalized.toIntOrNull() ?: return null
-    if (days > maxDays) return null
-
-    return TextFieldValue(normalized, selection = TextRange(normalized.length))
+    val days = text.trimStart('0').ifEmpty { "0" }.toIntOrNull() ?: return null
+    return days.takeUnless { it > maxDays }
 }
 
 @Composable
 internal fun QuickSetIntervalField(
-    value: TextFieldValue,
+    days: Int,
     maxDays: Int,
     enabled: Boolean,
     description: String,
-    onValueChange: (TextFieldValue) -> Unit,
+    onValueChange: (Int) -> Unit,
     onFocus: () -> Unit,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    supportingText: (@Composable () -> Unit)? = null,
 ) {
     val focusManager = LocalFocusManager.current
+    val text = days.toString()
 
     OutlinedTextField(
-        value = value,
-        onValueChange = { input -> input.sanitizeIntervalInput(maxDays)?.let(onValueChange) },
+        value = TextFieldValue(text, TextRange(text.length)),
+        onValueChange = { input -> input.sanitizedIntervalDays(maxDays)?.let(onValueChange) },
         modifier = modifier
             .semantics { this.contentDescription = description }
             .onFocusChanged { if (it.isFocused) onFocus() },
         enabled = enabled,
         singleLine = true,
+        isError = isError,
+        supportingText = supportingText,
         label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_daily_label)) },
         prefix = {
             QuickSetAffix(
@@ -104,6 +106,8 @@ internal fun QuickSetAmountField(
     enabled: Boolean,
     description: String,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    supportingText: (@Composable () -> Unit)? = null,
     label: String? = null,
 ) {
     val labelContent: (@Composable () -> Unit)? = if (label == null) null else {
@@ -116,6 +120,8 @@ internal fun QuickSetAmountField(
         consumer = consumer,
         fieldId = fieldId,
         enabled = enabled,
+        isError = isError,
+        supportingText = supportingText,
         label = labelContent,
         suffix = {
             QuickSetAffix(

@@ -89,7 +89,7 @@ class RoomEnvelogRepository @Inject constructor(
             else -> ArchiveResult.Archived
         }
 
-    override suspend fun canDeleteEnvelope(id: EnvelopeId): Boolean = envelopeDao.isDeletable(id)
+    override fun observeEnvelopeDeletable(id: EnvelopeId): Flow<Boolean> = envelopeDao.isDeletable(id)
 
     override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =
         try {

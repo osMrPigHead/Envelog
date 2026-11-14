@@ -16,37 +16,53 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
+import cn.osmrpighead.envelog.core.time.countDaysTo
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
+import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.component.LabeledBox
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
-import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetError
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
+import cn.osmrpighead.envelog.ui.model.AmountConsumer
+import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
+import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormError
+import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormModalState
+import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.text.dayOfWeekRangeText
+import java.math.RoundingMode
 import java.time.YearMonth
 
 @Composable
 internal fun QuickSetSheetContent(
-    formState: QuickSetFormState,
+    yearMonth: YearMonth,
+    modalState: QuickSetFormModalState,
     controller: QuickSetSheetController,
-    error: QuickSetError?,
-    complete: Boolean,
+    onUpdate: (QuickSetFormState) -> Unit,
     onCancel: () -> Unit,
     onApply: () -> Unit,
 ) {
+    val config = modalState.config
+    val schedule = modalState.schedule
+    val error = (modalState.state as? FormState.Active)?.error
+    val isBusy = modalState.state is FormState.Busy
+    val local = rememberQuickSetLocalState(config, onUpdate)
+    val maxIntervalDays = config.targetSpan.maxIntervalDays()
+
     Scaffold(
         bottomBar = {
             NumKeypadHost(
@@ -67,30 +83,137 @@ internal fun QuickSetSheetContent(
                 modifier = Modifier.padding(dimensionResource(R.dimen.spacingLarge)),
             ) {
                 QuickSetModeSection(
-                    formState = formState,
+                    config = config,
+                    local = local,
                     controller = controller,
+                    error = error,
+                    maxIntervalDays = maxIntervalDays,
+                    onUpdate = onUpdate,
                     modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
                 )
                 QuickSetTargetRangeField(
-                    yearMonth = formState.yearMonth,
-                    span = formState.targetSpan,
-                    enabled = formState.mode != QuickSetMode.MonthlyTotal,
-                    onSpanChange = formState::updateTargetSpan,
+                    yearMonth = yearMonth,
+                    span = config.targetSpan,
+                    enabled = config.mode != QuickSetMode.MonthlyTotal,
+                    onSpanChange = { onUpdate(config.withTargetSpan(it)) },
                     onOpen = controller::onPickerOpen,
                 )
                 QuickSetFeedback(
-                    preview = formState.preview,
-                    validation = formState.validation,
+                    preview = derivePreview(config, schedule),
                     error = error,
                 )
                 QuickSetActions(
-                    complete = complete,
-                    canApply = !complete && formState.canApply,
+                    isCompleted = modalState.state is FormState.Completed,
+                    canApply = !isBusy && canApply(config, schedule, maxIntervalDays),
                     onCancel = onCancel,
                     onApply = onApply,
                 )
             }
         }
+    }
+}
+
+/** 无法收纳进不可变表单数据的小键盘消费者与字段身份令牌。 */
+internal class QuickSetLocalState(
+    val dailyAmountConsumer: AmountConsumer,
+    val weeklyAmountConsumer: AmountConsumer,
+    val monthlyAmountConsumer: AmountConsumer,
+    val dailyAmountFieldId: Any,
+    val weeklyAmountFieldId: Any,
+    val monthlyAmountFieldId: Any,
+)
+
+@Composable
+private fun rememberQuickSetLocalState(
+    config: QuickSetFormState,
+    onUpdate: (QuickSetFormState) -> Unit,
+): QuickSetLocalState {
+    val latestConfig by rememberUpdatedState(config)
+    val latestOnUpdate by rememberUpdatedState(onUpdate)
+
+    return remember {
+        QuickSetLocalState(
+            dailyAmountConsumer = AmountConsumer(
+                scale = 0,
+                roundingMode = RoundingMode.HALF_UP,
+                submit = { amount ->
+                    latestOnUpdate(latestConfig.copy(dailyConfig = latestConfig.dailyConfig.copy(amount = amount)))
+                },
+                cancel = {},
+            ),
+            weeklyAmountConsumer = AmountConsumer(
+                scale = 0,
+                roundingMode = RoundingMode.HALF_UP,
+                submit = { amount ->
+                    latestOnUpdate(latestConfig.copy(weeklyConfig = latestConfig.weeklyConfig.copy(amount = amount)))
+                },
+                cancel = {},
+            ),
+            monthlyAmountConsumer = AmountConsumer(
+                scale = 0,
+                roundingMode = RoundingMode.HALF_UP,
+                submit = { amount ->
+                    latestOnUpdate(latestConfig.copy(monthlyConfig = latestConfig.monthlyConfig.copy(amount = amount)))
+                },
+                cancel = {},
+            ),
+            dailyAmountFieldId = Any(),
+            weeklyAmountFieldId = Any(),
+            monthlyAmountFieldId = Any(),
+        )
+    }
+}
+
+private fun QuickSetFormState.selectedAmount(): Long = when (mode) {
+    QuickSetMode.Daily -> dailyConfig.amount
+    QuickSetMode.Weekly -> weeklyConfig.amount
+    QuickSetMode.MonthlyTotal -> monthlyConfig.amount
+}
+
+/** 换目标区间时按新区间天数上限夹紧日额间隔。 */
+private fun QuickSetFormState.withTargetSpan(span: ClosedDateSpan): QuickSetFormState {
+    val max = span.maxIntervalDays()
+    return copy(
+        targetSpan = span,
+        dailyConfig = if (dailyConfig.intervalDays > max) dailyConfig.copy(intervalDays = max) else dailyConfig,
+    )
+}
+
+private fun ClosedDateSpan.maxIntervalDays(): Int = (startDate countDaysTo endDate).toInt() + 1
+
+private fun canApply(
+    config: QuickSetFormState,
+    schedule: QuickSetSchedule?,
+    maxIntervalDays: Int,
+): Boolean = schedule != null &&
+    config.selectedAmount() > 0L &&
+    (config.mode != QuickSetMode.Daily || config.dailyConfig.intervalDays in 1..maxIntervalDays)
+
+private fun derivePreview(config: QuickSetFormState, schedule: QuickSetSchedule?): QuickSetPreview? {
+    val plan = schedule ?: return null
+    val amount = config.selectedAmount()
+    if (amount <= 0L) return null
+    val days = plan.segments.sumOf { it.span.length }
+    return when (config.mode) {
+        QuickSetMode.Daily -> QuickSetPreview.Daily(
+            intervalDays = config.dailyConfig.intervalDays,
+            amount = amount,
+            days = days,
+            totalAmount = plan.totalAmount,
+        )
+
+        QuickSetMode.Weekly -> QuickSetPreview.Weekly(
+            startDayOfWeek = config.weeklyConfig.startDayOfWeek,
+            endDayOfWeek = config.weeklyConfig.endDayOfWeek,
+            amount = amount,
+            days = days,
+            totalAmount = plan.totalAmount,
+        )
+
+        QuickSetMode.MonthlyTotal -> QuickSetPreview.MonthlyTotal(
+            totalAmount = plan.totalAmount,
+            days = days,
+        )
     }
 }
 
@@ -131,8 +254,7 @@ private fun QuickSetTargetRangeField(
 @Composable
 private fun QuickSetFeedback(
     preview: QuickSetPreview?,
-    validation: QuickSetValidation?,
-    error: QuickSetError?,
+    error: QuickSetFormError?,
 ) {
     if (preview != null) Text(
         text = preview.asText(),
@@ -140,14 +262,9 @@ private fun QuickSetFeedback(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
     )
-    if (validation != null) Text(
-        text = validation.asText(),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.error,
-        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
-    )
-    if (error != null) Text(
-        text = error.asText(),
+    val feedback = error?.asFeedbackText()
+    if (feedback != null) Text(
+        text = feedback,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.error,
         modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
@@ -156,7 +273,7 @@ private fun QuickSetFeedback(
 
 @Composable
 private fun QuickSetActions(
-    complete: Boolean,
+    isCompleted: Boolean,
     canApply: Boolean,
     onCancel: () -> Unit,
     onApply: () -> Unit,
@@ -169,7 +286,7 @@ private fun QuickSetActions(
     ) {
         TextButton(
             onClick = onCancel,
-            enabled = !complete,
+            enabled = !isCompleted,
         ) {
             Text(text = stringResource(R.string.common_action_cancel))
         }
@@ -184,11 +301,11 @@ private fun QuickSetActions(
 
 @Composable
 internal fun QuickSetConflictDialog(
-    conflict: QuickSetBudgetPlan,
+    conflicts: List<Budget>,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    val conflictTotal = conflict.conflicts.sumOf { it.amount }
+    val conflictTotal = conflicts.sumOf { it.amount }
     AlertDialog(
         onDismissRequest = onCancel,
         title = { Text(text = stringResource(R.string.envelope_edit_quick_set_conflict_title)) },
@@ -196,7 +313,7 @@ internal fun QuickSetConflictDialog(
             Text(
                 text = stringResource(
                     R.string.envelope_edit_quick_set_conflict_message,
-                    conflict.conflicts.size,
+                    conflicts.size,
                     conflictTotal.asPreviewAmount(),
                 ),
             )
@@ -239,17 +356,15 @@ private fun QuickSetPreview.asText(): String = when (this) {
     )
 }
 
+/** 区间非法与金额非正由各字段的 supportingText 呈现，重叠由确认框呈现，故此处返回 null。 */
 @Composable
-private fun QuickSetValidation.asText(): String = when (this) {
-    QuickSetValidation.IntervalInvalid -> stringResource(R.string.envelope_edit_quick_set_interval_invalid)
-    QuickSetValidation.AmountNonPositive -> stringResource(R.string.common_msg_amount_positive)
-    QuickSetValidation.CannotGenerate -> stringResource(R.string.envelope_edit_quick_set_cannot_generate)
-}
-
-@Composable
-private fun QuickSetError.asText(): String = when (this) {
-    QuickSetError.EnvelopeArchived -> stringResource(R.string.envelope_edit_msg_archived)
-    QuickSetError.BudgetOverlaps -> stringResource(R.string.envelope_edit_msg_budget_overlaps)
+private fun QuickSetFormError.asFeedbackText(): String? = when (this) {
+    QuickSetFormError.EnvelopeArchived -> stringResource(R.string.envelope_edit_msg_archived)
+    QuickSetFormError.CannotGenerate -> stringResource(R.string.envelope_edit_quick_set_cannot_generate)
+    QuickSetFormError.IntervalInvalid,
+    QuickSetFormError.AmountNonPositive,
+    is QuickSetFormError.BudgetOverlaps,
+    -> null
 }
 
 @Composable

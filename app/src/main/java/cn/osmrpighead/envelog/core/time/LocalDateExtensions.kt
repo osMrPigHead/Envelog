@@ -16,6 +16,7 @@ infix fun LocalDate.untilInclusive(end: LocalDate): ClosedDateSpan = ClosedDateS
 
 val LocalDate.yearMonth: YearMonth get() = YearMonth.from(this)
 
+fun LocalDate.toHalfOpenDateSpan(): HalfOpenDateSpan = this untilExclusive plusDays(1)
 fun LocalDate.next(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.next(dayOfWeek))
 fun LocalDate.nextOrSame(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.nextOrSame(dayOfWeek))
 fun LocalDate.previous(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.previous(dayOfWeek))

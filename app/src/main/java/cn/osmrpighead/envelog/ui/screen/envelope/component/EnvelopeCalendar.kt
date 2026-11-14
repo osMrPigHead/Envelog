@@ -82,7 +82,7 @@ private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier
 fun BudgetCalendar(
     model: EnvelopeCalendarModel,
     onDateClick: (LocalDate) -> Unit,
-    onBudgetClick: (BudgetId) -> Unit,
+    onBudgetClick: (BudgetId, LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val style = StatItemStyle.SmallCenter
@@ -100,7 +100,7 @@ fun BudgetCalendar(
                         if (budgetId == null) {
                             { onDateClick(date) }
                         } else {
-                            { onBudgetClick(budgetId) }
+                            { onBudgetClick(budgetId, date) }
                         },
                         Modifier.weight(1f),
                     )
@@ -113,7 +113,7 @@ fun BudgetCalendar(
                         budget = budget,
                         fill = budget.length != 1L,
                         modifier = Modifier
-                            .clickable { onBudgetClick(budget.id) }
+                            .clickable { onBudgetClick(budget.id, null) }
                             .padding(horizontal = dimensionResource(R.dimen.spacingMedium))
                             .weight(budget.length.toFloat()),
                     )

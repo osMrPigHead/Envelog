@@ -652,7 +652,7 @@ class RoomEnvelogRepositoryWriteTest {
     fun canDeleteEnvelope_trueWhenTheEnvelopeHasNoRows() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")))
 
-        assertTrue(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertTrue(repository.observeEnvelopeDeletable(RoomTestData.envelopeA))
     }
 
     @Test
@@ -676,7 +676,7 @@ class RoomEnvelogRepositoryWriteTest {
             allocations = garbageOfA.second + garbageOfB.second,
         )
 
-        assertTrue(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertTrue(repository.observeEnvelopeDeletable(RoomTestData.envelopeA))
         assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(RoomTestData.envelopeA))
     }
 
@@ -690,7 +690,7 @@ class RoomEnvelogRepositoryWriteTest {
             ),
         )
 
-        assertFalse(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertFalse(repository.observeEnvelopeDeletable(RoomTestData.envelopeA))
         assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(RoomTestData.envelopeA))
     }
 
@@ -705,7 +705,7 @@ class RoomEnvelogRepositoryWriteTest {
             allocations = alive.second,
         )
 
-        assertFalse(repository.canDeleteEnvelope(RoomTestData.envelopeA))
+        assertFalse(repository.observeEnvelopeDeletable(RoomTestData.envelopeA))
         assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(RoomTestData.envelopeA))
     }
 
@@ -713,7 +713,7 @@ class RoomEnvelogRepositoryWriteTest {
     fun canDeleteEnvelope_trueForUnknownEnvelope() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮")))
 
-        assertTrue("判断只统计引用，信封是否存在不影响结果", repository.canDeleteEnvelope(RoomTestData.envelopeId(0xEE)))
+        assertTrue("判断只统计引用，信封是否存在不影响结果", repository.observeEnvelopeDeletable(RoomTestData.envelopeId(0xEE)))
         assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(RoomTestData.envelopeId(0xEE)))
     }
 }

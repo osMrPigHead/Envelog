@@ -157,7 +157,7 @@ interface EnvelopeDao {
                    )
         """,
     )
-    suspend fun isDeletable(id: EnvelopeId): Boolean
+    fun isDeletable(id: EnvelopeId): Flow<Boolean>
 
     @Update
     suspend fun update(entity: EnvelopeEntity): Int

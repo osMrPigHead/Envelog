@@ -16,7 +16,8 @@ enum class EnvelopeSubmissionError {
     BudgetOverlaps,
 }
 
-enum class ActiveBudgetError {
+data class BudgetModalItem(val budget: Budget, val isNew: Boolean)
+enum class BudgetModalError {
     EnvelopeArchived, BudgetOverlaps, AmountNonPositive,
 }
 
@@ -34,7 +35,7 @@ data class QuickSetUiState(
 data class ActiveItem(
     val budget: Budget?,
     val isNew: Boolean,
-    val error: ActiveBudgetError?,
+    val error: BudgetModalError?,
     val complete: Boolean,
     val allocations: List<AllocationWithInfo> = emptyList(),
 )
@@ -55,7 +56,7 @@ sealed interface EnvelopeUiState {
         val quickSet: QuickSetUiState = QuickSetUiState(),
     ) : EnvelopeUiState {
         val allocationsByDate = allocations.associateBy { it.happenedDate }
-        val calendar = EnvelopeCalendarModel.of(  // TODO: 优化
+        val calendar = EnvelopeCalendarModel.of(
             span = yearMonth.toHalfOpenDateSpan(),
             firstDayOfWeek = DayOfWeek.MONDAY,  // TODO: User rule
             budgets = if (envelope.isBudgeted) budgets.values else null,

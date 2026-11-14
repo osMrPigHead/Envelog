@@ -139,7 +139,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 EnvelopeUiState.Success(
                     envelope = envelope,
                     isNew = false,
-                    canDelete = repository.canDeleteEnvelope(envelope.id),
+                    canDelete = false,
                     yearMonth = yearMonth.value,
                     today = appState.today.value,
                     budgets = budgets,
@@ -209,7 +209,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                         amount = 0,
                     ),
                     isNew = true,
-                    error = ActiveBudgetError.AmountNonPositive,
+                    error = BudgetModalError.AmountNonPositive,
                     complete = false,
                 ),
             )
@@ -225,9 +225,9 @@ class EnvelopeViewModel @AssistedInject constructor(
                     budget = budget,
                     error =
                         when {
-                            budget.amount <= 0 -> ActiveBudgetError.AmountNonPositive
+                            budget.amount <= 0 -> BudgetModalError.AmountNonPositive
                             (it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap() ->
-                                ActiveBudgetError.BudgetOverlaps
+                                BudgetModalError.BudgetOverlaps
 
                             else -> null
                         },
@@ -253,7 +253,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         if (budget.amount <= 0) {
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
-                it.copy(activeItem = it.activeItem.copy(error = ActiveBudgetError.AmountNonPositive))
+                it.copy(activeItem = it.activeItem.copy(error = BudgetModalError.AmountNonPositive))
             }
             return
         }
@@ -270,8 +270,8 @@ class EnvelopeViewModel @AssistedInject constructor(
                     it.copy(
                         activeItem = it.activeItem.copy(
                             error = when (result) {
-                                EnvelopeArchived -> ActiveBudgetError.EnvelopeArchived
-                                BudgetOverlaps -> ActiveBudgetError.BudgetOverlaps
+                                EnvelopeArchived -> BudgetModalError.EnvelopeArchived
+                                BudgetOverlaps -> BudgetModalError.BudgetOverlaps
                             },
                         ),
                     )
@@ -300,12 +300,12 @@ class EnvelopeViewModel @AssistedInject constructor(
             if (!uiState.isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
             val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
             val canDelete =
-                if (!uiState.isNew) repository.canDeleteEnvelope(uiState.envelope.id) else uiState.canDelete
+                if (!uiState.isNew) repository.observeEnvelopeDeletable(uiState.envelope.id) else uiState.canDelete
             _uiState.update {
                 if (it !is EnvelopeUiState.Success) return@update it
                 it.copy(
                     budgets = updatedBudgets ?: (it.budgets - budget.id),
-                    canDelete = canDelete,
+                    canDelete = false,
                     activeItem = it.activeItem.copy(complete = true),
                 )
             }

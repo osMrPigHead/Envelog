@@ -204,7 +204,7 @@ class OverviewViewModelTest {
         override suspend fun archiveEnvelope(id: EnvelopeId): ArchiveResult =
             throw NotImplementedError()
 
-        override suspend fun canDeleteEnvelope(id: EnvelopeId): Boolean =
+        override suspend fun observeEnvelopeDeletable(id: EnvelopeId): Boolean =
             throw NotImplementedError()
 
         override suspend fun deleteEnvelope(id: EnvelopeId): EnvelopeDeleteResult =

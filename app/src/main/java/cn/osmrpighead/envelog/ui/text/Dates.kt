@@ -3,6 +3,7 @@ package cn.osmrpighead.envelog.ui.text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.countDaysTo
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -24,12 +25,12 @@ fun yearMonthText(yearMonth: YearMonth): String = stringResource(
 )
 
 @Composable
-fun dayRangeText(start: LocalDate, endInclusive: LocalDate): String =
-    if (start != endInclusive)
-        stringResource(R.string.time_format_day, start.dayOfMonth) +
+fun dayRangeText(span: ClosedDateSpan): String =
+    if (span.startDate != span.endDate)
+        stringResource(R.string.time_format_day, span.startDate.dayOfMonth) +
                 stringResource(R.string.symbol_en_dash) +
-                stringResource(R.string.time_format_day, endInclusive.dayOfMonth)
-    else stringResource(R.string.time_format_day, start.dayOfMonth)
+                stringResource(R.string.time_format_day, span.endDate.dayOfMonth)
+    else stringResource(R.string.time_format_day, span.startDate.dayOfMonth)
 
 @Composable
 fun dayOfWeekText(dayOfWeek: DayOfWeek): String = stringResource(dayOfWeek.shortNameRes())

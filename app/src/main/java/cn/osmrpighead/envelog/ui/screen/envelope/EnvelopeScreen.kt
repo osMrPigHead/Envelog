@@ -28,7 +28,6 @@ import cn.osmrpighead.envelog.ui.component.form.MonthPickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.MonthPickerSheetBuilder
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.screen.envelope.component.*
-import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
@@ -36,9 +35,9 @@ import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.YearMonth
 
-private enum class EnvelopeTab { Calendar, Budget, Allocation }
+enum class EnvelopeTab { Calendar, Budget, Allocation }
 
-private val EnvelopeTab.labelRes: Int
+val EnvelopeTab.labelRes: Int
     get() = when (this) {
         EnvelopeTab.Calendar -> R.string.envelope_edit_tab_calendar
         EnvelopeTab.Budget -> R.string.envelope_edit_tab_budget
@@ -112,10 +111,10 @@ private fun SuccessBody(
 ) {
     LaunchedEffect(Unit) { backEvent.collect { back() } }
     BackHandler { saveAndBack() }
-
-    var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
     var showArchiveConfirmation by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
+
+    var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
     val visibleTabs =
         if (envelope.isBudgeted) EnvelopeTab.entries
         else EnvelopeTab.entries - EnvelopeTab.Budget
@@ -211,7 +210,7 @@ private fun SuccessBody(
                     EnvelopeTab.Calendar -> BudgetCalendar(
                         model = calendar,
                         onDateClick = newActiveBudget,
-                        onBudgetClick = openActiveBudget,
+                        onBudgetClick = { p1, p2 -> openActiveBudget(p1) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
@@ -328,20 +327,19 @@ private fun EnvelopeOverlays(
         clear = clearActiveBudget,
     )
 
-    if (uiState.quickSet.open) QuickSetBudgetModalBottomSheet(
-        yearMonth = uiState.yearMonth,
-        complete = uiState.quickSet.complete,
-        conflict = uiState.quickSet.conflict,
-        error = uiState.quickSet.error,
-        onDismissRequest = dismissQuickSet,
-        onDismissed = clearQuickSet,
-        onApply = applyQuickSet,
-        onConfirmOverwrite = confirmQuickSetOverwrite,
-        onCancelOverwrite = cancelQuickSetOverwrite,
-    )
+//    if (uiState.quickSet.open) QuickSetBudgetModalBottomSheet(
+//        yearMonth = uiState.yearMonth,
+//        complete = uiState.quickSet.complete,
+//        conflict = uiState.quickSet.conflict,
+//        error = uiState.quickSet.error,
+//        onDismissRequest = dismissQuickSet,
+//        onDismissed = clearQuickSet,
+//        onApply = applyQuickSet,
+//        onConfirmOverwrite = confirmQuickSetOverwrite,
+//        onCancelOverwrite = cancelQuickSetOverwrite,
+//    )
 
-    if (uiState.envelopeSubmissionError != null) EnvelopeSubmissionErrorDialog(
-        error = uiState.envelopeSubmissionError,
+    if (uiState.envelopeSubmissionError != null) BudgetOverlapsErrorDialog(
         onDismiss = clearSubmissionError,
     )
 }

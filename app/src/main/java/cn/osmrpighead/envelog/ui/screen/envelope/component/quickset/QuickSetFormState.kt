@@ -23,6 +23,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
+@Deprecated("错误与排期改由 QuickSetFormError 与 envelope2.model.QuickSetFormState 表达")
 internal sealed interface QuickSetValidation {
     data object IntervalInvalid : QuickSetValidation
     data object AmountNonPositive : QuickSetValidation
@@ -51,6 +52,9 @@ internal sealed interface QuickSetPreview {
     ) : QuickSetPreview
 }
 
+@Deprecated(
+    "组件不再持有该可变对象：表单改由 envelope2.QuickSetFormModalState 传入，变更通过 onUpdate(QuickSetFormState) 上报",
+)
 internal class QuickSetFormState(
     val yearMonth: YearMonth,
     initialTargetSpan: ClosedDateSpan = yearMonth.toHalfOpenDateSpan().toClosed(),

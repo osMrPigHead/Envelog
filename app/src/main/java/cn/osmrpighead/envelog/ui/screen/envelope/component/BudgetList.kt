@@ -109,7 +109,7 @@ fun BudgetList(
             for ((budget, span) in visibleBudgets)
                 BudgetRow(
                     budget = budget,
-                    dateRange = dayRangeText(span.startDate, span.endDate.minusDays(1)),
+                    dateRange = dayRangeText(span.toClosed()),
                     onBudgetClick = onBudgetClick,
                 )
         }

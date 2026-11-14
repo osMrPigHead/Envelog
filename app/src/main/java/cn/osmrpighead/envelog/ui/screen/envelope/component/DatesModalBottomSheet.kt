@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,8 +23,8 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
-import cn.osmrpighead.envelog.ui.screen.envelope.ActiveBudgetError
-import cn.osmrpighead.envelog.ui.screen.envelope.ActiveBudgetError.*
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetModalError
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetModalError.*
 import cn.osmrpighead.envelog.ui.screen.envelope.ActiveItem
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
@@ -42,7 +41,7 @@ fun BudgetItemSheet(
     onSave: () -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit,
-    error: ActiveBudgetError?,
+    error: BudgetModalError?,
     modifier: Modifier = Modifier,
 ) {
     LabeledBox(

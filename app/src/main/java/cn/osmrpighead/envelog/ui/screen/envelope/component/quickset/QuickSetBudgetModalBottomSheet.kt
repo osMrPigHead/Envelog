@@ -3,31 +3,27 @@ package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.saveable.rememberSaveable
-import cn.osmrpighead.envelog.core.time.ClosedDateSpan
-import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetError
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
+import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormError
+import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormModalState
+import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickSetBudgetModalBottomSheet(
     yearMonth: YearMonth,
-    complete: Boolean,
-    conflict: QuickSetBudgetPlan?,
-    error: QuickSetError?,
+    modalState: QuickSetFormModalState,
+    onUpdate: (QuickSetFormState) -> Unit,
+    onSubmit: () -> Unit,
     onDismissRequest: () -> Unit,
     onDismissed: () -> Unit,
-    onApply: (QuickSetConfig, ClosedDateSpan) -> Unit,
     onConfirmOverwrite: () -> Unit,
     onCancelOverwrite: () -> Unit,
 ) {
-    val formState = rememberSaveable(yearMonth, saver = QuickSetFormState.saver) {
-        QuickSetFormState(yearMonth)
-    }
+    val state = modalState.state
     val controller = rememberQuickSetSheetController(
-        complete = complete,
+        isCompleted = state is FormState.Completed,
         onDismissed = onDismissed,
     )
 
@@ -39,27 +35,26 @@ fun QuickSetBudgetModalBottomSheet(
         sheetState = controller.sheetState,
     ) {
         QuickSetSheetContent(
-            formState = formState,
+            yearMonth = yearMonth,
+            modalState = modalState,
             controller = controller,
-            error = error,
-            complete = complete,
+            onUpdate = onUpdate,
             onCancel = {
                 controller.onDismissRequest()
                 onDismissRequest()
             },
             onApply = {
-                if (controller.requestApply()) {
+                if (controller.requestApply(state is FormState.Busy)) {
                     controller.onApply()
-                    onApply(formState.config, formState.targetSpan)
+                    onSubmit()
                 }
             },
         )
-        if (conflict != null && !complete) {
-            QuickSetConflictDialog(
-                conflict = conflict,
-                onConfirm = onConfirmOverwrite,
-                onCancel = onCancelOverwrite,
-            )
-        }
+        val error = (state as? FormState.Active)?.error
+        if (error is QuickSetFormError.BudgetOverlaps) QuickSetConflictDialog(
+            conflicts = error.conflicts,
+            onConfirm = onConfirmOverwrite,
+            onCancel = onCancelOverwrite,
+        )
     }
 }

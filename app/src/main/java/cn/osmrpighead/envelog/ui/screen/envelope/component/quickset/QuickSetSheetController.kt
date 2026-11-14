@@ -42,8 +42,9 @@ internal class QuickSetSheetController(
         focusManager.clearFocus()
     }
 
-    /** 返回 true 表示可以继续提交；键盘打开时只确认键盘，等待下一次点击。 */
-    fun requestApply(): Boolean {
+    /** 返回 true 表示可以继续提交；提交中或键盘打开时不提交，键盘打开时只确认键盘，等待下一次点击。 */
+    fun requestApply(isBusy: Boolean): Boolean {
+        if (isBusy) return false
         if (numKeypadHost.isOpen) {
             numKeypadHost.confirm()
             return false
@@ -60,7 +61,7 @@ internal class QuickSetSheetController(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun rememberQuickSetSheetController(
-    complete: Boolean,
+    isCompleted: Boolean,
     onDismissed: () -> Unit,
 ): QuickSetSheetController {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -75,8 +76,8 @@ internal fun rememberQuickSetSheetController(
         sheetState.show()
     }
 
-    LaunchedEffect(complete) {
-        if (!complete) return@LaunchedEffect
+    LaunchedEffect(isCompleted) {
+        if (!isCompleted) return@LaunchedEffect
         numKeypadHost.cancel()
         sheetState.hide()
         onDismissed()

@@ -25,23 +25,55 @@ import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerConfirmEvent
 import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerSheetBuilder
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormError
+import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
+import java.time.DayOfWeek
 
 @Composable
 internal fun QuickSetModeSection(
-    formState: QuickSetFormState,
+    config: QuickSetFormState,
+    local: QuickSetLocalState,
     controller: QuickSetSheetController,
+    error: QuickSetFormError?,
+    maxIntervalDays: Int,
+    onUpdate: (QuickSetFormState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dailySelected = formState.mode == QuickSetMode.Daily
-    val weeklySelected = formState.mode == QuickSetMode.Weekly
-    val monthlySelected = formState.mode == QuickSetMode.MonthlyTotal
+    val dailySelected = config.mode == QuickSetMode.Daily
+    val weeklySelected = config.mode == QuickSetMode.Weekly
+    val monthlySelected = config.mode == QuickSetMode.MonthlyTotal
     val weekdayDescription = stringResource(R.string.envelope_edit_quick_set_weekday_range_field)
 
+    val intervalInvalid = error == QuickSetFormError.IntervalInvalid
+    val intervalSupporting: (@Composable () -> Unit)? = if (intervalInvalid) {
+        { Text(text = stringResource(R.string.envelope_edit_quick_set_interval_invalid)) }
+    } else {
+        null
+    }
+    val amountSupporting: (@Composable () -> Unit)? = if (error == QuickSetFormError.AmountNonPositive) {
+        { Text(text = stringResource(R.string.common_msg_amount_positive)) }
+    } else {
+        null
+    }
+
     val selectMode: (QuickSetMode) -> Unit = { newMode ->
-        if (formState.mode != newMode) {
+        if (config.mode != newMode) {
             controller.onModeChange()
-            formState.selectMode(newMode)
+            onUpdate(config.copy(mode = newMode))
         }
+    }
+    val updateIntervalDays: (Int) -> Unit = { days ->
+        onUpdate(config.copy(dailyConfig = config.dailyConfig.copy(intervalDays = days)))
+    }
+    val updateWeeklyRange: (DayOfWeek, DayOfWeek) -> Unit = { start, end ->
+        onUpdate(
+            config.copy(
+                weeklyConfig = config.weeklyConfig.copy(
+                    startDayOfWeek = start,
+                    endDayOfWeek = end,
+                ),
+            ),
+        )
     }
 
     Column(
@@ -52,22 +84,26 @@ internal fun QuickSetModeSection(
             onSelect = { selectMode(QuickSetMode.Daily) },
         ) {
             QuickSetIntervalField(
-                value = formState.intervalFieldValue,
-                maxDays = formState.maxIntervalDays,
+                days = config.dailyConfig.intervalDays,
+                maxDays = maxIntervalDays,
                 enabled = dailySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_interval_field),
-                onValueChange = formState::updateIntervalField,
+                onValueChange = updateIntervalDays,
                 onFocus = controller::onTextInputFocus,
                 modifier = Modifier.weight(1f),
+                isError = intervalInvalid,
+                supportingText = intervalSupporting,
             )
             QuickSetAmountField(
-                amount = formState.dailyAmount,
+                amount = config.dailyConfig.amount,
                 host = controller.numKeypadHost,
-                consumer = formState.dailyAmountConsumer,
-                fieldId = formState.dailyAmountFieldId,
+                consumer = local.dailyAmountConsumer,
+                fieldId = local.dailyAmountFieldId,
                 enabled = dailySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_daily_amount_field),
                 modifier = Modifier.weight(1f),
+                isError = dailySelected && amountSupporting != null,
+                supportingText = if (dailySelected) amountSupporting else null,
             )
         }
 
@@ -76,12 +112,10 @@ internal fun QuickSetModeSection(
             onSelect = { selectMode(QuickSetMode.Weekly) },
         ) {
             DayOfWeekRangePickerField(
-                startDayOfWeek = formState.weeklyStartDayOfWeek,
-                endDayOfWeek = formState.weeklyEndDayOfWeek,
+                startDayOfWeek = config.weeklyConfig.startDayOfWeek,
+                endDayOfWeek = config.weeklyConfig.endDayOfWeek,
                 sheetBuilder = DayOfWeekRangePickerSheetBuilder.Default(
-                    confirmEventHandler = DayOfWeekRangePickerConfirmEventHandler.Default(
-                        formState::updateWeeklyRange,
-                    ),
+                    confirmEventHandler = DayOfWeekRangePickerConfirmEventHandler.Default(updateWeeklyRange),
                 ),
                 enabled = weeklySelected,
                 textStyle = MaterialTheme.typography.bodyMedium,
@@ -92,13 +126,15 @@ internal fun QuickSetModeSection(
                     .semantics { this.contentDescription = weekdayDescription },
             )
             QuickSetAmountField(
-                amount = formState.weeklyAmount,
+                amount = config.weeklyConfig.amount,
                 host = controller.numKeypadHost,
-                consumer = formState.weeklyAmountConsumer,
-                fieldId = formState.weeklyAmountFieldId,
+                consumer = local.weeklyAmountConsumer,
+                fieldId = local.weeklyAmountFieldId,
                 enabled = weeklySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_weekly_amount_field),
                 modifier = Modifier.weight(1f),
+                isError = weeklySelected && amountSupporting != null,
+                supportingText = if (weeklySelected) amountSupporting else null,
             )
         }
 
@@ -107,14 +143,16 @@ internal fun QuickSetModeSection(
             onSelect = { selectMode(QuickSetMode.MonthlyTotal) },
         ) {
             QuickSetAmountField(
-                amount = formState.monthlyAmount,
+                amount = config.monthlyConfig.amount,
                 host = controller.numKeypadHost,
-                consumer = formState.monthlyAmountConsumer,
-                fieldId = formState.monthlyAmountFieldId,
+                consumer = local.monthlyAmountConsumer,
+                fieldId = local.monthlyAmountFieldId,
                 enabled = monthlySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_monthly_amount_field),
                 label = stringResource(R.string.envelope_edit_quick_set_monthly_amount_field),
                 modifier = Modifier.weight(1f),
+                isError = monthlySelected && amountSupporting != null,
+                supportingText = if (monthlySelected) amountSupporting else null,
             )
             Spacer(modifier = Modifier.weight(1f))
         }
