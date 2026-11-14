@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.screen.envelope2.component
+package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -17,18 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.BudgetId
-import cn.osmrpighead.envelog.ui.screen.envelope.component.AllocationList
-import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetCalendar
-import cn.osmrpighead.envelog.ui.screen.envelope.component.BudgetList
-import cn.osmrpighead.envelog.ui.screen.envelope2.LedgerState
-import cn.osmrpighead.envelog.ui.screen.overview.OverviewPreviewData.yearMonth
+import cn.osmrpighead.envelog.ui.screen.envelope.LedgerState
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.time.LocalDate
+import java.time.YearMonth
 
 enum class EnvelopeTab { Calendar, Budget, Allocation }
 
 @Composable
 fun Ledger(
+    yearMonth: YearMonth,
     ledgerState: LedgerState,
     activeTab: EnvelopeTab,
     onBudgetClick: (BudgetId, LocalDate?) -> Unit,

@@ -246,9 +246,9 @@ class EnvelopeDeleteInstrumentedTest {
     fun isDeletable_isTrueWhileNothingReferencesTheEnvelope() = runBlocking {
         seedEnvelopes()
 
-        assertTrue(envelopeDao.isDeletable(envelopeA))
-        assertTrue(envelopeDao.isDeletable(envelopeB))
-        assertTrue("未知信封没有引用行，判断同样放行", envelopeDao.isDeletable(unknownEnvelope))
+        assertTrue(envelopeDao.isDeletable(envelopeA).first())
+        assertTrue(envelopeDao.isDeletable(envelopeB).first())
+        assertTrue("未知信封没有引用行，判断同样放行", envelopeDao.isDeletable(unknownEnvelope).first())
         assertEquals(
             "汇总查询的可删除列应与逐 id 判断一致",
             mapOf(envelopeA to true, envelopeB to true),
@@ -261,8 +261,8 @@ class EnvelopeDeleteInstrumentedTest {
         seedEnvelopes()
         seedDao.insertBudgets(listOf(budget(0xD1)))
 
-        assertFalse("存活预算会让 DELETE 命中 RESTRICT", envelopeDao.isDeletable(envelopeA))
-        assertTrue("A 的预算不挡住 B", envelopeDao.isDeletable(envelopeB))
+        assertFalse("存活预算会让 DELETE 命中 RESTRICT", envelopeDao.isDeletable(envelopeA).first())
+        assertTrue("A 的预算不挡住 B", envelopeDao.isDeletable(envelopeB).first())
         assertEquals(mapOf(envelopeA to false, envelopeB to true), canDeleteByEnvelope())
     }
 
@@ -270,8 +270,8 @@ class EnvelopeDeleteInstrumentedTest {
     fun isDeletable_agreesWithTheForeignKeyWhenALiveAllocationRemains() = runBlocking {
         seedMixedRecords()
 
-        assertFalse("B3 存活且分摊到 A", envelopeDao.isDeletable(envelopeA))
-        assertFalse("B3 同样分摊到 B", envelopeDao.isDeletable(envelopeB))
+        assertFalse("B3 存活且分摊到 A", envelopeDao.isDeletable(envelopeA).first())
+        assertFalse("B3 同样分摊到 B", envelopeDao.isDeletable(envelopeB).first())
         assertEquals(mapOf(envelopeA to false, envelopeB to false), canDeleteByEnvelope())
     }
 
@@ -283,7 +283,7 @@ class EnvelopeDeleteInstrumentedTest {
         seedDao.insertExpenses(listOf(garbage))
         seedDao.insertAllocations(garbageShares)
 
-        assertTrue("垃圾行不构成 RESTRICT 阻挡", envelopeDao.isDeletable(envelopeA))
+        assertTrue("垃圾行不构成 RESTRICT 阻挡", envelopeDao.isDeletable(envelopeA).first())
         assertEquals("汇总查询同样只认存活引用", mapOf(envelopeA to true, envelopeB to true), canDeleteByEnvelope())
 
         assertEquals(1, expenseDao.clean(envelopeA))
@@ -299,7 +299,7 @@ class EnvelopeDeleteInstrumentedTest {
         assertEquals(1, expenseDao.clean(envelopeA))
         assertEquals(1, allocationDao.clean(envelopeA))
 
-        assertFalse("清掉 B1、B2 的分摊后 B3 仍挡住删除", envelopeDao.isDeletable(envelopeA))
+        assertFalse("清掉 B1、B2 的分摊后 B3 仍挡住删除", envelopeDao.isDeletable(envelopeA).first())
     }
 
     @Test
@@ -310,7 +310,7 @@ class EnvelopeDeleteInstrumentedTest {
         seedDao.insertExpenses(listOf(garbage))
         seedDao.insertAllocations(garbageShares)
 
-        assertTrue(envelopeDao.isDeletable(envelopeA))
-        assertTrue(envelopeDao.isDeletable(envelopeB))
+        assertTrue(envelopeDao.isDeletable(envelopeA).first())
+        assertTrue(envelopeDao.isDeletable(envelopeB).first())
     }
 }

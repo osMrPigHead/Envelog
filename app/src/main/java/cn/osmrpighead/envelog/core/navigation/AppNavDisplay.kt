@@ -9,7 +9,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import cn.osmrpighead.envelog.ui.screen.envelope2.envelopeEntry
+import cn.osmrpighead.envelog.ui.screen.envelope.envelopeEntry
 import cn.osmrpighead.envelog.ui.screen.overview.overviewEntry
 import cn.osmrpighead.envelog.ui.screen.record.recordEntry
 

@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
@@ -102,7 +103,6 @@ internal fun QuickSetAmountField(
     amount: Long,
     host: NumKeypadHostState,
     consumer: AmountConsumer,
-    fieldId: Any,
     enabled: Boolean,
     description: String,
     modifier: Modifier = Modifier,
@@ -110,6 +110,7 @@ internal fun QuickSetAmountField(
     supportingText: (@Composable () -> Unit)? = null,
     label: String? = null,
 ) {
+    val fieldId = remember { Any() }
     val labelContent: (@Composable () -> Unit)? = if (label == null) null else {
         { Text(text = label) }
     }

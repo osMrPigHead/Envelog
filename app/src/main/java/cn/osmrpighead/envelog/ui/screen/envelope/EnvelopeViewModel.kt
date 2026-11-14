@@ -1,32 +1,36 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.core.navigation.NavigationTarget
-import cn.osmrpighead.envelog.core.time.ClosedDateSpan
-import cn.osmrpighead.envelog.core.time.hasOverlap
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
-import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.data.query.AllocationWithInfo
+import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult.*
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
+import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult.*
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
+import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlanner
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
+import cn.osmrpighead.envelog.util.updateNotNull
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -37,470 +41,492 @@ class EnvelopeViewModel @AssistedInject constructor(
     private val repository: EnvelogRepository,
 ) : ViewModel() {
     private val yearMonth = appState.yearMonth
-    fun selectMonth(yearMonth: YearMonth) {
-        appState.selectMonth(yearMonth)
-        val uiState = _uiState.value
-        require(uiState is EnvelopeUiState.Success)
-        if (!uiState.isNew) fetchEnvelope()
-        else _uiState.update {
-            if (it !is EnvelopeUiState.Success) return@update it
-            it.copy(
-                yearMonth = yearMonth,
-                activeItem = ActiveItem(
-                    budget = null,
-                    isNew = false,
-                    error = null,
-                    complete = true,
-                ),
-            )
-        }
-    }
+    private val today = appState.today
+    fun selectMonth(yearMonth: YearMonth) = appState.selectMonth(yearMonth)
 
-    private var job: Job? = null
-    private val _uiState = MutableStateFlow(
-        if (route.id is NavigationTarget.New) EnvelopeUiState.IsNew else EnvelopeUiState.Loading,
-    )
-    private val _backEvent = Channel<Unit>(Channel.BUFFERED)
-    private val fieldId = Any()
-    val uiState = _uiState.asStateFlow()
-    val backEvent = _backEvent.receiveAsFlow()
+    private val isNew = route.id is NavigationTarget.New
+    private val envelopeId = if (route.id is NavigationTarget.Existing) route.id.value else EnvelopeId.generate()
 
-    private suspend fun sendBack() {
-        _backEvent.send(Unit)
-    }
+    private val memoryBudgets = MutableStateFlow(emptyList<Budget>())
 
-    private val savedEnvelope = flow {
-        if (route.id is NavigationTarget.Existing) emit(repository.getEnvelope(route.id.value))
-    }
+    private val isDeletable =
+        if (route.id is NavigationTarget.Existing) repository.observeEnvelopeDeletable(route.id.value)
+        else flowOf(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val savedBudgets = if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
+    private val budgets = if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
         repository.observeBudgets(
             envelopeId = route.id.value,
-            dateSpan = yearMonth.toHalfOpenDateSpan(),  // TODO: User rule
-        ).map { budgets -> budgets.associateBy { it.id } }
-    } else flowOf()
+            dateSpan = yearMonth.toHalfOpenDateSpan(), // TODO: User rule
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()) else memoryBudgets
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val allocations = if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
+        repository.observeAllocations(
+            envelopeId = route.id.value,
+            dateSpan = yearMonth.toHalfOpenDateSpan(), // TODO: User rule
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()) else MutableStateFlow(emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val allocationSummaries = if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
         repository.observeDailyAllocationOverview(
             envelopeId = route.id.value,
-            dateSpan = yearMonth.toHalfOpenDateSpan(),
+            dateSpan = yearMonth.toHalfOpenDateSpan(), // TODO: User rule
         )
-    } else flowOf()
+    } else flowOf(emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val monthlyAllocations: Flow<List<AllocationWithInfo>> =
-        if (route.id is NavigationTarget.Existing) yearMonth.flatMapLatest { yearMonth ->
-            repository.observeAllocations(route.id.value, yearMonth.toHalfOpenDateSpan())
-                .map { allocations -> allocations.sortedBy { it.expense.happenedAt } }
-        } else flowOf(emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val activeAllocations: Flow<List<AllocationWithInfo>> =
-        if (route.id is NavigationTarget.Existing) _uiState
-            .map { (it as? EnvelopeUiState.Success)?.activeItem?.budget?.dateSpan }
-            .distinctUntilChanged()
-            .flatMapLatest { span ->
-                if (span == null) flowOf(emptyList())
-                else repository.observeAllocations(route.id.value, span)
-                    .map { allocations -> allocations.sortedBy { it.expense.happenedAt } }
-            }
-        else flowOf(emptyList())
-
-    fun initializeForNew(envelope: Envelope) {
-        _uiState.value = EnvelopeUiState.Success(
-            envelope = envelope,
-            isNew = true,
-            yearMonth = yearMonth.value,
-            today = appState.today.value,
-            budgets = emptyMap(),
-            amountFieldId = fieldId,
-            allocations = emptyList(),
-            allocationsWithInfo = emptyList(),
-            activeItem = ActiveItem(
-                budget = null,
-                isNew = false,
-                error = null,
-                complete = true,
-            ),
-            envelopeSubmissionError = null,
+    private val ledgerState = combine(
+        yearMonth,
+        budgets,
+        allocations,
+        allocationSummaries,
+    ) { yearMonth, budgets, allocations, allocationSummaries ->
+        LedgerState.of(
+            span = yearMonth.toHalfOpenDateSpan(), // TODO: User rule
+            firstDayOfWeek = DayOfWeek.MONDAY, // TODO: User rule
+            budgets = budgets,
+            allocations = allocations,
+            allocationSummaries = allocationSummaries,
         )
     }
 
-    fun fetchEnvelope() {
-        viewModelScope.launch {
-            val success = combine(
-                savedEnvelope,
-                savedBudgets,
-                allocations,
-                monthlyAllocations,
-            ) { envelope, budgets, allocations, allocationsWithInfo ->
-                EnvelopeUiState.Success(
-                    envelope = envelope,
-                    isNew = false,
-                    canDelete = false,
-                    yearMonth = yearMonth.value,
-                    today = appState.today.value,
-                    budgets = budgets,
-                    amountFieldId = fieldId,
-                    allocations = allocations,
-                    allocationsWithInfo = allocationsWithInfo,
-                    activeItem = ActiveItem(
-                        budget = null,
-                        isNew = false,
-                        error = null,
-                        complete = true,
-                    ),
-                    envelopeSubmissionError = null,
-                )
-            }.first()
-            _uiState.value = success
-        }
+    private val envelopeForm = MutableStateFlow<EnvelopeForm?>(null)
+    private val detailModalState = MutableStateFlow<DetailModalState?>(null)
+    private val quickSetFormModalState = MutableStateFlow<QuickSetFormModalState?>(null)
+
+    private val detailNotReady = when (route.id) {
+        is NavigationTarget.Existing -> EnvelopeDetail.Loading
+        is NavigationTarget.New -> EnvelopeDetail.IsNew
     }
+    private val detail = combine(
+        ledgerState,
+        envelopeForm,
+        detailModalState,
+        quickSetFormModalState,
+        isDeletable,
+    ) { ledgerState, envelopeForm, detailModalState, quickSetFormModalState, isDeletable ->
+        if (envelopeForm == null) detailNotReady
+        else EnvelopeDetail.Success(ledgerState, envelopeForm, detailModalState, quickSetFormModalState, isDeletable)
+    }
+    val uiState =
+        combine(yearMonth, today, detail) { yearMonth, today, detail -> EnvelopeUiState(yearMonth, today, detail) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = EnvelopeUiState(yearMonth.value, today.value, detailNotReady),
+            )
 
     init {
-        if (route.id is NavigationTarget.Existing) {
-            fetchEnvelope()
-            viewModelScope.launch {
-                activeAllocations.collect { allocations ->
-                    _uiState.update {
-                        if (it !is EnvelopeUiState.Success) return@update it
-                        it.copy(
-                            activeItem = it.activeItem.copy(allocations = allocations),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    fun updateEnvelope(envelope: Envelope) {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(envelope = envelope)
-        }
-    }
-
-    fun openActiveBudget(id: BudgetId) {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(
-                activeItem = ActiveItem(
-                    budget = it.budgets[id],
-                    isNew = false,
-                    error = null,
-                    complete = false,
-                ),
+        if (route.id is NavigationTarget.Existing) viewModelScope.launch {
+            envelopeForm.value = EnvelopeForm(
+                state = FormState.Active(null),
+                envelope = repository.getEnvelope(route.id.value),
+                isNew = false,
+                isDirty = false,
             )
         }
     }
 
-    fun newActiveBudget(date: LocalDate) {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(
-                activeItem = ActiveItem(
-                    budget = Budget(
-                        id = BudgetId.generate(),
-                        envelopeId = it.envelope.id,
-                        dateSpan = date untilExclusive date.plusDays(1),
-                        attributedMonth = yearMonth.value,
-                        amount = 0,
-                    ),
-                    isNew = true,
-                    error = BudgetModalError.AmountNonPositive,
-                    complete = false,
-                ),
-            )
-        }
+    fun initializeNewEnvelope(name: String) {
+        envelopeForm.value = EnvelopeForm(
+            state = FormState.Active(null),
+            envelope = Envelope(
+                id = envelopeId,
+                name = name,
+                isBudgeted = true,
+                archived = false,
+            ),
+            isNew = true,
+            isDirty = false,
+        )
     }
 
-    fun updateActiveBudget(budget: Budget) {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            if (it.activeItem.budget?.id != budget.id) return@update it
-            it.copy(
-                activeItem = it.activeItem.copy(
-                    budget = budget,
-                    error =
-                        when {
-                            budget.amount <= 0 -> BudgetModalError.AmountNonPositive
-                            (it.budgets + (budget.id to budget)).map { budget -> budget.value.dateSpan }.hasOverlap() ->
-                                BudgetModalError.BudgetOverlaps
-
-                            else -> null
-                        },
-                ),
-            )
-        }
+    // TODO: 名称校验
+    fun updateEnvelope(envelope: Envelope) = envelopeForm.updateNotNull {
+        it.copy(envelope = envelope, isDirty = true)
     }
 
-    fun closeActiveBudget() {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(activeItem = it.activeItem.copy(complete = true))
+    private fun requestEnvelopeForm(): EnvelopeForm? {
+        val form = envelopeForm.value ?: return null
+        var active = false
+        envelopeForm.update {
+            if (it == null || it.state !is FormState.Active) return@update it
+            active = true
+            it.copy(state = FormState.Busy)
         }
+        if (!active) return null
+        return form
     }
 
-    fun saveActiveBudget() {
-        if (job?.isActive == true) return
+    private fun releaseEnvelopeForm(function: (EnvelopeForm) -> EnvelopeForm) = envelopeForm.update {
+        if (it == null || it.state !is FormState.Busy) return@update it
+        function(it)
+    }
 
-        val uiState = _uiState.value
-        require(uiState is EnvelopeUiState.Success)
-        val budget = uiState.activeItem.budget ?: return
+    fun saveEnvelope() {
+        val form = requestEnvelopeForm() ?: return
 
-        if (budget.amount <= 0) {
-            _uiState.update {
-                if (it !is EnvelopeUiState.Success) return@update it
-                it.copy(activeItem = it.activeItem.copy(error = BudgetModalError.AmountNonPositive))
-            }
-            return
-        }
-
-        job = viewModelScope.launch {
-            val result = if (!uiState.isNew) {
-                if (uiState.activeItem.isNew) repository.insertBudget(budget)
-                else repository.updateBudget(budget)
-            } else null
-
-            if (result != null && result != Success) {
-                _uiState.update {
-                    if (it !is EnvelopeUiState.Success) return@update it
-                    it.copy(
-                        activeItem = it.activeItem.copy(
-                            error = when (result) {
-                                EnvelopeArchived -> BudgetModalError.EnvelopeArchived
-                                BudgetOverlaps -> BudgetModalError.BudgetOverlaps
-                            },
-                        ),
-                    )
-                }
+        viewModelScope.launch {
+            detailModalState.first { it?.budgetForm?.state != FormState.Busy }
+            quickSetFormModalState.first { it?.state != FormState.Busy }
+            if (!isNew) {
+                repository.updateEnvelope(form.envelope)
+                releaseEnvelopeForm { it.copy(state = FormState.Completed) }
                 return@launch
             }
-            val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
-            _uiState.update {
-                if (it !is EnvelopeUiState.Success) return@update it
+            val result = repository.insertEnvelope(form.envelope, budgets.value)
+            releaseEnvelopeForm {
                 it.copy(
-                    budgets = updatedBudgets ?: (it.budgets + (budget.id to budget)),
-                    canDelete = false,
-                    activeItem = it.activeItem.copy(complete = true),
-                )
-            }
-        }
-    }
-
-    fun deleteActiveBudget() {
-        if (job?.isActive == true) return
-
-        val uiState = _uiState.value
-        require(uiState is EnvelopeUiState.Success)
-        val budget = uiState.activeItem.budget ?: return
-        job = viewModelScope.launch {
-            if (!uiState.isNew && !uiState.activeItem.isNew) repository.deleteBudget(budget.id)
-            val updatedBudgets = if (!uiState.isNew) savedBudgets.first() else null
-            val canDelete =
-                if (!uiState.isNew) repository.observeEnvelopeDeletable(uiState.envelope.id) else uiState.canDelete
-            _uiState.update {
-                if (it !is EnvelopeUiState.Success) return@update it
-                it.copy(
-                    budgets = updatedBudgets ?: (it.budgets - budget.id),
-                    canDelete = false,
-                    activeItem = it.activeItem.copy(complete = true),
-                )
-            }
-        }
-    }
-
-    fun clearActiveBudget() {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(
-                activeItem = ActiveItem(
-                    budget = null,
-                    isNew = false,
-                    error = null,
-                    complete = false,
-                ),
-            )
-        }
-    }
-
-    fun openQuickSet() {
-        _uiState.update {
-            if (it !is EnvelopeUiState.Success) return@update it
-            it.copy(quickSet = QuickSetUiState(open = true))
-        }
-    }
-
-    fun dismissQuickSet() {
-        _uiState.update {
-            if (it !is EnvelopeUiState.Success || !it.quickSet.open) return@update it
-            it.copy(
-                quickSet = it.quickSet.copy(
-                    complete = true,
-                    conflict = null,
-                    error = null,
-                ),
-            )
-        }
-    }
-
-    fun clearQuickSet() {
-        _uiState.update {
-            if (it !is EnvelopeUiState.Success) return@update it
-            it.copy(quickSet = QuickSetUiState())
-        }
-    }
-
-    fun applyQuickSet(config: QuickSetConfig, targetSpan: ClosedDateSpan) {
-        if (job?.isActive == true) return
-
-        val state = _uiState.value as? EnvelopeUiState.Success ?: return
-        if (config.amount <= 0) return
-
-        val plan = QuickSetBudgetPlanner.plan(
-            config = config,
-            selection = targetSpan,
-            yearMonth = state.yearMonth,
-            envelopeId = state.envelope.id,
-            existing = state.budgets.values,
-        ) ?: return
-
-        if (plan.conflicts.isNotEmpty()) {
-            _uiState.update {
-                if (it !is EnvelopeUiState.Success) return@update it
-                it.copy(
-                    quickSet = it.quickSet.copy(
-                        conflict = plan,
-                        error = null,
-                    ),
-                )
-            }
-            return
-        }
-
-        _uiState.update {
-            if (it !is EnvelopeUiState.Success) return@update it
-            it.copy(quickSet = it.quickSet.copy(error = null))
-        }
-        persistQuickSet(plan)
-    }
-
-    fun confirmQuickSetOverwrite() {
-        if (job?.isActive == true) return
-
-        val state = _uiState.value as? EnvelopeUiState.Success ?: return
-        val plan = state.quickSet.conflict ?: return
-        persistQuickSet(plan)
-    }
-
-    fun cancelQuickSetOverwrite() {
-        _uiState.update {
-            if (it !is EnvelopeUiState.Success) return@update it
-            it.copy(quickSet = it.quickSet.copy(conflict = null))
-        }
-    }
-
-    private fun persistQuickSet(plan: QuickSetBudgetPlan) {
-        job = viewModelScope.launch {
-            val state = _uiState.value as? EnvelopeUiState.Success ?: return@launch
-            if (!state.isNew) {
-                val result = repository.replaceBudgets(
-                    envelopeId = state.envelope.id,
-                    deleteBudgetIds = plan.conflicts.map { it.id },
-                    budgets = plan.budgets,
-                )
-                if (result != Success) {
-                    _uiState.update {
-                        if (it !is EnvelopeUiState.Success) return@update it
-                        if (!it.quickSet.open || it.quickSet.complete) return@update it
-                        it.copy(
-                            quickSet = it.quickSet.copy(
-                                conflict = null,
-                                error = if (result == EnvelopeArchived) {
-                                    QuickSetError.EnvelopeArchived
-                                } else {
-                                    QuickSetError.BudgetOverlaps
-                                },
-                            ),
-                        )
-                    }
-                    return@launch
-                }
-            }
-
-            _uiState.update {
-                if (it !is EnvelopeUiState.Success) return@update it
-                val removed = plan.conflicts.map { conflict -> conflict.id }.toSet()
-                it.copy(
-                    budgets = (it.budgets - removed) + plan.budgets.associateBy { budget -> budget.id },
-                    canDelete = false,
-                    quickSet = if (it.quickSet.open) {
-                        it.quickSet.copy(
-                            complete = true,
-                            conflict = null,
-                            error = null,
-                        )
-                    } else {
-                        it.quickSet
+                    state = when (result) {
+                        EnvelopeArchived -> throw IllegalArgumentException()
+                        BudgetOverlaps -> FormState.Active(EnvelopeSubmissionError.BudgetOverlaps)
+                        Success -> FormState.Completed
                     },
                 )
             }
         }
     }
 
-    fun saveAndBack() {
-        if (job?.isActive == true) return
+    fun archiveEnvelope() {
+        val form = requestEnvelopeForm() ?: return
+        if (isNew) throw IllegalArgumentException()
+        viewModelScope.launch {
+            repository.archiveEnvelope(form.envelope.id)
+            releaseEnvelopeForm { it.copy(state = FormState.Completed) }
+        }
+    }
 
-        val uiState = _uiState.value
-        require(uiState is EnvelopeUiState.Success)
-        job = viewModelScope.launch {
-            if (!uiState.isNew) {
-                repository.updateEnvelope(uiState.envelope)
-                sendBack()
+    fun deleteEnvelope() {
+        val form = requestEnvelopeForm() ?: return
+        if (isNew) throw IllegalArgumentException()
+        viewModelScope.launch {
+            val result = repository.deleteEnvelope(form.envelope.id)
+            releaseEnvelopeForm {
+                it.copy(
+                    state = when (result) {
+                        Deleted -> FormState.Completed
+                        NotFound -> FormState.Completed
+                        Constraint -> FormState.Active(null) // TODO: 错误处理方式
+                    },
+                )
+            }
+        }
+    }
+
+    fun dismissEnvelopeFormError() {
+        requestEnvelopeForm() ?: return
+        releaseEnvelopeForm { it.copy(state = FormState.Active(null)) }
+    }
+
+    fun openDetailWithExistingBudget(id: BudgetId, date: LocalDate?) = detailModalState.update { state ->
+        if (state != null && state.budgetForm.state == FormState.Busy) return@update state
+        val budget = budgets.value.find { it.id == id } ?: return@update state
+        val allocations =
+            if (date == null) allocations.value.filter { it.expense.happenedDate in budget.dateSpan }
+            else allocations.value.filter { it.expense.happenedDate == date }
+        DetailModalState(
+            budgetForm = BudgetForm(
+                state = FormState.Active(null),
+                budget = budget,
+                isNew = false,
+                isDirty = false,
+            ),
+            allocations = allocations,
+            dismissed = false,
+        )
+    }
+
+    fun openDetailCreatingBudget(date: LocalDate) = detailModalState.update { state ->
+        if (state != null && state.budgetForm.state == FormState.Busy) return@update state
+        val allocations = allocations.value.filter { it.expense.happenedDate == date }
+        DetailModalState(
+            budgetForm = BudgetForm(
+                state = FormState.Active(BudgetFormError.AmountNonPositive),
+                budget = Budget(
+                    id = BudgetId.generate(),
+                    envelopeId = envelopeId,
+                    dateSpan = date.toHalfOpenDateSpan(),
+                    attributedMonth = yearMonth.value,
+                    amount = 0,
+                ),
+                isNew = true,
+                isDirty = false,
+            ),
+            allocations = allocations,
+            dismissed = false,
+        )
+    }
+
+    fun updateBudget(budget: Budget) {
+        detailModalState.update {
+            if (it == null) return@update it
+            if (it.budgetForm.budget.id != budget.id) return@update it
+            it.copy(
+                budgetForm = it.budgetForm.copy(
+                    state = FormState.Active(
+                        when {
+                            budget.amount <= 0 -> BudgetFormError.AmountNonPositive
+                            budgets.value.any { b -> b.dateSpan overlaps budget.dateSpan && b.id != budget.id } ->
+                                BudgetFormError.BudgetOverlaps
+
+                            else -> null
+                        },
+                    ),
+                    budget = budget,
+                    isDirty = true,
+                ),
+            )
+        }
+    }
+
+    private fun requestBudgetForm(): BudgetForm? {
+        val form = detailModalState.value?.budgetForm ?: return null
+        var active = false
+        detailModalState.update {
+            if (it == null || it.dismissed ||
+                it.budgetForm.state !is FormState.Active ||
+                it.budgetForm.state.error != null
+            ) return@update it
+            active = true
+            it.copy(budgetForm = it.budgetForm.copy(state = FormState.Busy))
+        }
+        if (!active) return null
+        return form
+    }
+
+    private fun releaseBudgetForm(function: (DetailModalState) -> DetailModalState) {
+        detailModalState.update {
+            if (it == null || it.dismissed ||
+                it.budgetForm.state !is FormState.Busy
+            ) return@update it
+            function(it)
+        }
+    }
+
+    fun saveBudget() {
+        val form = requestBudgetForm() ?: return
+
+        if (isNew) {
+            memoryBudgets.update { budgets ->
+                if (form.isNew) budgets + form.budget
+                else budgets.map { if (it.id == form.budget.id) form.budget else it }
+            }
+            releaseBudgetForm { it.copy(budgetForm = it.budgetForm.copy(state = FormState.Completed)) }
+        } else viewModelScope.launch {
+            val result =
+                if (form.isNew) repository.insertBudget(form.budget)
+                else repository.updateBudget(form.budget)
+            releaseBudgetForm {
+                it.copy(
+                    budgetForm = it.budgetForm.copy(
+                        state = when (result) {
+                            EnvelopeArchived -> FormState.Active(BudgetFormError.EnvelopeArchived)
+                            BudgetOverlaps -> FormState.Active(BudgetFormError.BudgetOverlaps)
+                            Success -> FormState.Completed
+                        },
+                    ),
+                )
+            }
+        }
+    }
+
+    fun deleteBudget() {
+        val form = requestBudgetForm() ?: return
+        if (isNew) {
+            memoryBudgets.update { budgets ->
+                if (form.isNew) budgets
+                else budgets.filter { it.id != form.budget.id }
+            }
+            releaseBudgetForm { it.copy(budgetForm = it.budgetForm.copy(state = FormState.Completed)) }
+        } else viewModelScope.launch {
+            repository.deleteBudget(form.budget.id)
+            releaseBudgetForm { it.copy(budgetForm = it.budgetForm.copy(state = FormState.Completed)) }
+        }
+    }
+
+    fun dismissDetail() {
+        detailModalState.update {
+            if (it == null) return@update it
+            it.copy(dismissed = true)
+        }
+    }
+
+    fun clearDetail() {
+        detailModalState.value = null
+    }
+
+    fun openQuickSet() = quickSetFormModalState.update { state ->
+        if (state != null && state.state == FormState.Busy) return@update state
+        QuickSetFormModalState(
+            state = FormState.Active(null),
+            config = QuickSetFormState(
+                mode = QuickSetMode.Daily,
+                dailyConfig = QuickSetConfig.Daily(1, 0),
+                weeklyConfig = QuickSetConfig.Weekly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, 0),
+                monthlyConfig = QuickSetConfig.MonthlyTotal(0),
+                targetSpan = yearMonth.value.toHalfOpenDateSpan().toClosed(),
+            ),
+            schedule = null,
+            dismissed = false,
+        )
+    }
+
+    fun updateQuickSet(config: QuickSetFormState) {
+        quickSetFormModalState.update {
+            if (it == null || it.dismissed || it.state !is FormState.Active) return@update it
+            val schedule = QuickSetBudgetPlanner.schedule(config.selectedConfig(), config.targetSpan, yearMonth.value)
+            it.copy(
+                state = FormState.Active(config.validate(schedule)),
+                config = config,
+                schedule = schedule,
+            )
+        }
+    }
+
+    private fun requestQuickSetForm(accepted: (QuickSetFormError?) -> Boolean): QuickSetFormModalState? {
+        val form = quickSetFormModalState.value ?: return null
+        var active = false
+        quickSetFormModalState.update {
+            val error = (it?.state as? FormState.Active)?.error
+            if (it == null || it.dismissed || it.state !is FormState.Active || !accepted(error)) return@update it
+            active = true
+            it.copy(state = FormState.Busy)
+        }
+        if (!active) return null
+        return form
+    }
+
+    private fun releaseQuickSetForm(function: (QuickSetFormModalState) -> QuickSetFormModalState) {
+        quickSetFormModalState.update {
+            if (it == null || it.dismissed || it.state !is FormState.Busy) return@update it
+            function(it)
+        }
+    }
+
+    fun cancelQuickSetOverwrite() {
+        quickSetFormModalState.update {
+            if (it == null || it.dismissed ||
+                (it.state as? FormState.Active)?.error !is QuickSetFormError.BudgetOverlaps
+            ) return@update it
+            it.copy(state = FormState.Active(it.config.validate(it.schedule)))
+        }
+    }
+
+    fun dismissQuickSet() {
+        quickSetFormModalState.update {
+            if (it == null) return@update it
+            it.copy(dismissed = true)
+        }
+    }
+
+    fun clearQuickSet() {
+        quickSetFormModalState.value = null
+    }
+
+    fun applyQuickSet(overwrite: Boolean) {
+        val form = requestQuickSetForm { it == null || it is QuickSetFormError.BudgetOverlaps } ?: return
+        viewModelScope.launch {
+            val config = form.config
+            val selected = config.selectedConfig()
+            val schedule = QuickSetBudgetPlanner.schedule(selected, config.targetSpan, yearMonth.value)
+            if (schedule == null) {
+                releaseQuickSetForm { it.copy(state = FormState.Active(QuickSetFormError.CannotGenerate)) }
                 return@launch
             }
-            val result = repository.insertEnvelope(uiState.envelope, uiState.budgets.values.toList())
-            when (result) {
-                Success -> sendBack()
-                EnvelopeArchived -> sendBack()
-                BudgetOverlaps -> _uiState.update {
-                    if (it !is EnvelopeUiState.Success) return@update it
-                    it.copy(envelopeSubmissionError = EnvelopeSubmissionError.BudgetOverlaps)
+
+            val plan = QuickSetBudgetPlanner.plan(
+                config = selected,
+                selection = config.targetSpan,
+                yearMonth = yearMonth.value,
+                envelopeId = envelopeId,
+                existing = readExisting(schedule.coveredSpan()),
+            )
+            if (plan == null) {
+                releaseQuickSetForm { it.copy(state = FormState.Active(QuickSetFormError.CannotGenerate)) }
+            } else if (plan.conflicts.isNotEmpty() && !overwrite) {
+                releaseQuickSetForm {
+                    it.copy(state = FormState.Active(QuickSetFormError.BudgetOverlaps(plan.conflicts)))
                 }
+            } else persistQuickSet(plan)
+        }
+    }
+
+    private suspend fun persistQuickSet(plan: QuickSetBudgetPlan) {
+        val conflictIds = plan.conflicts.map { it.id }
+
+        if (isNew) {
+            memoryBudgets.update { budgets -> budgets.filterNot { it.id in conflictIds } + plan.budgets }
+            releaseQuickSetForm { it.copy(state = FormState.Completed) }
+        } else {
+            val result = repository.replaceBudgets(
+                envelopeId = envelopeId,
+                deleteBudgetIds = conflictIds,
+                budgets = plan.budgets,
+            )
+            releaseQuickSetForm {
+                it.copy(
+                    state = when (result) {
+                        EnvelopeArchived -> FormState.Active(QuickSetFormError.EnvelopeArchived)
+                        BudgetOverlaps -> FormState.Active(QuickSetFormError.BudgetOverlaps(plan.conflicts))
+                        Success -> FormState.Completed
+                    },
+                )
             }
         }
     }
 
-    fun clearSubmissionError() {
-        _uiState.update {
-            require(it is EnvelopeUiState.Success)
-            it.copy(envelopeSubmissionError = null)
-        }
+    private suspend fun readExisting(coveredSpan: HalfOpenDateSpan): List<Budget> =
+        if (isNew) memoryBudgets.value
+        else repository.observeBudgets(envelopeId = envelopeId, dateSpan = coveredSpan).first()
+
+    private fun QuickSetFormState.selectedConfig(): QuickSetConfig = when (mode) {
+        QuickSetMode.Daily -> dailyConfig
+        QuickSetMode.Weekly -> weeklyConfig
+        QuickSetMode.MonthlyTotal -> monthlyConfig
     }
 
-    fun archiveAndBack() {
-        if (job?.isActive == true) return
+    private fun QuickSetFormState.validate(schedule: QuickSetSchedule?): QuickSetFormError? = when {
+        mode == QuickSetMode.Daily &&
+            (dailyConfig.intervalDays < 1 || dailyConfig.intervalDays.toLong() > targetSpan.length) ->
+            QuickSetFormError.IntervalInvalid
 
-        val uiState = _uiState.value
-        require(uiState is EnvelopeUiState.Success)
-        job = viewModelScope.launch {
-            if (!uiState.isNew) repository.archiveEnvelope(uiState.envelope.id)
-            sendBack()
-        }
+        selectedConfig().amount <= 0L -> QuickSetFormError.AmountNonPositive
+        schedule == null -> QuickSetFormError.CannotGenerate
+        else -> null
     }
 
-    fun deleteAndBack() {
-        if (job?.isActive == true) return
+    /** 末段预算按完整周期产出、不裁剪到显示月，冲突检测须按其实际覆盖的包络重读。 */
+    private fun QuickSetSchedule.coveredSpan(): HalfOpenDateSpan = HalfOpenDateSpan(
+        startDate = segments.minOf { it.span.startDate },
+        endDate = segments.maxOf { it.span.endDate },
+    )
 
-        val uiState = _uiState.value
-        require(uiState is EnvelopeUiState.Success)
-        if (!uiState.canDelete) return
-        job = viewModelScope.launch {
-            repository.deleteEnvelope(uiState.envelope.id)
-            sendBack()
-        }
+    fun onEvent(event: EnvelopeEvent) = when (event) {
+        is SelectMonth -> selectMonth(event.yearMonth)
+
+        is InitializeNewEnvelope -> initializeNewEnvelope(event.name)
+        is UpdateEnvelope -> updateEnvelope(event.envelope)
+        SaveEnvelope -> saveEnvelope()
+        ArchiveEnvelope -> archiveEnvelope()
+        DeleteEnvelope -> deleteEnvelope()
+        DismissEnvelopeFormError -> dismissEnvelopeFormError()
+
+        is OpenDetailWithExistingBudget -> openDetailWithExistingBudget(event.id, event.date)
+        is OpenDetailCreatingBudget -> openDetailCreatingBudget(event.date)
+        is UpdateBudget -> updateBudget(event.budget)
+        SaveBudget -> saveBudget()
+        DeleteBudget -> deleteBudget()
+        DismissDetail -> dismissDetail()
+        ClearDetail -> clearDetail()
+
+        OpenQuickSet -> openQuickSet()
+        is UpdateQuickSet -> updateQuickSet(event.config)
+        is ApplyQuickSet -> applyQuickSet(event.overwrite)
+        CancelOverwrite -> cancelQuickSetOverwrite()
+        DismissQuickSet -> dismissQuickSet()
+        ClearQuickSet -> clearQuickSet()
     }
 
     @AssistedFactory

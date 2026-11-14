@@ -490,7 +490,7 @@ class EnvelopeDaoTest {
     fun isDeletable_trueWhenNoEnvelopeIsReferenced() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
-        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
         assertTrue(summaries().single().canDelete)
     }
 
@@ -498,7 +498,7 @@ class EnvelopeDaoTest {
     fun isDeletable_trueForUnknownEnvelope() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
-        assertTrue(dao.isDeletable(RoomTestData.envelopeId(0xEE)))
+        assertTrue(dao.isDeletable(RoomTestData.envelopeId(0xEE)).first())
     }
 
     @Test
@@ -508,7 +508,7 @@ class EnvelopeDaoTest {
             budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA)),
         )
 
-        assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA).first())
         assertFalse(summaries().single().canDelete)
     }
 
@@ -523,7 +523,7 @@ class EnvelopeDaoTest {
             ),
         )
 
-        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
         assertTrue(summaries().single().canDelete)
     }
 
@@ -537,8 +537,8 @@ class EnvelopeDaoTest {
             budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, envelopeId = RoomTestData.envelopeB)),
         )
 
-        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
-        assertFalse("同一预算只挡住它所归属的信封", dao.isDeletable(RoomTestData.envelopeB))
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse("同一预算只挡住它所归属的信封", dao.isDeletable(RoomTestData.envelopeB).first())
 
         val canDelete = summaries().associate { it.id to it.canDelete }
         assertEquals(mapOf(RoomTestData.envelopeA to true, RoomTestData.envelopeB to false), canDelete)
@@ -553,7 +553,7 @@ class EnvelopeDaoTest {
             allocations = shares,
         )
 
-        assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA).first())
         assertFalse(summaries().single().canDelete)
     }
 
@@ -568,7 +568,7 @@ class EnvelopeDaoTest {
             allocations = firstShares + secondShares,
         )
 
-        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
         assertTrue(summaries().single().canDelete)
     }
 
@@ -588,8 +588,8 @@ class EnvelopeDaoTest {
             allocations = shares,
         )
 
-        assertTrue(dao.isDeletable(RoomTestData.envelopeA))
-        assertFalse("同一笔支出只挡住它分摊到的信封", dao.isDeletable(RoomTestData.envelopeB))
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse("同一笔支出只挡住它分摊到的信封", dao.isDeletable(RoomTestData.envelopeB).first())
 
         val canDelete = summaries().associate { it.id to it.canDelete }
         assertEquals(mapOf(RoomTestData.envelopeA to true, RoomTestData.envelopeB to false), canDelete)
@@ -607,7 +607,7 @@ class EnvelopeDaoTest {
             allocations = garbageShares + aliveShares,
         )
 
-        assertFalse(dao.isDeletable(RoomTestData.envelopeA))
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA).first())
         assertFalse(summaries().single().canDelete)
     }
 
@@ -626,7 +626,7 @@ class EnvelopeDaoTest {
         database.expenseAllocationDao().clean(RoomTestData.envelopeA)
         database.budgetDao().clean(RoomTestData.envelopeA)
 
-        assertTrue("清理垃圾行后信封应可删除", dao.isDeletable(RoomTestData.envelopeA))
+        assertTrue("清理垃圾行后信封应可删除", dao.isDeletable(RoomTestData.envelopeA).first())
         assertTrue(summaries().single().canDelete)
         assertEquals(1, dao.delete(RoomTestData.envelopeA))
     }

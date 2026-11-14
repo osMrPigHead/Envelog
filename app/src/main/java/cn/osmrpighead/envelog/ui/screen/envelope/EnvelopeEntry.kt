@@ -16,28 +16,8 @@ fun EntryProviderScope<AppRoute>.envelopeEntry(
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         EnvelopeScreen(
             uiState = uiState,
+            onEvent = viewModel::onEvent,
             back = { back(key) },
-            backEvent = viewModel.backEvent,
-            selectMonth = viewModel::selectMonth,
-            initializeForNew = viewModel::initializeForNew,
-            updateEnvelope = viewModel::updateEnvelope,
-            openActiveBudget = viewModel::openActiveBudget,
-            newActiveBudget = viewModel::newActiveBudget,
-            updateActiveBudget = viewModel::updateActiveBudget,
-            closeActiveBudget = viewModel::closeActiveBudget,
-            saveActiveBudget = viewModel::saveActiveBudget,
-            deleteActiveBudget = viewModel::deleteActiveBudget,
-            clearActiveBudget = viewModel::clearActiveBudget,
-            saveAndBack = viewModel::saveAndBack,
-            archiveAndBack = viewModel::archiveAndBack,
-            deleteAndBack = viewModel::deleteAndBack,
-            clearSubmissionError = viewModel::clearSubmissionError,
-            openQuickSet = viewModel::openQuickSet,
-            dismissQuickSet = viewModel::dismissQuickSet,
-            applyQuickSet = viewModel::applyQuickSet,
-            confirmQuickSetOverwrite = viewModel::confirmQuickSetOverwrite,
-            cancelQuickSetOverwrite = viewModel::cancelQuickSetOverwrite,
-            clearQuickSet = viewModel::clearQuickSet,
         )
     }
 }

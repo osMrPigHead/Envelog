@@ -23,6 +23,7 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.testing.hasButtonRole
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -36,6 +37,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -111,10 +113,8 @@ class AppNavigationInstrumentedTest {
         composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).performClick()
 
         waitForRepository {
-            runBlocking {
-                repository.observeOverview(today, month, span).first()
-                    .singleOrNull()?.allocated == 10_000L
-            }
+            repository.observeOverview(today, month, span).first()
+                .singleOrNull()?.allocated == 10_000L
         }
         waitForText(envelopeName)
 
@@ -129,10 +129,12 @@ class AppNavigationInstrumentedTest {
         composeRule.onNodeWithContentDescription(editText).performClick()
         waitForEditField()
         composeRule.onNode(hasSetTextAction()).performTextReplacement(editedEnvelopeName)
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
         composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
 
         waitForRepository {
-            runBlocking { repository.getEnvelope(envelopeId).name == editedEnvelopeName }
+            repository.getEnvelope(envelopeId).name == editedEnvelopeName
         }
         waitForText(editedEnvelopeName)
 
@@ -149,10 +151,8 @@ class AppNavigationInstrumentedTest {
         composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
 
         waitForRepository {
-            runBlocking {
-                repository.observeOverview(today, month, span).first()
-                    .any { it.name == newEnvelopeName }
-            }
+            repository.observeOverview(today, month, span).first()
+                .any { it.name == newEnvelopeName }
         }
         waitForText(newEnvelopeName)
 

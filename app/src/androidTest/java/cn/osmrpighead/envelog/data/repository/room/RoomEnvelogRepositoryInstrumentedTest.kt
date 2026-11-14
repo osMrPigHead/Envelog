@@ -206,7 +206,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         database.seedDao().insertExpenses(listOf(garbageOfA.first))
         database.seedDao().insertAllocations(listOf(garbageOfA.second))
 
-        assertTrue(repository.observeEnvelopeDeletable(envelopeA))
+        assertTrue(repository.observeEnvelopeDeletable(envelopeA).first())
         assertEquals(EnvelopeDeleteResult.Deleted, repository.deleteEnvelope(envelopeA))
     }
 
@@ -215,7 +215,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         seedEnvelopes()
         database.seedDao().insertBudgets(listOf(budget(0xD1, envelopeA, deletedAt), budget(0xD2, envelopeA, null)))
 
-        assertFalse(repository.observeEnvelopeDeletable(envelopeA))
+        assertFalse(repository.observeEnvelopeDeletable(envelopeA).first())
         assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(envelopeA))
     }
 
@@ -226,7 +226,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
         database.seedDao().insertExpenses(listOf(alive.first))
         database.seedDao().insertAllocations(listOf(alive.second))
 
-        assertFalse(repository.observeEnvelopeDeletable(envelopeA))
+        assertFalse(repository.observeEnvelopeDeletable(envelopeA).first())
         assertEquals(EnvelopeDeleteResult.Constraint, repository.deleteEnvelope(envelopeA))
     }
 
@@ -234,7 +234,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
     fun canDeleteEnvelope_isTrueForUnknownEnvelope() = runBlocking {
         seedEnvelopes()
 
-        assertTrue("判断只看引用，仓库不因信封不存在而拦截", repository.observeEnvelopeDeletable(unknownEnvelope))
+        assertTrue("判断只看引用，仓库不因信封不存在而拦截", repository.observeEnvelopeDeletable(unknownEnvelope).first())
         assertEquals(EnvelopeDeleteResult.NotFound, repository.deleteEnvelope(unknownEnvelope))
     }
 }

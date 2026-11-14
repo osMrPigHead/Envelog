@@ -1,9 +1,9 @@
-package cn.osmrpighead.envelog.ui.screen.envelope2
+package cn.osmrpighead.envelog.ui.screen.envelope
 
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
 import java.time.LocalDate
 import java.time.YearMonth
 

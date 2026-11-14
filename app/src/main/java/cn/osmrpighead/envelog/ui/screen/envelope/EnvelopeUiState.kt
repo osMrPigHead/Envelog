@@ -1,13 +1,14 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
-import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
+import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -16,54 +17,89 @@ enum class EnvelopeSubmissionError {
     BudgetOverlaps,
 }
 
-data class BudgetModalItem(val budget: Budget, val isNew: Boolean)
-enum class BudgetModalError {
+data class EnvelopeForm(
+    val state: FormState<EnvelopeSubmissionError>,
+    val envelope: Envelope,
+    val isNew: Boolean,
+    val isDirty: Boolean,
+) {
+    val saveBeforeQuit = isNew || isDirty
+}
+
+enum class BudgetFormError {
     EnvelopeArchived, BudgetOverlaps, AmountNonPositive,
 }
 
-enum class QuickSetError {
-    EnvelopeArchived, BudgetOverlaps,
+data class BudgetForm(
+    val state: FormState<BudgetFormError>,
+    val budget: Budget,
+    val isNew: Boolean,
+    val isDirty: Boolean,
+) {
+    val saveBeforeQuit = isDirty && state is FormState.Active && state.error == null
 }
 
-data class QuickSetUiState(
-    val open: Boolean = false,
-    val complete: Boolean = false,
-    val conflict: QuickSetBudgetPlan? = null,
-    val error: QuickSetError? = null,
+sealed interface QuickSetFormError {
+    data object EnvelopeArchived : QuickSetFormError
+    data class BudgetOverlaps(val conflicts: List<Budget>) : QuickSetFormError
+    data object AmountNonPositive : QuickSetFormError
+    data object IntervalInvalid : QuickSetFormError
+    data object CannotGenerate : QuickSetFormError
+}
+
+data class QuickSetFormModalState(
+    val state: FormState<QuickSetFormError>,
+    val config: QuickSetFormState,
+    val schedule: QuickSetSchedule?,
+    val dismissed: Boolean,
 )
 
-data class ActiveItem(
-    val budget: Budget?,
-    val isNew: Boolean,
-    val error: BudgetModalError?,
-    val complete: Boolean,
-    val allocations: List<AllocationWithInfo> = emptyList(),
+data class DetailModalState(
+    val budgetForm: BudgetForm,
+    val allocations: List<AllocationWithInfo>,
+    val dismissed: Boolean,
 )
 
-sealed interface EnvelopeUiState {
-    data class Success(
-        val envelope: Envelope,
-        val isNew: Boolean,
-        val canDelete: Boolean = false,
-        val yearMonth: YearMonth,
-        val today: LocalDate,
-        val budgets: Map<BudgetId, Budget>,
-        val amountFieldId: Any,
-        val allocations: List<DailyAllocationSummary>,
-        val allocationsWithInfo: List<AllocationWithInfo>,
-        val activeItem: ActiveItem,
-        val envelopeSubmissionError: EnvelopeSubmissionError?,
-        val quickSet: QuickSetUiState = QuickSetUiState(),
-    ) : EnvelopeUiState {
-        val allocationsByDate = allocations.associateBy { it.happenedDate }
-        val calendar = EnvelopeCalendarModel.of(
-            span = yearMonth.toHalfOpenDateSpan(),
-            firstDayOfWeek = DayOfWeek.MONDAY,  // TODO: User rule
-            budgets = if (envelope.isBudgeted) budgets.values else null,
-            allocations = allocationsByDate,
+data class LedgerState(
+    val calendar: EnvelopeCalendarModel,
+    val budgets: List<Budget>,
+    val allocations: List<AllocationWithInfo>,
+) {
+    companion object {
+        fun of(
+            span: HalfOpenDateSpan,
+            firstDayOfWeek: DayOfWeek,
+            budgets: List<Budget>,
+            allocations: List<AllocationWithInfo>,
+            allocationSummaries: List<DailyAllocationSummary>,
+        ) = LedgerState(
+            calendar = EnvelopeCalendarModel.of(
+                span = span,
+                firstDayOfWeek = firstDayOfWeek,
+                budgets = budgets,
+                allocations = allocationSummaries.associateBy { it.happenedDate },
+            ),
+            budgets = budgets,
+            allocations = allocations,
         )
     }
-
-    data object IsNew : EnvelopeUiState
-    data object Loading : EnvelopeUiState
 }
+
+sealed interface EnvelopeDetail {
+    data class Success(
+        val ledgerState: LedgerState,
+        val envelopeForm: EnvelopeForm,
+        val detailModalState: DetailModalState?,
+        val quickSetFormModalState: QuickSetFormModalState?,
+        val isDeletable: Boolean,
+    ) : EnvelopeDetail
+
+    data object IsNew : EnvelopeDetail
+    data object Loading : EnvelopeDetail
+}
+
+data class EnvelopeUiState(
+    val yearMonth: YearMonth,
+    val today: LocalDate,
+    val detail: EnvelopeDetail,
+)

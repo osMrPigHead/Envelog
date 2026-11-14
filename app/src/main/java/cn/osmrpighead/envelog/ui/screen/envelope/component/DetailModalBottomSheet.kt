@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.screen.envelope2.component
+package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -23,10 +23,9 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
 import cn.osmrpighead.envelog.ui.model.FormState
-import cn.osmrpighead.envelog.ui.screen.envelope.component.AllocationList
-import cn.osmrpighead.envelog.ui.screen.envelope2.BudgetForm
-import cn.osmrpighead.envelog.ui.screen.envelope2.BudgetFormError.*
-import cn.osmrpighead.envelog.ui.screen.envelope2.DetailModalState
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetForm
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFormError.*
+import cn.osmrpighead.envelog.ui.screen.envelope.DetailModalState
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount

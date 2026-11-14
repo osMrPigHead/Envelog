@@ -16,9 +16,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -33,25 +31,27 @@ import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandl
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
-import cn.osmrpighead.envelog.ui.model.AmountConsumer
+import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormError
+import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormModalState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
-import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormError
-import cn.osmrpighead.envelog.ui.screen.envelope2.QuickSetFormModalState
-import cn.osmrpighead.envelog.ui.screen.envelope2.model.QuickSetFormState
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.text.dayOfWeekRangeText
-import java.math.RoundingMode
 import java.time.YearMonth
 
 @Composable
 internal fun QuickSetSheetContent(
     yearMonth: YearMonth,
     modalState: QuickSetFormModalState,
-    controller: QuickSetSheetController,
+    numKeypadHost: NumKeypadHostState,
+    onModeChange: () -> Unit,
+    onTextInputFocus: () -> Unit,
+    onPickerOpen: () -> Unit,
     onUpdate: (QuickSetFormState) -> Unit,
     onCancel: () -> Unit,
     onApply: () -> Unit,
@@ -60,13 +60,12 @@ internal fun QuickSetSheetContent(
     val schedule = modalState.schedule
     val error = (modalState.state as? FormState.Active)?.error
     val isBusy = modalState.state is FormState.Busy
-    val local = rememberQuickSetLocalState(config, onUpdate)
     val maxIntervalDays = config.targetSpan.maxIntervalDays()
 
     Scaffold(
         bottomBar = {
             NumKeypadHost(
-                controller.numKeypadHost,
+                numKeypadHost,
                 modifier = Modifier.disableVerticalDrag(),
             )
         },
@@ -84,9 +83,11 @@ internal fun QuickSetSheetContent(
             ) {
                 QuickSetModeSection(
                     config = config,
-                    local = local,
-                    controller = controller,
                     error = error,
+                    numKeypadHost = numKeypadHost,
+                    onModeChange = onModeChange,
+                    onTextInputFocus = onTextInputFocus,
+                    onPickerOpen = onPickerOpen,
                     maxIntervalDays = maxIntervalDays,
                     onUpdate = onUpdate,
                     modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
@@ -96,7 +97,7 @@ internal fun QuickSetSheetContent(
                     span = config.targetSpan,
                     enabled = config.mode != QuickSetMode.MonthlyTotal,
                     onSpanChange = { onUpdate(config.withTargetSpan(it)) },
-                    onOpen = controller::onPickerOpen,
+                    onOpen = onPickerOpen,
                 )
                 QuickSetFeedback(
                     preview = derivePreview(config, schedule),
@@ -110,57 +111,6 @@ internal fun QuickSetSheetContent(
                 )
             }
         }
-    }
-}
-
-/** 无法收纳进不可变表单数据的小键盘消费者与字段身份令牌。 */
-internal class QuickSetLocalState(
-    val dailyAmountConsumer: AmountConsumer,
-    val weeklyAmountConsumer: AmountConsumer,
-    val monthlyAmountConsumer: AmountConsumer,
-    val dailyAmountFieldId: Any,
-    val weeklyAmountFieldId: Any,
-    val monthlyAmountFieldId: Any,
-)
-
-@Composable
-private fun rememberQuickSetLocalState(
-    config: QuickSetFormState,
-    onUpdate: (QuickSetFormState) -> Unit,
-): QuickSetLocalState {
-    val latestConfig by rememberUpdatedState(config)
-    val latestOnUpdate by rememberUpdatedState(onUpdate)
-
-    return remember {
-        QuickSetLocalState(
-            dailyAmountConsumer = AmountConsumer(
-                scale = 0,
-                roundingMode = RoundingMode.HALF_UP,
-                submit = { amount ->
-                    latestOnUpdate(latestConfig.copy(dailyConfig = latestConfig.dailyConfig.copy(amount = amount)))
-                },
-                cancel = {},
-            ),
-            weeklyAmountConsumer = AmountConsumer(
-                scale = 0,
-                roundingMode = RoundingMode.HALF_UP,
-                submit = { amount ->
-                    latestOnUpdate(latestConfig.copy(weeklyConfig = latestConfig.weeklyConfig.copy(amount = amount)))
-                },
-                cancel = {},
-            ),
-            monthlyAmountConsumer = AmountConsumer(
-                scale = 0,
-                roundingMode = RoundingMode.HALF_UP,
-                submit = { amount ->
-                    latestOnUpdate(latestConfig.copy(monthlyConfig = latestConfig.monthlyConfig.copy(amount = amount)))
-                },
-                cancel = {},
-            ),
-            dailyAmountFieldId = Any(),
-            weeklyAmountFieldId = Any(),
-            monthlyAmountFieldId = Any(),
-        )
     }
 }
 

@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.screen.envelope2.component
+package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,7 +13,7 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.model.FormState
-import cn.osmrpighead.envelog.ui.screen.envelope2.EnvelopeForm
+import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeForm
 
 @Composable
 fun EnvelopeForm(
