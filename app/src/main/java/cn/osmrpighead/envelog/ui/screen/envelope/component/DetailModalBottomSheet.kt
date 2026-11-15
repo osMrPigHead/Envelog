@@ -21,28 +21,44 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
-import cn.osmrpighead.envelog.ui.model.AmountValidationError
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFieldError.*
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetForm
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFormError.*
 import cn.osmrpighead.envelog.ui.screen.envelope.DetailModalState
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.util.nonPositiveToError
 import java.math.RoundingMode
 
 @Composable
 fun BudgetItemSheet(
     budgetForm: BudgetForm,
     onSpanChange: (HalfOpenDateSpan) -> Unit,
+    onAmountChange: (Long) -> Unit,
     numKeypadHost: NumKeypadHostState,
-    amountConsumer: AmountConsumer,
     save: () -> Unit,
     cancel: () -> Unit,
     delete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val fieldId = remember { Any() }
+    val consumer = remember {
+        AmountConsumer(
+            scale = 0,
+            roundingMode = RoundingMode.HALF_UP,
+            submit = { onAmountChange(it) },
+            cancel = {},
+        )
+    }
+
+    val budgetOverlaps = BudgetOverlaps in budgetForm.fieldErrors
+    val (amountNonPositive, amountError) = consumer.nonPositiveToError(
+        AmountNonPositive in budgetForm.fieldErrors,
+        fieldId,
+        numKeypadHost,
+    )
 
     LabeledBox(
         label = stringResource(R.string.envelope_edit_budget_title),
@@ -53,22 +69,22 @@ fun BudgetItemSheet(
             dialogBuilder = DateRangePickerDialogBuilder.Default(
                 DateRangePickerConfirmEventHandler.Default { onSpanChange(it.toHalfOpen()) },
             ),
+            isError = budgetOverlaps,
+            supportingText = if (budgetOverlaps) {
+                { Text(text = stringResource(R.string.envelope_edit_msg_budget_overlaps)) }
+            } else null,
             label = { Text(stringResource(R.string.envelope_edit_budget_range_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
         NumKeypadField(
             value = budgetForm.budget.amount.formatAsAmount(Formatter.AmountInteger),
             host = numKeypadHost,
-            consumer = amountConsumer,
+            consumer = consumer,
             fieldId = fieldId,
-            isError = amountConsumer.validationError != null,
-            supportingText = when (amountConsumer.validationError) {
-                null -> null
-                is AmountValidationError.MathError -> null
-                AmountValidationError.NonPositive -> {
-                    { Text(text = stringResource(R.string.common_msg_amount_positive)) }
-                }
-            },
+            isError = amountError,
+            supportingText = if (amountNonPositive) {
+                { Text(text = stringResource(R.string.common_msg_amount_positive)) }
+            } else null,
             label = { Text(stringResource(R.string.envelope_edit_budget_amount_label)) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -77,8 +93,6 @@ fun BudgetItemSheet(
         if (budgetForm.state is FormState.Active && budgetForm.state.error != null) Text(
             text = when (budgetForm.state.error) {
                 EnvelopeArchived -> stringResource(R.string.envelope_edit_msg_archived)
-                BudgetOverlaps -> stringResource(R.string.envelope_edit_msg_budget_overlaps)
-                AmountNonPositive -> stringResource(R.string.common_msg_amount_positive)
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
@@ -100,10 +114,8 @@ fun BudgetItemSheet(
                     numKeypadHost.confirm()
                     save()
                 },
-                enabled = budgetForm.state is FormState.Active && budgetForm.state.error == null,
-            ) {
-                Text(text = stringResource(R.string.common_action_ok))
-            }
+                enabled = budgetForm.state is FormState.Active && !budgetForm.isError,
+            ) { Text(text = stringResource(R.string.common_action_ok)) }
         }
     }
 }
@@ -160,13 +172,8 @@ fun DetailModalBottomSheet(
             BudgetItemSheet(
                 budgetForm = budgetForm,
                 onSpanChange = { update(budgetForm.budget.copy(dateSpan = it)) },
+                onAmountChange = { update(budgetForm.budget.copy(amount = it)) },
                 numKeypadHost = numKeypadHost,
-                amountConsumer = AmountConsumer(
-                    scale = 0,
-                    roundingMode = RoundingMode.HALF_UP,
-                    submit = { update(budgetForm.budget.copy(amount = it)) },
-                    cancel = {},
-                ),
                 save = save,
                 cancel = close,
                 delete = delete,

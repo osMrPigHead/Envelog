@@ -103,6 +103,7 @@ internal fun QuickSetAmountField(
     amount: Long,
     host: NumKeypadHostState,
     consumer: AmountConsumer,
+    fieldId: Any,
     enabled: Boolean,
     description: String,
     modifier: Modifier = Modifier,
@@ -110,7 +111,6 @@ internal fun QuickSetAmountField(
     supportingText: (@Composable () -> Unit)? = null,
     label: String? = null,
 ) {
-    val fieldId = remember { Any() }
     val labelContent: (@Composable () -> Unit)? = if (label == null) null else {
         { Text(text = label) }
     }

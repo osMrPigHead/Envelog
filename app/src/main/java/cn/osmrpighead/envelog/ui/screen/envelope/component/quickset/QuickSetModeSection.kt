@@ -1,12 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
@@ -29,9 +23,11 @@ import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerSheetBuilder
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
-import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormError
+import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFieldError
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
+import cn.osmrpighead.envelog.ui.util.nonPositiveToError
 import java.math.RoundingMode
 import java.time.DayOfWeek
 
@@ -58,7 +54,7 @@ private fun rememberAmountConsumer(
 @Composable
 internal fun QuickSetModeSection(
     config: QuickSetFormState,
-    error: QuickSetFormError?,
+    fieldErrors: Set<QuickSetFieldError>,
     numKeypadHost: NumKeypadHostState,
     onModeChange: () -> Unit,
     onTextInputFocus: () -> Unit,
@@ -72,27 +68,43 @@ internal fun QuickSetModeSection(
     val monthlySelected = config.mode == QuickSetMode.MonthlyTotal
     val weekdayDescription = stringResource(R.string.envelope_edit_quick_set_weekday_range_field)
 
-    val dailyAmountConsumer = rememberAmountConsumer(config, onUpdate) { form, amount ->
+    val dailyFieldId = remember { Any() }
+    val dailyConsumer = rememberAmountConsumer(config, onUpdate) { form, amount ->
         form.copy(dailyConfig = form.dailyConfig.copy(amount = amount))
     }
-    val weeklyAmountConsumer = rememberAmountConsumer(config, onUpdate) { form, amount ->
+    val weeklyFieldId = remember { Any() }
+    val weeklyConsumer = rememberAmountConsumer(config, onUpdate) { form, amount ->
         form.copy(weeklyConfig = form.weeklyConfig.copy(amount = amount))
     }
-    val monthlyAmountConsumer = rememberAmountConsumer(config, onUpdate) { form, amount ->
+    val monthlyFieldId = remember { Any() }
+    val monthlyConsumer = rememberAmountConsumer(config, onUpdate) { form, amount ->
         form.copy(monthlyConfig = form.monthlyConfig.copy(amount = amount))
     }
 
-    val intervalInvalid = error == QuickSetFormError.IntervalInvalid
-    val intervalSupporting: (@Composable () -> Unit)? = if (intervalInvalid) {
+    val spacer: @Composable () -> Unit =
+        { Spacer(Modifier.height(MaterialTheme.typography.bodySmall.lineHeightAsDp)) }
+    val intervalSupporting: @Composable () -> Unit =
         { Text(text = stringResource(R.string.envelope_edit_quick_set_interval_invalid)) }
-    } else {
-        null
-    }
-    val amountSupporting: (@Composable () -> Unit)? = if (error == QuickSetFormError.AmountNonPositive) {
+    val amountSupporting: @Composable () -> Unit =
         { Text(text = stringResource(R.string.common_msg_amount_positive)) }
-    } else {
-        null
-    }
+
+    val intervalInvalid = QuickSetFieldError.IntervalInvalid in fieldErrors
+    val amountNonPositive = QuickSetFieldError.AmountNonPositive in fieldErrors
+    val (dailyNonPositive, dailyAmountError) = dailyConsumer.nonPositiveToError(
+        amountNonPositive && dailySelected,
+        dailyFieldId,
+        numKeypadHost,
+    )
+    val (weeklyNonPositive, weeklyAmountError) = weeklyConsumer.nonPositiveToError(
+        amountNonPositive && weeklySelected,
+        weeklyFieldId,
+        numKeypadHost,
+    )
+    val (monthlyNonPositive, monthlyAmountError) = monthlyConsumer.nonPositiveToError(
+        amountNonPositive && monthlySelected,
+        monthlyFieldId,
+        numKeypadHost,
+    )
 
     val selectMode: (QuickSetMode) -> Unit = { newMode ->
         if (config.mode != newMode) {
@@ -129,18 +141,19 @@ internal fun QuickSetModeSection(
                 onValueChange = updateIntervalDays,
                 onFocus = onTextInputFocus,
                 modifier = Modifier.weight(1f),
-                isError = intervalInvalid,
-                supportingText = intervalSupporting,
+                isError = dailySelected && intervalInvalid,
+                supportingText = if (dailySelected && intervalInvalid) intervalSupporting else spacer,
             )
             QuickSetAmountField(
                 amount = config.dailyConfig.amount,
                 host = numKeypadHost,
-                consumer = dailyAmountConsumer,
+                consumer = dailyConsumer,
+                fieldId = dailyFieldId,
                 enabled = dailySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_daily_amount_field),
                 modifier = Modifier.weight(1f),
-                isError = dailySelected && amountSupporting != null,
-                supportingText = if (dailySelected) amountSupporting else null,
+                isError = dailyAmountError,
+                supportingText = if (dailyNonPositive) amountSupporting else spacer,
             )
         }
 
@@ -156,6 +169,7 @@ internal fun QuickSetModeSection(
                 ),
                 enabled = weeklySelected,
                 textStyle = MaterialTheme.typography.bodyMedium,
+                supportingText = spacer,
                 label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_weekly_label)) },
                 onOpen = onPickerOpen,
                 modifier = Modifier
@@ -165,12 +179,13 @@ internal fun QuickSetModeSection(
             QuickSetAmountField(
                 amount = config.weeklyConfig.amount,
                 host = numKeypadHost,
-                consumer = weeklyAmountConsumer,
+                consumer = weeklyConsumer,
+                fieldId = weeklyFieldId,
                 enabled = weeklySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_weekly_amount_field),
                 modifier = Modifier.weight(1f),
-                isError = weeklySelected && amountSupporting != null,
-                supportingText = if (weeklySelected) amountSupporting else null,
+                isError = weeklyAmountError,
+                supportingText = if (weeklyNonPositive) amountSupporting else spacer,
             )
         }
 
@@ -181,13 +196,14 @@ internal fun QuickSetModeSection(
             QuickSetAmountField(
                 amount = config.monthlyConfig.amount,
                 host = numKeypadHost,
-                consumer = monthlyAmountConsumer,
+                consumer = monthlyConsumer,
+                fieldId = monthlyFieldId,
                 enabled = monthlySelected,
                 description = stringResource(R.string.envelope_edit_quick_set_monthly_amount_field),
                 label = stringResource(R.string.envelope_edit_quick_set_monthly_amount_field),
                 modifier = Modifier.weight(1f),
-                isError = monthlySelected && amountSupporting != null,
-                supportingText = if (monthlySelected) amountSupporting else null,
+                isError = monthlyAmountError,
+                supportingText = if (monthlyNonPositive) amountSupporting else spacer,
             )
             Spacer(modifier = Modifier.weight(1f))
         }

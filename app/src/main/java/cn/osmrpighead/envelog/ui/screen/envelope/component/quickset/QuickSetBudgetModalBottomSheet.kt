@@ -74,9 +74,9 @@ fun QuickSetBudgetModalBottomSheet(
                 }
             },
         )
-        if (modalState.state is FormState.Active && modalState.state.error is QuickSetFormError.BudgetOverlaps)
+        if (modalState.state is FormState.Active && modalState.pendingOverwrite != null)
             QuickSetConflictDialog(
-                conflicts = modalState.state.error.conflicts,
+                conflicts = modalState.pendingOverwrite,
                 onConfirm = { apply(true) },
                 onCancel = cancelOverwrite,
             )

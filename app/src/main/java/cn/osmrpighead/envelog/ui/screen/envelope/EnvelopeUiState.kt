@@ -27,30 +27,39 @@ data class EnvelopeForm(
 }
 
 enum class BudgetFormError {
-    EnvelopeArchived, BudgetOverlaps, AmountNonPositive,
+    EnvelopeArchived,
+}
+
+enum class BudgetFieldError {
+    BudgetOverlaps, AmountNonPositive,
 }
 
 data class BudgetForm(
     val state: FormState<BudgetFormError>,
+    val fieldErrors: Set<BudgetFieldError>,
     val budget: Budget,
     val isNew: Boolean,
     val isDirty: Boolean,
 ) {
-    val saveBeforeQuit = isDirty && state is FormState.Active && state.error == null
+    val isError = (state as? FormState.Active)?.error != null || fieldErrors.isNotEmpty()
+    val saveBeforeQuit = isDirty && state is FormState.Active && !isError
 }
 
 sealed interface QuickSetFormError {
     data object EnvelopeArchived : QuickSetFormError
-    data class BudgetOverlaps(val conflicts: List<Budget>) : QuickSetFormError
-    data object AmountNonPositive : QuickSetFormError
-    data object IntervalInvalid : QuickSetFormError
     data object CannotGenerate : QuickSetFormError
+}
+
+enum class QuickSetFieldError {
+    AmountNonPositive, IntervalInvalid,
 }
 
 data class QuickSetFormModalState(
     val state: FormState<QuickSetFormError>,
+    val fieldErrors: Set<QuickSetFieldError>,
     val config: QuickSetFormState,
     val schedule: QuickSetSchedule?,
+    val pendingOverwrite: List<Budget>?,
     val dismissed: Boolean,
 )
 

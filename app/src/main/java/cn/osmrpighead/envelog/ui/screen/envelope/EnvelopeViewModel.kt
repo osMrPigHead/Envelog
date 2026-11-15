@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
@@ -16,13 +15,9 @@ import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult.*
 import cn.osmrpighead.envelog.ui.model.AppStateHolder
 import cn.osmrpighead.envelog.ui.model.FormState
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlan
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetBudgetPlanner
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetConfig
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
+import cn.osmrpighead.envelog.ui.screen.envelope.model.*
 import cn.osmrpighead.envelog.util.updateNotNull
+import cn.osmrpighead.envelog.util.withElementIf
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -229,6 +224,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         DetailModalState(
             budgetForm = BudgetForm(
                 state = FormState.Active(null),
+                fieldErrors = emptySet(),
                 budget = budget,
                 isNew = false,
                 isDirty = false,
@@ -243,7 +239,8 @@ class EnvelopeViewModel @AssistedInject constructor(
         val allocations = allocations.value.filter { it.expense.happenedDate == date }
         DetailModalState(
             budgetForm = BudgetForm(
-                state = FormState.Active(BudgetFormError.AmountNonPositive),
+                state = FormState.Active(null),
+                fieldErrors = setOf(BudgetFieldError.AmountNonPositive),
                 budget = Budget(
                     id = BudgetId.generate(),
                     envelopeId = envelopeId,
@@ -265,15 +262,16 @@ class EnvelopeViewModel @AssistedInject constructor(
             if (it.budgetForm.budget.id != budget.id) return@update it
             it.copy(
                 budgetForm = it.budgetForm.copy(
-                    state = FormState.Active(
-                        when {
-                            budget.amount <= 0 -> BudgetFormError.AmountNonPositive
-                            budgets.value.any { b -> b.dateSpan overlaps budget.dateSpan && b.id != budget.id } ->
-                                BudgetFormError.BudgetOverlaps
-
-                            else -> null
-                        },
-                    ),
+                    state = FormState.Active(null),
+                    fieldErrors = it.budgetForm.fieldErrors
+                        .withElementIf(
+                            BudgetFieldError.AmountNonPositive,
+                            budget.amount <= 0,
+                        )
+                        .withElementIf(
+                            BudgetFieldError.BudgetOverlaps,
+                            budgets.value.any { b -> b.dateSpan overlaps budget.dateSpan && b.id != budget.id },
+                        ),
                     budget = budget,
                     isDirty = true,
                 ),
@@ -323,9 +321,13 @@ class EnvelopeViewModel @AssistedInject constructor(
                     budgetForm = it.budgetForm.copy(
                         state = when (result) {
                             EnvelopeArchived -> FormState.Active(BudgetFormError.EnvelopeArchived)
-                            BudgetOverlaps -> FormState.Active(BudgetFormError.BudgetOverlaps)
+                            BudgetOverlaps -> FormState.Active(null)
                             Success -> FormState.Completed
                         },
+                        fieldErrors = it.budgetForm.fieldErrors.withElementIf(
+                            BudgetFieldError.BudgetOverlaps,
+                            result == BudgetOverlaps,
+                        ),
                     ),
                 )
             }
@@ -361,6 +363,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         if (state != null && state.state == FormState.Busy) return@update state
         QuickSetFormModalState(
             state = FormState.Active(null),
+            fieldErrors = setOf(QuickSetFieldError.AmountNonPositive),
             config = QuickSetFormState(
                 mode = QuickSetMode.Daily,
                 dailyConfig = QuickSetConfig.Daily(1, 0),
@@ -369,6 +372,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 targetSpan = yearMonth.value.toHalfOpenDateSpan().toClosed(),
             ),
             schedule = null,
+            pendingOverwrite = null,
             dismissed = false,
         )
     }
@@ -376,21 +380,37 @@ class EnvelopeViewModel @AssistedInject constructor(
     fun updateQuickSet(config: QuickSetFormState) {
         quickSetFormModalState.update {
             if (it == null || it.dismissed || it.state !is FormState.Active) return@update it
-            val schedule = QuickSetBudgetPlanner.schedule(config.selectedConfig(), config.targetSpan, yearMonth.value)
+            val fieldErrors = it.fieldErrors
+                .withElementIf(
+                    QuickSetFieldError.IntervalInvalid,
+                    config.mode == QuickSetMode.Daily &&
+                            (config.dailyConfig.intervalDays < 1 || config.dailyConfig.intervalDays.toLong() > config.targetSpan.length),
+                )
+                .withElementIf(
+                    QuickSetFieldError.AmountNonPositive,
+                    config.selectedConfig().amount <= 0,
+                )
+            val schedule =
+                if (fieldErrors.isEmpty()) QuickSetBudgetPlanner.schedule(
+                    config.selectedConfig(),
+                    config.targetSpan,
+                    yearMonth.value,
+                )
+                else null
             it.copy(
-                state = FormState.Active(config.validate(schedule)),
+                state = FormState.Active(if (schedule == null) QuickSetFormError.CannotGenerate else null),
+                fieldErrors = fieldErrors,
                 config = config,
                 schedule = schedule,
             )
         }
     }
 
-    private fun requestQuickSetForm(accepted: (QuickSetFormError?) -> Boolean): QuickSetFormModalState? {
+    private fun requestQuickSetForm(): QuickSetFormModalState? {
         val form = quickSetFormModalState.value ?: return null
         var active = false
         quickSetFormModalState.update {
-            val error = (it?.state as? FormState.Active)?.error
-            if (it == null || it.dismissed || it.state !is FormState.Active || !accepted(error)) return@update it
+            if (it == null || it.dismissed || it.state !is FormState.Active || it.state.error != null) return@update it
             active = true
             it.copy(state = FormState.Busy)
         }
@@ -407,10 +427,11 @@ class EnvelopeViewModel @AssistedInject constructor(
 
     fun cancelQuickSetOverwrite() {
         quickSetFormModalState.update {
-            if (it == null || it.dismissed ||
-                (it.state as? FormState.Active)?.error !is QuickSetFormError.BudgetOverlaps
-            ) return@update it
-            it.copy(state = FormState.Active(it.config.validate(it.schedule)))
+            if (it == null || it.dismissed || it.pendingOverwrite == null) return@update it
+            it.copy(
+                state = FormState.Active(if (it.schedule == null) QuickSetFormError.CannotGenerate else null),
+                pendingOverwrite = null,
+            )
         }
     }
 
@@ -426,7 +447,7 @@ class EnvelopeViewModel @AssistedInject constructor(
     }
 
     fun applyQuickSet(overwrite: Boolean) {
-        val form = requestQuickSetForm { it == null || it is QuickSetFormError.BudgetOverlaps } ?: return
+        val form = requestQuickSetForm() ?: return
         viewModelScope.launch {
             val config = form.config
             val selected = config.selectedConfig()
@@ -447,7 +468,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 releaseQuickSetForm { it.copy(state = FormState.Active(QuickSetFormError.CannotGenerate)) }
             } else if (plan.conflicts.isNotEmpty() && !overwrite) {
                 releaseQuickSetForm {
-                    it.copy(state = FormState.Active(QuickSetFormError.BudgetOverlaps(plan.conflicts)))
+                    it.copy(state = FormState.Active(null), pendingOverwrite = plan.conflicts)
                 }
             } else persistQuickSet(plan)
         }
@@ -458,7 +479,7 @@ class EnvelopeViewModel @AssistedInject constructor(
 
         if (isNew) {
             memoryBudgets.update { budgets -> budgets.filterNot { it.id in conflictIds } + plan.budgets }
-            releaseQuickSetForm { it.copy(state = FormState.Completed) }
+            releaseQuickSetForm { it.copy(state = FormState.Completed, pendingOverwrite = null) }
         } else {
             val result = repository.replaceBudgets(
                 envelopeId = envelopeId,
@@ -469,9 +490,10 @@ class EnvelopeViewModel @AssistedInject constructor(
                 it.copy(
                     state = when (result) {
                         EnvelopeArchived -> FormState.Active(QuickSetFormError.EnvelopeArchived)
-                        BudgetOverlaps -> FormState.Active(QuickSetFormError.BudgetOverlaps(plan.conflicts))
+                        BudgetOverlaps -> FormState.Active(QuickSetFormError.CannotGenerate)
                         Success -> FormState.Completed
                     },
+                    pendingOverwrite = null,
                 )
             }
         }
@@ -485,16 +507,6 @@ class EnvelopeViewModel @AssistedInject constructor(
         QuickSetMode.Daily -> dailyConfig
         QuickSetMode.Weekly -> weeklyConfig
         QuickSetMode.MonthlyTotal -> monthlyConfig
-    }
-
-    private fun QuickSetFormState.validate(schedule: QuickSetSchedule?): QuickSetFormError? = when {
-        mode == QuickSetMode.Daily &&
-            (dailyConfig.intervalDays < 1 || dailyConfig.intervalDays.toLong() > targetSpan.length) ->
-            QuickSetFormError.IntervalInvalid
-
-        selectedConfig().amount <= 0L -> QuickSetFormError.AmountNonPositive
-        schedule == null -> QuickSetFormError.CannotGenerate
-        else -> null
     }
 
     /** 末段预算按完整周期产出、不裁剪到显示月，冲突检测须按其实际覆盖的包络重读。 */

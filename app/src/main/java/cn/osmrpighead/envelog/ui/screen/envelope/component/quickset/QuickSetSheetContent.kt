@@ -59,6 +59,7 @@ internal fun QuickSetSheetContent(
     val config = modalState.config
     val schedule = modalState.schedule
     val error = (modalState.state as? FormState.Active)?.error
+    val fieldErrors = modalState.fieldErrors
     val isBusy = modalState.state is FormState.Busy
     val maxIntervalDays = config.targetSpan.maxIntervalDays()
 
@@ -83,7 +84,7 @@ internal fun QuickSetSheetContent(
             ) {
                 QuickSetModeSection(
                     config = config,
-                    error = error,
+                    fieldErrors = fieldErrors,
                     numKeypadHost = numKeypadHost,
                     onModeChange = onModeChange,
                     onTextInputFocus = onTextInputFocus,
@@ -311,10 +312,6 @@ private fun QuickSetPreview.asText(): String = when (this) {
 private fun QuickSetFormError.asFeedbackText(): String? = when (this) {
     QuickSetFormError.EnvelopeArchived -> stringResource(R.string.envelope_edit_msg_archived)
     QuickSetFormError.CannotGenerate -> stringResource(R.string.envelope_edit_quick_set_cannot_generate)
-    QuickSetFormError.IntervalInvalid,
-    QuickSetFormError.AmountNonPositive,
-    is QuickSetFormError.BudgetOverlaps,
-    -> null
 }
 
 @Composable
