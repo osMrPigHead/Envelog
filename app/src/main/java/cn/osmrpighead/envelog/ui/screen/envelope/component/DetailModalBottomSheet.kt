@@ -9,10 +9,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.ui.component.LabeledBox
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
@@ -22,24 +23,27 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetField
-import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFieldError.*
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFieldError.AmountNonPositive
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFieldError.BudgetOverlaps
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetForm
-import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFormError.*
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFormError.EnvelopeArchived
 import cn.osmrpighead.envelog.ui.screen.envelope.DetailModalState
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.theme.ButtonColor
 import cn.osmrpighead.envelog.ui.util.nonPositiveToError
 import java.math.RoundingMode
 
 @Composable
 fun BudgetItemSheet(
     budgetForm: BudgetForm,
+    dismissed: Boolean,
     onSpanChange: (HalfOpenDateSpan) -> Unit,
     onAmountChange: (Long) -> Unit,
     numKeypadHost: NumKeypadHostState,
     save: () -> Unit,
-    cancel: () -> Unit,
+    dismiss: () -> Unit,
     delete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +57,8 @@ fun BudgetItemSheet(
         )
     }
 
+    val enabled = budgetForm.state is FormState.Active && !dismissed
+
     val budgetOverlaps = BudgetOverlaps in budgetForm.fieldErrors
     val (amountNonPositive, amountError) = consumer.nonPositiveToError(
         AmountNonPositive in budgetForm.fieldErrors,
@@ -61,17 +67,20 @@ fun BudgetItemSheet(
 
     LabeledBox(
         label = stringResource(R.string.envelope_edit_budget_title),
+        labelBackground = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = modifier,
     ) {
         DateRangePickerField(
             span = budgetForm.budget.dateSpan.toClosed(),
-            dialogBuilder = DateRangePickerDialogBuilder.Default(
-                DateRangePickerConfirmEventHandler.Default { onSpanChange(it.toHalfOpen()) },
+            dialogBuilder = DateRangePickerDialogBuilder.of(
+                onSpanChange = { onSpanChange(it.toHalfOpen()) },
+                initialSpan = budgetForm.budget.dateSpan.toClosed(),
             ),
             isError = budgetOverlaps,
             supportingText = if (budgetOverlaps) {
                 { Text(text = stringResource(R.string.envelope_edit_msg_budget_overlaps)) }
             } else null,
+            enabled = enabled,
             label = { Text(stringResource(R.string.envelope_edit_budget_range_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -84,6 +93,7 @@ fun BudgetItemSheet(
             supportingText = if (amountNonPositive) {
                 { Text(text = stringResource(R.string.common_msg_amount_positive)) }
             } else null,
+            enabled = enabled,
             label = { Text(stringResource(R.string.envelope_edit_budget_amount_label)) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -101,19 +111,26 @@ fun BudgetItemSheet(
                 .fillMaxWidth()
                 .padding(top = dimensionResource(R.dimen.spacingMedium)),
         ) {
-            TextButton(onClick = delete) {
-                Text(text = stringResource(R.string.common_action_delete), color = MaterialTheme.colorScheme.error)
+            if (!budgetForm.isNew) TextButton(
+                onClick = delete,
+                enabled = enabled,
+                colors = ButtonColor.outlinedDanger,
+            ) {
+                Text(text = stringResource(R.string.common_action_delete))
             }
             Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = cancel) {
+            TextButton(
+                onClick = dismiss,
+                enabled = enabled,
+            ) {
                 Text(text = stringResource(R.string.common_action_cancel))
             }
             Button(
                 onClick = {
-                    numKeypadHost.confirm()
-                    save()
+                    if (numKeypadHost.isOpen) numKeypadHost.safeClose()
+                    else save()
                 },
-                enabled = budgetForm.state is FormState.Active && !budgetForm.isError,
+                enabled = enabled && !budgetForm.isError,
             ) { Text(text = stringResource(R.string.common_action_ok)) }
         }
     }
@@ -124,7 +141,7 @@ fun BudgetItemSheet(
 fun DetailModalBottomSheet(
     detailModalState: DetailModalState,
     update: (BudgetField) -> Unit,
-    close: () -> Unit,
+    dismiss: () -> Unit,
     save: () -> Unit,
     delete: () -> Unit,
     clear: () -> Unit,
@@ -143,21 +160,22 @@ fun DetailModalBottomSheet(
         }
     }
 
-    LaunchedEffect(numKeypadHost.isOpen) {
-        if (numKeypadHost.isOpen) sheetState.expand()
-        else sheetState.partialExpand()
-    }
-
-    LaunchedEffect(budgetForm.state, detailModalState.dismissed) {
-        if (budgetForm.state != FormState.Completed && !detailModalState.dismissed) return@LaunchedEffect
-        sheetState.hide()
-        clear()
+    LaunchedEffect(numKeypadHost.isOpen, budgetForm.state, detailModalState.dismissed) {
+        if (detailModalState.dismissed || budgetForm.state == FormState.Completed) {
+            try {
+                sheetState.hide()
+            } finally {
+                clear()
+            }
+        } else
+            if (numKeypadHost.isOpen) sheetState.expand()
+            else sheetState.partialExpand()
     }
 
     ModalBottomSheet(
         onDismissRequest = {
             if (budgetForm.saveBeforeQuit) save()
-            else clear()
+            else dismiss()
         },
         sheetState = sheetState,
         sheetGesturesEnabled = !sheetState.isAnimationRunning,
@@ -165,23 +183,31 @@ fun DetailModalBottomSheet(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .fillMaxWidth(),
         ) {
+            Text(
+                text = detailModalState.dateSpan.format(),
+                color = MaterialTheme.colorScheme.onSecondaryFixedVariant,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
             BudgetItemSheet(
                 budgetForm = budgetForm,
+                dismissed = detailModalState.dismissed,
                 onSpanChange = { update(BudgetField.DateSpan(it)) },
                 onAmountChange = { update(BudgetField.Amount(it)) },
                 numKeypadHost = numKeypadHost,
                 save = save,
-                cancel = close,
+                dismiss = dismiss,
                 delete = delete,
-                modifier = Modifier.padding(dimensionResource(R.dimen.spacingLarge)),
+                modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingLarge)),
             )
             AllocationList(
                 allocations = detailModalState.allocations,
                 modifier = Modifier.padding(
-                    top = dimensionResource(R.dimen.spacingMedium),
+                    top = dimensionResource(R.dimen.spacingBold),
                     bottom = dimensionResource(R.dimen.spacingBold),
                 ),
             )

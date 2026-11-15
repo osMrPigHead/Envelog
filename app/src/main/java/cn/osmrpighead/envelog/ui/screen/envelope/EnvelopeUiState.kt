@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.Envelope
@@ -95,6 +96,7 @@ data class QuickSetFormModalState(
 
 data class DetailModalState(
     val budgetForm: BudgetForm,
+    val dateSpan: ClosedDateSpan,
     val allocations: List<AllocationWithInfo>,
     val dismissed: Boolean,
 )
@@ -108,6 +110,7 @@ data class LedgerState(
         fun of(
             span: HalfOpenDateSpan,
             firstDayOfWeek: DayOfWeek,
+            isBudgeted: Boolean,
             budgets: List<Budget>,
             allocations: List<AllocationWithInfo>,
             allocationSummaries: List<DailyAllocationSummary>,
@@ -115,6 +118,7 @@ data class LedgerState(
             calendar = EnvelopeCalendarModel.of(
                 span = span,
                 firstDayOfWeek = firstDayOfWeek,
+                isBudgeted = isBudgeted,
                 budgets = budgets,
                 allocations = allocationSummaries.associateBy { it.happenedDate },
             ),

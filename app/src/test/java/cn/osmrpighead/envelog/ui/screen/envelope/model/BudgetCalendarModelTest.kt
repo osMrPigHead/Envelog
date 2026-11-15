@@ -37,6 +37,7 @@ class BudgetCalendarModelTest {
     ): EnvelopeCalendarModel = EnvelopeCalendarModel.of(
         span = month.toHalfOpenDateSpan(),
         firstDayOfWeek = DayOfWeek.MONDAY,
+        isBudgeted = true,
         budgets = budgets,
         allocations = allocations,
     )

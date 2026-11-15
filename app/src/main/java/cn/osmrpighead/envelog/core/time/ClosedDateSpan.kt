@@ -14,5 +14,6 @@ data class ClosedDateSpan(
 
     fun toHalfOpen() = HalfOpenDateSpan(startDate, endDate.plusDays(1))
     fun format(style: FormatStyle = FormatStyle.SHORT, locale: Locale = AppLocale.current()): String =
-        "${startDate.format(style, locale)} ~ ${endDate.format(style, locale)}"
+        if (length == 1L) startDate.format(style, locale)
+        else "${startDate.format(style, locale)} ~ ${endDate.format(style, locale)}"
 }

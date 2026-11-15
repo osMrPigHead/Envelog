@@ -59,6 +59,7 @@ class DetailModalDelegate(
                 isNew = false,
                 isDirty = false,
             ),
+            dateSpan = date?.toHalfOpenDateSpan()?.toClosed() ?: budget.dateSpan.toClosed(),
             allocations = allocations,
             dismissed = false,
         )
@@ -81,6 +82,7 @@ class DetailModalDelegate(
                 isNew = true,
                 isDirty = false,
             ),
+            dateSpan = date.toHalfOpenDateSpan().toClosed(),
             allocations = allocations,
             dismissed = false,
         )

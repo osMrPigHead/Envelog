@@ -35,3 +35,4 @@ fun BigDecimal.asAmount(scale: Int, roundingMode: RoundingMode): Long =
     setScale(scale, roundingMode).movePointRight(2).toLong()
 
 fun Long.ratioOf(denominator: Long): Ratio = Ratio.of(this, denominator)
+fun Long.formatWithSign(): String = String.format("%+d", this)

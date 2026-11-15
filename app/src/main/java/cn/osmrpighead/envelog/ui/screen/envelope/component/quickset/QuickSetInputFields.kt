@@ -183,8 +183,8 @@ internal fun QuickSetTargetRangeField(
 
     DateRangePickerField(
         span = span,
-        dialogBuilder = DateRangePickerDialogBuilder.Default(
-            confirmEventHandler = DateRangePickerConfirmEventHandler.Default(onSpanChange),
+        dialogBuilder = DateRangePickerDialogBuilder.of(
+            onSpanChange = onSpanChange,
             initialSpan = span,
             selectableDates = selectableDates,
         ),

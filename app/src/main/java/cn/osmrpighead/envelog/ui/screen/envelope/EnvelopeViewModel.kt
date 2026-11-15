@@ -70,21 +70,6 @@ class EnvelopeViewModel @AssistedInject constructor(
         )
     } else flowOf(emptyList())
 
-    private val ledgerState = combine(
-        yearMonth,
-        budgets,
-        allocations,
-        allocationSummaries,
-    ) { yearMonth, budgets, allocations, allocationSummaries ->
-        LedgerState.of(
-            span = yearMonth.toHalfOpenDateSpan(), // TODO: User rule
-            firstDayOfWeek = DayOfWeek.MONDAY, // TODO: User rule
-            budgets = budgets,
-            allocations = allocations,
-            allocationSummaries = allocationSummaries,
-        )
-    }
-
     private val detailModal = DetailModalDelegate(
         isNew = isNew,
         envelopeId = envelopeId,
@@ -112,6 +97,23 @@ class EnvelopeViewModel @AssistedInject constructor(
         repository = repository,
         scope = viewModelScope,
     )
+
+    private val ledgerState = combine(
+        yearMonth,
+        budgets,
+        allocations,
+        allocationSummaries,
+        envelopeForm.state,
+    ) { yearMonth, budgets, allocations, allocationSummaries, envelopeForm ->
+        LedgerState.of(
+            span = yearMonth.toHalfOpenDateSpan(), // TODO: User rule
+            firstDayOfWeek = DayOfWeek.MONDAY, // TODO: User rule
+            isBudgeted = envelopeForm?.envelope?.isBudgeted ?: true,
+            budgets = budgets,
+            allocations = allocations,
+            allocationSummaries = allocationSummaries,
+        )
+    }
 
     private val detailNotReady = when (route.id) {
         is NavigationTarget.Existing -> EnvelopeDetail.Loading

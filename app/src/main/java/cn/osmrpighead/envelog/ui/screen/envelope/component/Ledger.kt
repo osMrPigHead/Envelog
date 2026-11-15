@@ -36,8 +36,7 @@ fun Ledger(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacingMedium))
-            .verticalScroll(rememberScrollState()),
+            .padding(top = dimensionResource(R.dimen.spacingMedium)),
     ) {
         AnimatedContent(
             targetState = activeTab,
@@ -73,7 +72,7 @@ fun Ledger(
                     ),
                 )
 
-                EnvelopeTab.Calendar -> BudgetCalendar(
+                EnvelopeTab.Calendar -> EnvelopeCalendar(
                     model = ledgerState.calendar,
                     onDateClick = onDateClick,
                     onBudgetClick = onBudgetClick,

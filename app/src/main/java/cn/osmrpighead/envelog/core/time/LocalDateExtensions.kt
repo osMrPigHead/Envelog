@@ -10,6 +10,7 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 infix fun LocalDate.countDaysTo(other: LocalDate): Long = other.toEpochDay() - toEpochDay()
+infix fun LocalDate.countMonthsTo(other: LocalDate): Long = yearMonth countMonthsTo other.yearMonth
 
 infix fun LocalDate.untilExclusive(end: LocalDate): HalfOpenDateSpan = HalfOpenDateSpan(this, end)
 infix fun LocalDate.untilInclusive(end: LocalDate): ClosedDateSpan = ClosedDateSpan(this, end)

@@ -18,11 +18,14 @@ import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeForm
 @Composable
 fun EnvelopeForm(
     form: EnvelopeForm,
+    dismissed: Boolean,
     update: (EnvelopeField) -> Unit,
 ) {
+    val enabled = form.state is FormState.Active && !dismissed
+
     OutlinedTextField(
         value = form.envelope.name,
-        enabled = form.state is FormState.Active,
+        enabled = enabled,
         onValueChange = { update(EnvelopeField.Name(it)) },
         label = { Text(text = stringResource(R.string.common_label_name)) },
         singleLine = true,
@@ -31,7 +34,7 @@ fun EnvelopeForm(
 
     LabeledSwitch(
         checked = form.envelope.isBudgeted,
-        enabled = form.state is FormState.Active,
+        enabled = enabled,
         onCheckedChange = { update(EnvelopeField.IsBudgeted(it)) },
         modifier = Modifier
             .fillMaxWidth()

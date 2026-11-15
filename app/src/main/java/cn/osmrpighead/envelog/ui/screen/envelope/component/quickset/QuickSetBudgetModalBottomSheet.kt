@@ -34,8 +34,11 @@ fun QuickSetBudgetModalBottomSheet(
 
     LaunchedEffect(modalState.state, modalState.dismissed) {
         if (modalState.state != FormState.Completed && !modalState.dismissed) return@LaunchedEffect
-        sheetState.hide()
-        clear()
+        try {
+            sheetState.hide()
+        } finally {
+            clear()
+        }
     }
 
     ModalBottomSheet(

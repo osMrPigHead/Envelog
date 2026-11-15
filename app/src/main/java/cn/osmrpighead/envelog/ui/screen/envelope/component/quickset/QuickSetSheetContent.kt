@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,7 +27,7 @@ import cn.osmrpighead.envelog.ui.text.dayOfWeekRangeText
 import java.time.YearMonth
 
 @Composable
-internal fun QuickSetSheetContent(
+internal fun ColumnScope.QuickSetSheetContent(
     yearMonth: YearMonth,
     modalState: QuickSetFormModalState,
     numKeypadHost: NumKeypadHostState,
@@ -36,52 +37,50 @@ internal fun QuickSetSheetContent(
 ) {
     val config = modalState.config
 
-    Scaffold(
-        bottomBar = {
-            NumKeypadHost(
-                numKeypadHost,
-                modifier = Modifier.disableVerticalDrag(),
-            )
-        },
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxWidth()
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .background(MaterialTheme.colorScheme.surface)
+            .fillMaxWidth()
+            .imePadding()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        LabeledBox(
+            label = stringResource(R.string.envelope_edit_quick_set_title),
+            modifier = Modifier.padding(dimensionResource(R.dimen.spacingLarge)),
         ) {
-            LabeledBox(
-                label = stringResource(R.string.envelope_edit_quick_set_title),
-                modifier = Modifier.padding(dimensionResource(R.dimen.spacingLarge)),
-            ) {
-                QuickSetModeSection(
-                    config = config,
-                    fieldErrors = modalState.fieldErrors,
-                    numKeypadHost = numKeypadHost,
-                    maxIntervalDays = config.targetSpan.length,
-                    update = update,
-                    modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
-                )
-                QuickSetTargetRangeField(
-                    yearMonth = yearMonth,
-                    span = config.targetSpan,
-                    enabled = config.mode != QuickSetMode.Monthly,
-                    onSpanChange = { update(QuickSetField.TargetSpan(it)) },
-                )
-                QuickSetFeedback(
-                    preview = modalState.preview,
-                    error = (modalState.state as? FormState.Active)?.error,
-                )
-                QuickSetActions(
-                    active = modalState.state is FormState.Active,
-                    isError = modalState.isError,
-                    dismiss = dismiss,
-                    apply = apply,
-                )
-            }
+            QuickSetModeSection(
+                enabled = modalState.state is FormState.Active && !modalState.dismissed,
+                config = config,
+                fieldErrors = modalState.fieldErrors,
+                numKeypadHost = numKeypadHost,
+                maxIntervalDays = config.targetSpan.length,
+                update = update,
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
+            )
+            QuickSetTargetRangeField(
+                yearMonth = yearMonth,
+                span = config.targetSpan,
+                enabled = config.mode != QuickSetMode.Monthly,
+                onSpanChange = { update(QuickSetField.TargetSpan(it)) },
+            )
+            QuickSetFeedback(
+                preview = modalState.preview,
+                error = (modalState.state as? FormState.Active)?.error,
+            )
+            QuickSetActions(
+                active = modalState.state is FormState.Active,
+                isError = modalState.isError,
+                dismiss = dismiss,
+                apply = apply,
+            )
         }
     }
+
+    NumKeypadHost(
+        numKeypadHost,
+        modifier = Modifier.disableVerticalDrag(),
+    )
 }
 
 @Composable

@@ -6,11 +6,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.LineHeightStyle
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
@@ -28,7 +35,7 @@ import java.time.YearMonth
 @Composable
 private fun BudgetRow(
     budget: Budget,
-    dateRange: String,
+    dateRange: AnnotatedString,
     onBudgetClick: (BudgetId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,11 +100,9 @@ fun BudgetList(
     onBudgetClick: (BudgetId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val month = yearMonth.toHalfOpenDateSpan()
-    val visibleBudgets = budgets.mapNotNull { budget ->
-        val span = budget.dateSpan intersect month
-        if (span.startDate < span.endDate) budget to span else null
-    }.sortedBy { (_, span) -> span.startDate }
+    val visibleBudgets = budgets
+        .filter { it.dateSpan overlaps yearMonth.toHalfOpenDateSpan() }
+        .sortedBy { it.dateSpan.startDate }
     if (visibleBudgets.isEmpty()) return
     Column(
         modifier = modifier
@@ -105,13 +110,20 @@ fun BudgetList(
             .fillMaxWidth(),
     ) {
         BudgetListHeader(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacingSmall)))
-        Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge))) {
-            for ((budget, span) in visibleBudgets)
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge))) {
+            items(visibleBudgets, { it.id.toString() }) {
                 BudgetRow(
-                    budget = budget,
-                    dateRange = dayRangeText(span.toClosed()),
+                    budget = it,
+                    dateRange = dayRangeText(
+                        span = it.dateSpan.toClosed(),
+                        diffStyle = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.primary,
+                            baselineShift = BaselineShift(.2f),
+                        ),
+                    ),
                     onBudgetClick = onBudgetClick,
                 )
+            }
         }
     }
 }

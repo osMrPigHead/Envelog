@@ -1,7 +1,9 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
@@ -11,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.component.HugeDangerButton
+import cn.osmrpighead.envelog.ui.component.DangerButton
 import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.form.MonthPickerButton
@@ -71,6 +73,7 @@ private fun TopBar(
 private fun SuccessBody(
     yearMonth: YearMonth,
     today: LocalDate,
+    dismissed: Boolean,
     detail: EnvelopeDetail.Success,
     onEvent: (EnvelopeEvent) -> Unit,
     back: () -> Unit,
@@ -93,6 +96,7 @@ private fun SuccessBody(
         Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold))) {
             EnvelopeForm(
                 form = detail.envelopeForm,
+                dismissed = dismissed,
                 update = { onEvent(UpdateEnvelope(it)) },
             )
 
@@ -125,18 +129,35 @@ private fun SuccessBody(
             modifier = Modifier.weight(1f),
         )
 
-        if (detail.envelopeForm.isNew)
-            HugeDangerButton(
-                onClick = back,
-            ) { Text(text = stringResource(R.string.common_action_cancel)) }
-        else if (detail.isDeletable)
-            HugeDangerButton(
-                onClick = { showDeleteConfirmation = true },
-            ) { Text(text = stringResource(R.string.common_action_delete_envelope)) }
-        else
-            HugeDangerButton(
-                onClick = { showArchiveConfirmation = true },
-            ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = dimensionResource(R.dimen.spacingExtra),
+                    vertical = dimensionResource(R.dimen.spacingThin),
+                ),
+        ) {
+            if (detail.envelopeForm.isNew)
+                DangerButton(
+                    onClick = back,
+                    modifier = Modifier.weight(1f),
+                ) { Text(text = stringResource(R.string.common_action_cancel)) }
+            else if (detail.isDeletable)
+                DangerButton(
+                    onClick = { showDeleteConfirmation = true },
+                    modifier = Modifier.weight(1f),
+                ) { Text(text = stringResource(R.string.common_action_delete_envelope)) }
+            else
+                DangerButton(
+                    onClick = { showArchiveConfirmation = true },
+                    modifier = Modifier.weight(1f),
+                ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
+            Button(
+                onClick = { onEvent(SaveEnvelope) },
+                modifier = Modifier.weight(1f),
+            ) { Text(text = stringResource(R.string.common_action_save_and_back)) }
+        }
     }
 
     if (showArchiveConfirmation) ArchiveEnvelopeConfirmationDialog(
@@ -165,9 +186,15 @@ private fun Body(
     back: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    BackHandler { if (detail.saveAndQuit) onEvent(SaveEnvelope) else back() }
+    var dismissed by remember { mutableStateOf(false) }
+    BackHandler {
+        if (detail.saveAndQuit) onEvent(SaveEnvelope) else {
+            dismissed = true
+            back()
+        }
+    }
     when (detail) {
-        is EnvelopeDetail.Success -> SuccessBody(yearMonth, today, detail, onEvent, back, modifier)
+        is EnvelopeDetail.Success -> SuccessBody(yearMonth, today, dismissed, detail, onEvent, back, modifier)
         EnvelopeDetail.Loading -> {}
         EnvelopeDetail.IsNew -> {
             val envelopeName = stringResource(R.string.envelope_edit_default_name)
@@ -187,7 +214,7 @@ private fun Overlays(
     if (detail.detailModalState != null) DetailModalBottomSheet(
         detailModalState = detail.detailModalState,
         update = { onEvent(UpdateBudget(it)) },
-        close = { onEvent(DismissDetail) },
+        dismiss = { onEvent(DismissDetail) },
         save = { onEvent(SaveBudget) },
         delete = { onEvent(DeleteBudget) },
         clear = { onEvent(ClearDetail) },

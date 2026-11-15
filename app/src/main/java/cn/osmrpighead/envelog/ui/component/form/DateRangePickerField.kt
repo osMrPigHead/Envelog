@@ -60,6 +60,8 @@ sealed interface DateRangePickerDialogBuilder {
     class Default(
         private val confirmEventHandler: DateRangePickerConfirmEventHandler,
         private val onDismiss: (hideDialog: () -> Unit) -> Unit = { it() },
+        private val initialSpan: ClosedDateSpan? = null,
+        private val selectableDates: SelectableDates? = null,
         private val dismissButton: (@Composable (hideDialog: () -> Unit) -> Unit)? = {
             TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) }
         },
@@ -67,8 +69,6 @@ sealed interface DateRangePickerDialogBuilder {
         private val colors: DatePickerColors? = null,
         private val title: (@Composable () -> Unit)? = null,
         private val headline: (@Composable () -> Unit)? = null,
-        private val initialSpan: ClosedDateSpan? = null,
-        private val selectableDates: SelectableDates? = null,
     ) : DateRangePickerDialogBuilder {
         @Composable
         override fun Composable(hideDialog: () -> Unit, modifier: Modifier) {
@@ -103,6 +103,18 @@ sealed interface DateRangePickerDialogBuilder {
                 )
             }
         }
+    }
+
+    companion object {
+        fun of(
+            onSpanChange: (ClosedDateSpan) -> Unit,
+            initialSpan: ClosedDateSpan? = null,
+            selectableDates: SelectableDates? = null,
+        ) = Default(
+            confirmEventHandler = DateRangePickerConfirmEventHandler.Default(onSpanChange),
+            initialSpan = initialSpan,
+            selectableDates = selectableDates,
+        )
     }
 }
 

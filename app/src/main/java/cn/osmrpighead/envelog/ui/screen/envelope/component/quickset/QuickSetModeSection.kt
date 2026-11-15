@@ -26,6 +26,7 @@ import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
 
 @Composable
 internal fun QuickSetModeSection(
+    enabled: Boolean,
     config: QuickSetFormState,
     fieldErrors: Set<QuickSetFieldError>,
     numKeypadHost: NumKeypadHostState,
@@ -44,7 +45,7 @@ internal fun QuickSetModeSection(
         modifier = modifier.selectableGroup(),
     ) {
         QuickSetModeRow(
-            dailySelected, fieldErrors, numKeypadHost, update, config.dailyConfig.amount,
+            dailySelected, enabled, fieldErrors, numKeypadHost, update, config.dailyConfig.amount,
             amountField = QuickSetField.Daily::Amount,
             amountDescription = stringResource(R.string.envelope_edit_quick_set_daily_amount_field),
             mode = QuickSetMode.Daily,
@@ -53,7 +54,7 @@ internal fun QuickSetModeSection(
             QuickSetIntervalField(
                 days = config.dailyConfig.intervalDays,
                 maxDays = maxIntervalDays,
-                enabled = dailySelected,
+                enabled = dailySelected && enabled,
                 description = stringResource(R.string.envelope_edit_quick_set_interval_field),
                 onValueChange = { days -> update(QuickSetField.Daily.Interval(days)) },
                 modifier = Modifier.weight(1f),
@@ -66,7 +67,7 @@ internal fun QuickSetModeSection(
         }
 
         QuickSetModeRow(
-            weeklySelected, fieldErrors, numKeypadHost, update, config.weeklyConfig.amount,
+            weeklySelected, enabled, fieldErrors, numKeypadHost, update, config.weeklyConfig.amount,
             amountField = QuickSetField.Weekly::Amount,
             amountDescription = stringResource(R.string.envelope_edit_quick_set_weekly_amount_field),
             mode = QuickSetMode.Weekly,
@@ -78,7 +79,7 @@ internal fun QuickSetModeSection(
                 sheetBuilder = DayOfWeekRangePickerSheetBuilder.of { start, end ->
                     update(QuickSetField.Weekly.DaySpan(start, end))
                 },
-                enabled = weeklySelected,
+                enabled = weeklySelected && enabled,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
                 ),
@@ -98,7 +99,7 @@ internal fun QuickSetModeSection(
         }
 
         QuickSetModeRow(
-            monthlySelected, fieldErrors, numKeypadHost, update, config.monthlyConfig.amount,
+            monthlySelected, enabled, fieldErrors, numKeypadHost, update, config.monthlyConfig.amount,
             amountField = QuickSetField.Monthly::Amount,
             amountDescription = stringResource(R.string.envelope_edit_quick_set_monthly_amount_field),
             mode = QuickSetMode.Monthly,
@@ -112,6 +113,7 @@ internal fun QuickSetModeSection(
 @Composable
 private fun QuickSetModeRow(
     selected: Boolean,
+    enabled: Boolean,
     fieldErrors: Set<QuickSetFieldError>,
     numKeypadHost: NumKeypadHostState,
     update: (QuickSetField) -> Unit,
@@ -127,6 +129,7 @@ private fun QuickSetModeRow(
             .fillMaxWidth()
             .selectable(
                 selected = selected,
+                enabled = enabled,
                 onClick = { update(QuickSetField.Mode(mode)) },
                 role = Role.RadioButton,
             )
@@ -134,7 +137,7 @@ private fun QuickSetModeRow(
         horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
         verticalAlignment = Alignment.CenterVertically,
         content = {
-            RadioButton(selected = selected, onClick = null)
+            RadioButton(selected = selected, enabled = enabled, onClick = null)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
                 verticalAlignment = Alignment.Bottom,
@@ -145,7 +148,7 @@ private fun QuickSetModeRow(
                         fieldErrors = fieldErrors,
                         host = numKeypadHost,
                         update = { amount -> update(amountField(amount)) },
-                        selected = selected,
+                        selected = selected && enabled,
                         description = amountDescription,
                         modifier = Modifier.weight(1f),
                         label = if (it) amountDescription else null,

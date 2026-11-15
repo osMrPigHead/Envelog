@@ -11,7 +11,7 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
 
 @Composable
-fun HugeDangerButton(
+fun DangerButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
@@ -19,9 +19,7 @@ fun HugeDangerButton(
     Button(
         onClick = onClick,
         colors = ButtonColor.danger,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = dimensionResource(R.dimen.spacingExtra)),
+        modifier = modifier,
         content = content
     )
 }

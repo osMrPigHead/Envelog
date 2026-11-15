@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,7 +36,7 @@ private fun DayCell(
     style: StatItemStyle,
     date: LocalDate,
     allocation: Long?,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     StatItem(
@@ -46,12 +47,17 @@ private fun DayCell(
             caption = allocation?.takeIf { it != 0L }?.formatAsAmount(Formatter.AmountConcise)?.asSlot()
                 ?: StatItemSlot.Space,
         ),
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = onClick?.let { modifier.clickable(onClick = onClick) } ?: modifier,
     )
 }
 
 @Composable
-private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier: Modifier = Modifier) {
+private fun BudgetCapsule(
+    budget: BudgetDisplay.NoSpace,
+    fill: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -63,15 +69,16 @@ private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = when (budget) {
+                .clip(
+                    when (budget) {
                         is BudgetDisplay.Internal -> CircleShape
                         is BudgetDisplay.External -> RectangleShape
                         is BudgetDisplay.LeftBound -> CapsuleStart
                         is BudgetDisplay.RightBound -> CapsuleEnd
                     },
                 )
+                .clickable(onClick = onClick)
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(horizontal = dimensionResource(R.dimen.spacingSmall))
                 .then(if (fill) Modifier.fillMaxWidth() else Modifier),
         )
@@ -79,7 +86,7 @@ private fun BudgetCapsule(budget: BudgetDisplay.NoSpace, fill: Boolean, modifier
 }
 
 @Composable
-fun BudgetCalendar(
+fun EnvelopeCalendar(
     model: EnvelopeCalendarModel,
     onDateClick: (LocalDate) -> Unit,
     onBudgetClick: (BudgetId, LocalDate?) -> Unit,
@@ -97,23 +104,24 @@ fun BudgetCalendar(
                         style,
                         date,
                         model.dates[date]?.allocationSummary?.amount,
-                        if (budgetId == null) {
-                            { onDateClick(date) }
-                        } else {
+                        if (!model.isBudgeted) null
+                        else if (budgetId != null) {
                             { onBudgetClick(budgetId, date) }
+                        } else {
+                            { onDateClick(date) }
                         },
                         Modifier.weight(1f),
                     )
                 }
                 if (after > 0) Spacer(modifier = spacerModifier.weight(after.toFloat()))
             }
-            if (budgets.isNotEmpty()) Row {
+            if (model.isBudgeted) Row {
                 for (budget in budgets) when (budget) {
                     is BudgetDisplay.NoSpace -> BudgetCapsule(
                         budget = budget,
                         fill = budget.length != 1L,
+                        onClick = { onBudgetClick(budget.id, null) },
                         modifier = Modifier
-                            .clickable { onBudgetClick(budget.id, null) }
                             .padding(horizontal = dimensionResource(R.dimen.spacingMedium))
                             .weight(budget.length.toFloat()),
                     )
