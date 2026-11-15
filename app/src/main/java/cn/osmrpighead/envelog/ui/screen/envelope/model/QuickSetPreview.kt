@@ -1,10 +1,10 @@
-package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
+package cn.osmrpighead.envelog.ui.screen.envelope.model
 
 import java.time.DayOfWeek
 
-internal sealed interface QuickSetPreview {
+sealed interface QuickSetPreview {
     data class Daily(
-        val intervalDays: Int,
+        val intervalDays: Long,
         val amount: Long,
         val days: Long,
         val totalAmount: Long,

@@ -1,15 +1,18 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -20,11 +23,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
+import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
+import cn.osmrpighead.envelog.core.time.toLocalDate
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
+import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
+import cn.osmrpighead.envelog.ui.model.AmountValidationError
+import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFieldError
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
+import java.math.RoundingMode
+import java.time.YearMonth
 
 @Composable
 private fun QuickSetAffix(
@@ -44,22 +58,21 @@ private fun QuickSetAffix(
  * 只接受纯数字输入，符号一律拒绝；超出目标区间天数的输入同样拒绝。
  * 返回 null 表示本次输入无效，应保持原值。
  */
-private fun TextFieldValue.sanitizedIntervalDays(maxDays: Int): Int? {
+private fun TextFieldValue.sanitizedIntervalDays(maxDays: Long): Long? {
     if (text.isEmpty()) return 0
     if (text.any { it !in '0'..'9' }) return null
 
-    val days = text.trimStart('0').ifEmpty { "0" }.toIntOrNull() ?: return null
+    val days = text.trimStart('0').ifEmpty { "0" }.toLongOrNull() ?: return null
     return days.takeUnless { it > maxDays }
 }
 
 @Composable
 internal fun QuickSetIntervalField(
-    days: Int,
-    maxDays: Int,
+    days: Long,
+    maxDays: Long,
     enabled: Boolean,
     description: String,
-    onValueChange: (Int) -> Unit,
-    onFocus: () -> Unit,
+    onValueChange: (Long) -> Unit,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
     supportingText: (@Composable () -> Unit)? = null,
@@ -70,9 +83,7 @@ internal fun QuickSetIntervalField(
     OutlinedTextField(
         value = TextFieldValue(text, TextRange(text.length)),
         onValueChange = { input -> input.sanitizedIntervalDays(maxDays)?.let(onValueChange) },
-        modifier = modifier
-            .semantics { this.contentDescription = description }
-            .onFocusChanged { if (it.isFocused) onFocus() },
+        modifier = modifier.semantics { this.contentDescription = description },
         enabled = enabled,
         singleLine = true,
         isError = isError,
@@ -101,28 +112,47 @@ internal fun QuickSetIntervalField(
 @Composable
 internal fun QuickSetAmountField(
     amount: Long,
+    fieldErrors: Set<QuickSetFieldError>,
     host: NumKeypadHostState,
-    consumer: AmountConsumer,
-    fieldId: Any,
-    enabled: Boolean,
+    update: (Long) -> Unit,
+    selected: Boolean,
     description: String,
     modifier: Modifier = Modifier,
-    isError: Boolean = false,
-    supportingText: (@Composable () -> Unit)? = null,
     label: String? = null,
 ) {
     val labelContent: (@Composable () -> Unit)? = if (label == null) null else {
         { Text(text = label) }
     }
 
+    val fieldId = remember { Any() }
+    val consumer = remember {
+        AmountConsumer(
+            scale = 0,
+            roundingMode = RoundingMode.HALF_UP,
+            submit = update,
+            cancel = {},
+        )
+    }
+
+    val active = host.activeFieldId == fieldId
+    val nonPositive = QuickSetFieldError.AmountNonPositive in fieldErrors ||
+            (active && consumer.validationError == AmountValidationError.NonPositive)
+    val error = nonPositive || (active && consumer.validationError != null)
+
     NumKeypadField(
         value = amount.formatAsAmount(Formatter.AmountInteger),
         host = host,
         consumer = consumer,
         fieldId = fieldId,
-        enabled = enabled,
-        isError = isError,
-        supportingText = supportingText,
+        enabled = selected,
+        isError = error && selected,
+        supportingText =
+            if (nonPositive && selected) {
+                { Text(text = stringResource(R.string.common_msg_amount_positive)) }
+            }
+            else {
+                { Spacer(Modifier.height(MaterialTheme.typography.bodySmall.lineHeightAsDp)) }
+            },
         label = labelContent,
         suffix = {
             QuickSetAffix(
@@ -131,5 +161,37 @@ internal fun QuickSetAmountField(
             )
         },
         modifier = modifier.semantics { this.contentDescription = description },
+    )
+}
+
+@Composable
+internal fun QuickSetTargetRangeField(
+    yearMonth: YearMonth,
+    span: ClosedDateSpan,
+    enabled: Boolean,
+    onSpanChange: (ClosedDateSpan) -> Unit,
+) {
+    val selectableDates = remember(yearMonth) {
+        val monthSpan = yearMonth.toHalfOpenDateSpan()
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                utcTimeMillis.toLocalDate() in monthSpan
+
+            override fun isSelectableYear(year: Int): Boolean = year == yearMonth.year
+        }
+    }
+
+    DateRangePickerField(
+        span = span,
+        dialogBuilder = DateRangePickerDialogBuilder.Default(
+            confirmEventHandler = DateRangePickerConfirmEventHandler.Default(onSpanChange),
+            initialSpan = span,
+            selectableDates = selectableDates,
+        ),
+        enabled = enabled,
+        label = { Text(text = stringResource(R.string.envelope_edit_quick_set_range_label)) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = dimensionResource(R.dimen.spacingMedium)),
     )
 }

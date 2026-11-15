@@ -9,10 +9,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalFocusManager
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.FormState
-import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormError
+import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetField
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormModalState
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
-import kotlinx.coroutines.launch
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,7 +18,7 @@ import java.time.YearMonth
 fun QuickSetBudgetModalBottomSheet(
     yearMonth: YearMonth,
     modalState: QuickSetFormModalState,
-    update: (QuickSetFormState) -> Unit,
+    update: (QuickSetField) -> Unit,
     apply: (Boolean) -> Unit,
     dismiss: () -> Unit,
     clear: () -> Unit,
@@ -28,8 +26,6 @@ fun QuickSetBudgetModalBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val numKeypadHost = rememberNumKeypadHostState()
-    val focusManager = LocalFocusManager.current
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(sheetState) {
         sheetState.show()
@@ -41,37 +37,15 @@ fun QuickSetBudgetModalBottomSheet(
         clear()
     }
 
-    val closeKeypadAndFocus: () -> Unit = {
-        numKeypadHost.safeClose()
-        focusManager.clearFocus()
-    }
-
     ModalBottomSheet(
         onDismissRequest = dismiss,
         sheetState = sheetState,
     ) {
         QuickSetSheetContent(
-            yearMonth = yearMonth,
-            modalState = modalState,
-            numKeypadHost = numKeypadHost,
-            onModeChange = closeKeypadAndFocus,
-            onTextInputFocus = {
-                numKeypadHost.safeClose()
-                scope.launch { sheetState.expand() }
-            },
-            onPickerOpen = closeKeypadAndFocus,
-            onUpdate = update,
-            onCancel = dismiss,
-            // 键盘打开时第一次点击只确认键盘，等待下一次点击才提交；提交中不提交。
-            onApply = {
-                when {
-                    modalState.state is FormState.Busy -> {}
-                    numKeypadHost.isOpen -> numKeypadHost.confirm()
-                    else -> {
-                        focusManager.clearFocus()
-                        apply(false)
-                    }
-                }
+            yearMonth, modalState, numKeypadHost, update, dismiss,
+            apply = {
+                if (numKeypadHost.isOpen) numKeypadHost.safeClose()
+                else apply(false)
             },
         )
         if (modalState.state is FormState.Active && modalState.pendingOverwrite != null)

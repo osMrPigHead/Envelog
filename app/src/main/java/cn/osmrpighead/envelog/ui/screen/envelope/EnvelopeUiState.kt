@@ -6,8 +6,10 @@ import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetPreview
 import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -45,9 +47,8 @@ data class BudgetForm(
     val saveBeforeQuit = isDirty && state is FormState.Active && !isError
 }
 
-sealed interface QuickSetFormError {
-    data object EnvelopeArchived : QuickSetFormError
-    data object CannotGenerate : QuickSetFormError
+enum class QuickSetFormError {
+    EnvelopeArchived, CannotGenerate,
 }
 
 enum class QuickSetFieldError {
@@ -61,7 +62,36 @@ data class QuickSetFormModalState(
     val schedule: QuickSetSchedule?,
     val pendingOverwrite: List<Budget>?,
     val dismissed: Boolean,
-)
+) {
+    val isError = (state as? FormState.Active)?.error != null || fieldErrors.isNotEmpty()
+    val preview: QuickSetPreview? get() {
+        val plan = schedule ?: return null
+        val amount = config.selectedConfig.amount
+        if (amount <= 0L) return null
+        val days = plan.segments.sumOf { it.span.length }
+        return when (config.mode) {
+            QuickSetMode.Daily -> QuickSetPreview.Daily(
+                intervalDays = config.dailyConfig.intervalDays,
+                amount = amount,
+                days = days,
+                totalAmount = plan.totalAmount,
+            )
+
+            QuickSetMode.Weekly -> QuickSetPreview.Weekly(
+                startDayOfWeek = config.weeklyConfig.startDayOfWeek,
+                endDayOfWeek = config.weeklyConfig.endDayOfWeek,
+                amount = amount,
+                days = days,
+                totalAmount = plan.totalAmount,
+            )
+
+            QuickSetMode.Monthly -> QuickSetPreview.MonthlyTotal(
+                totalAmount = plan.totalAmount,
+                days = days,
+            )
+        }
+    }
+}
 
 data class DetailModalState(
     val budgetForm: BudgetForm,

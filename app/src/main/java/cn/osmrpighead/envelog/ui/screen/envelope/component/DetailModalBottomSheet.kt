@@ -56,8 +56,7 @@ fun BudgetItemSheet(
     val budgetOverlaps = BudgetOverlaps in budgetForm.fieldErrors
     val (amountNonPositive, amountError) = consumer.nonPositiveToError(
         AmountNonPositive in budgetForm.fieldErrors,
-        fieldId,
-        numKeypadHost,
+        fieldId, numKeypadHost,
     )
 
     LabeledBox(

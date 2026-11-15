@@ -2,7 +2,6 @@ package cn.osmrpighead.envelog.ui.screen.envelope.model
 
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
-import cn.osmrpighead.envelog.core.time.countDaysTo
 import cn.osmrpighead.envelog.core.time.nextOrSame
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
@@ -15,14 +14,14 @@ import java.time.YearMonth
 enum class QuickSetMode {
     Daily,
     Weekly,
-    MonthlyTotal,
+    Monthly,
 }
 
 sealed interface QuickSetConfig {
     val amount: Long
 
     data class Daily(
-        val intervalDays: Int,
+        val intervalDays: Long,
         override val amount: Long,
     ) : QuickSetConfig
 
@@ -32,7 +31,7 @@ sealed interface QuickSetConfig {
         override val amount: Long,
     ) : QuickSetConfig
 
-    data class MonthlyTotal(
+    data class Monthly(
         override val amount: Long,
     ) : QuickSetConfig
 }
@@ -65,7 +64,7 @@ object QuickSetBudgetPlanner {
 
         val monthSpan = yearMonth.toHalfOpenDateSpan()
         val targetSpan = when (config) {
-            is QuickSetConfig.MonthlyTotal -> monthSpan
+            is QuickSetConfig.Monthly -> monthSpan
             is QuickSetConfig.Daily, is QuickSetConfig.Weekly -> selection.toHalfOpen() intersect monthSpan
         }
         if (targetSpan.length <= 0) return null
@@ -73,7 +72,7 @@ object QuickSetBudgetPlanner {
         val segments = when (config) {
             is QuickSetConfig.Daily -> dailySegments(config, targetSpan)
             is QuickSetConfig.Weekly -> weeklySegments(config, targetSpan)
-            is QuickSetConfig.MonthlyTotal -> listOf(QuickSetSegment(targetSpan, config.amount))
+            is QuickSetConfig.Monthly -> listOf(QuickSetSegment(targetSpan, config.amount))
         }
         if (segments.isEmpty() || segments.any { it.amount <= 0 }) return null
 
@@ -121,7 +120,7 @@ object QuickSetBudgetPlanner {
         span: HalfOpenDateSpan,
     ): List<QuickSetSegment> {
         if (config.intervalDays <= 0) return emptyList()
-        val periodDays = config.intervalDays.toLong()
+        val periodDays = config.intervalDays
 
         return buildList {
             var cursor = span.startDate

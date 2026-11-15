@@ -1,43 +1,24 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.core.time.ClosedDateSpan
-import cn.osmrpighead.envelog.core.time.countDaysTo
-import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
-import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.component.LabeledBox
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetField
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormError
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormModalState
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetSchedule
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetPreview
 import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
@@ -49,19 +30,11 @@ internal fun QuickSetSheetContent(
     yearMonth: YearMonth,
     modalState: QuickSetFormModalState,
     numKeypadHost: NumKeypadHostState,
-    onModeChange: () -> Unit,
-    onTextInputFocus: () -> Unit,
-    onPickerOpen: () -> Unit,
-    onUpdate: (QuickSetFormState) -> Unit,
-    onCancel: () -> Unit,
-    onApply: () -> Unit,
+    update: (QuickSetField) -> Unit,
+    dismiss: () -> Unit,
+    apply: () -> Unit,
 ) {
     val config = modalState.config
-    val schedule = modalState.schedule
-    val error = (modalState.state as? FormState.Active)?.error
-    val fieldErrors = modalState.fieldErrors
-    val isBusy = modalState.state is FormState.Busy
-    val maxIntervalDays = config.targetSpan.maxIntervalDays()
 
     Scaffold(
         bottomBar = {
@@ -84,122 +57,31 @@ internal fun QuickSetSheetContent(
             ) {
                 QuickSetModeSection(
                     config = config,
-                    fieldErrors = fieldErrors,
+                    fieldErrors = modalState.fieldErrors,
                     numKeypadHost = numKeypadHost,
-                    onModeChange = onModeChange,
-                    onTextInputFocus = onTextInputFocus,
-                    onPickerOpen = onPickerOpen,
-                    maxIntervalDays = maxIntervalDays,
-                    onUpdate = onUpdate,
+                    maxIntervalDays = config.targetSpan.length,
+                    update = update,
                     modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
                 )
                 QuickSetTargetRangeField(
                     yearMonth = yearMonth,
                     span = config.targetSpan,
-                    enabled = config.mode != QuickSetMode.MonthlyTotal,
-                    onSpanChange = { onUpdate(config.withTargetSpan(it)) },
-                    onOpen = onPickerOpen,
+                    enabled = config.mode != QuickSetMode.Monthly,
+                    onSpanChange = { update(QuickSetField.TargetSpan(it)) },
                 )
                 QuickSetFeedback(
-                    preview = derivePreview(config, schedule),
-                    error = error,
+                    preview = modalState.preview,
+                    error = (modalState.state as? FormState.Active)?.error,
                 )
                 QuickSetActions(
-                    isCompleted = modalState.state is FormState.Completed,
-                    canApply = !isBusy && canApply(config, schedule, maxIntervalDays),
-                    onCancel = onCancel,
-                    onApply = onApply,
+                    active = modalState.state is FormState.Active,
+                    isError = modalState.isError,
+                    dismiss = dismiss,
+                    apply = apply,
                 )
             }
         }
     }
-}
-
-private fun QuickSetFormState.selectedAmount(): Long = when (mode) {
-    QuickSetMode.Daily -> dailyConfig.amount
-    QuickSetMode.Weekly -> weeklyConfig.amount
-    QuickSetMode.MonthlyTotal -> monthlyConfig.amount
-}
-
-/** 换目标区间时按新区间天数上限夹紧日额间隔。 */
-private fun QuickSetFormState.withTargetSpan(span: ClosedDateSpan): QuickSetFormState {
-    val max = span.maxIntervalDays()
-    return copy(
-        targetSpan = span,
-        dailyConfig = if (dailyConfig.intervalDays > max) dailyConfig.copy(intervalDays = max) else dailyConfig,
-    )
-}
-
-private fun ClosedDateSpan.maxIntervalDays(): Int = (startDate countDaysTo endDate).toInt() + 1
-
-private fun canApply(
-    config: QuickSetFormState,
-    schedule: QuickSetSchedule?,
-    maxIntervalDays: Int,
-): Boolean = schedule != null &&
-    config.selectedAmount() > 0L &&
-    (config.mode != QuickSetMode.Daily || config.dailyConfig.intervalDays in 1..maxIntervalDays)
-
-private fun derivePreview(config: QuickSetFormState, schedule: QuickSetSchedule?): QuickSetPreview? {
-    val plan = schedule ?: return null
-    val amount = config.selectedAmount()
-    if (amount <= 0L) return null
-    val days = plan.segments.sumOf { it.span.length }
-    return when (config.mode) {
-        QuickSetMode.Daily -> QuickSetPreview.Daily(
-            intervalDays = config.dailyConfig.intervalDays,
-            amount = amount,
-            days = days,
-            totalAmount = plan.totalAmount,
-        )
-
-        QuickSetMode.Weekly -> QuickSetPreview.Weekly(
-            startDayOfWeek = config.weeklyConfig.startDayOfWeek,
-            endDayOfWeek = config.weeklyConfig.endDayOfWeek,
-            amount = amount,
-            days = days,
-            totalAmount = plan.totalAmount,
-        )
-
-        QuickSetMode.MonthlyTotal -> QuickSetPreview.MonthlyTotal(
-            totalAmount = plan.totalAmount,
-            days = days,
-        )
-    }
-}
-
-@Composable
-private fun QuickSetTargetRangeField(
-    yearMonth: YearMonth,
-    span: ClosedDateSpan,
-    enabled: Boolean,
-    onSpanChange: (ClosedDateSpan) -> Unit,
-    onOpen: () -> Unit,
-) {
-    val selectableDates = remember(yearMonth) {
-        val monthSpan = yearMonth.toHalfOpenDateSpan()
-        object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                utcTimeMillis.toLocalDate() in monthSpan
-
-            override fun isSelectableYear(year: Int): Boolean = year == yearMonth.year
-        }
-    }
-
-    DateRangePickerField(
-        span = span,
-        dialogBuilder = DateRangePickerDialogBuilder.Default(
-            confirmEventHandler = DateRangePickerConfirmEventHandler.Default(onSpanChange),
-            initialSpan = span,
-            selectableDates = selectableDates,
-        ),
-        enabled = enabled,
-        label = { Text(text = stringResource(R.string.envelope_edit_quick_set_range_label)) },
-        onOpen = onOpen,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacingMedium)),
-    )
 }
 
 @Composable
@@ -224,10 +106,10 @@ private fun QuickSetFeedback(
 
 @Composable
 private fun QuickSetActions(
-    isCompleted: Boolean,
-    canApply: Boolean,
-    onCancel: () -> Unit,
-    onApply: () -> Unit,
+    active: Boolean,
+    isError: Boolean,
+    dismiss: () -> Unit,
+    apply: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -236,14 +118,14 @@ private fun QuickSetActions(
         horizontalArrangement = Arrangement.End,
     ) {
         TextButton(
-            onClick = onCancel,
-            enabled = !isCompleted,
+            onClick = dismiss,
+            enabled = active,
         ) {
             Text(text = stringResource(R.string.common_action_cancel))
         }
         Button(
-            onClick = onApply,
-            enabled = canApply,
+            onClick = apply,
+            enabled = active && !isError,
         ) {
             Text(text = stringResource(R.string.common_action_ok))
         }

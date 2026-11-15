@@ -130,6 +130,11 @@ sealed interface DayOfWeekRangePickerSheetBuilder {
             }
         }
     }
+
+    companion object {
+        fun of(onDayOfWeekRangeChange: (DayOfWeek, DayOfWeek) -> Unit) =
+            Default(DayOfWeekRangePickerConfirmEventHandler.Default(onDayOfWeekRangeChange))
+    }
 }
 
 @Composable

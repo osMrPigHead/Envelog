@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
 import cn.osmrpighead.envelog.core.navigation.NavigationTarget
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
@@ -368,7 +369,7 @@ class EnvelopeViewModel @AssistedInject constructor(
                 mode = QuickSetMode.Daily,
                 dailyConfig = QuickSetConfig.Daily(1, 0),
                 weeklyConfig = QuickSetConfig.Weekly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY, 0),
-                monthlyConfig = QuickSetConfig.MonthlyTotal(0),
+                monthlyConfig = QuickSetConfig.Monthly(0),
                 targetSpan = yearMonth.value.toHalfOpenDateSpan().toClosed(),
             ),
             schedule = null,
@@ -377,32 +378,73 @@ class EnvelopeViewModel @AssistedInject constructor(
         )
     }
 
-    fun updateQuickSet(config: QuickSetFormState) {
-        quickSetFormModalState.update {
-            if (it == null || it.dismissed || it.state !is FormState.Active) return@update it
-            val fieldErrors = it.fieldErrors
-                .withElementIf(
-                    QuickSetFieldError.IntervalInvalid,
-                    config.mode == QuickSetMode.Daily &&
-                            (config.dailyConfig.intervalDays < 1 || config.dailyConfig.intervalDays.toLong() > config.targetSpan.length),
-                )
-                .withElementIf(
-                    QuickSetFieldError.AmountNonPositive,
-                    config.selectedConfig().amount <= 0,
-                )
-            val schedule =
-                if (fieldErrors.isEmpty()) QuickSetBudgetPlanner.schedule(
-                    config.selectedConfig(),
-                    config.targetSpan,
-                    yearMonth.value,
-                )
-                else null
-            it.copy(
-                state = FormState.Active(if (schedule == null) QuickSetFormError.CannotGenerate else null),
-                fieldErrors = fieldErrors,
-                config = config,
-                schedule = schedule,
-            )
+    private fun Set<QuickSetFieldError>.checkAmount(config: QuickSetFormState) = withElementIf(
+        QuickSetFieldError.AmountNonPositive,
+        config.selectedConfig.amount <= 0,
+    )
+
+    private fun QuickSetFormModalState.updateWithAmountChecked(config: QuickSetFormState) = copy(
+        fieldErrors = fieldErrors.checkAmount(config),
+        config = config,
+    ).reschedule()
+
+    private fun Set<QuickSetFieldError>.checkInterval(config: QuickSetFormState) = withElementIf(
+        QuickSetFieldError.IntervalInvalid,
+        config.dailyConfig.intervalDays < 1 || config.dailyConfig.intervalDays > config.targetSpan.length,
+    )
+
+    private fun QuickSetFormModalState.reschedule(): QuickSetFormModalState {
+        val schedule = if (fieldErrors.isEmpty()) QuickSetBudgetPlanner.schedule(
+            config.selectedConfig,
+            config.targetSpan,
+            yearMonth.value,
+        ) else null
+        return copy(
+            state = FormState.Active(if (schedule == null) QuickSetFormError.CannotGenerate else null),
+            schedule = schedule,
+        )
+    }
+
+    fun updateQuickSet(field: QuickSetField) = quickSetFormModalState.update {
+        if (it == null || it.dismissed || it.state !is FormState.Active) return@update it
+        when (field) {
+            is QuickSetField.Mode -> {
+                val config = it.config.copy(mode = field.mode)
+                it.copy(fieldErrors = it.fieldErrors.checkInterval(config).checkAmount(config), config = config)
+                    .reschedule()
+            }
+
+            is QuickSetField.TargetSpan -> {
+                it.copy(config = it.config.copy(targetSpan = field.span)).reschedule()
+            }
+
+            is QuickSetField.Daily.Interval -> {
+                val config = it.config.copy(dailyConfig = it.config.dailyConfig.copy(intervalDays = field.days))
+                it.copy(fieldErrors = it.fieldErrors.checkInterval(config), config = config).reschedule()
+            }
+
+            is QuickSetField.Weekly.DaySpan -> {
+                it.copy(
+                    config = it.config.copy(
+                        weeklyConfig = it.config.weeklyConfig.copy(
+                            startDayOfWeek = field.start,
+                            endDayOfWeek = field.end,
+                        ),
+                    ),
+                ).reschedule()
+            }
+
+            is QuickSetField.Daily.Amount -> {
+                it.updateWithAmountChecked(it.config.copy(dailyConfig = it.config.dailyConfig.copy(amount = field.amount)))
+            }
+
+            is QuickSetField.Weekly.Amount -> {
+                it.updateWithAmountChecked(it.config.copy(weeklyConfig = it.config.weeklyConfig.copy(amount = field.amount)))
+            }
+
+            is QuickSetField.Monthly.Amount -> {
+                it.updateWithAmountChecked(it.config.copy(monthlyConfig = it.config.monthlyConfig.copy(amount = field.amount)))
+            }
         }
     }
 
@@ -450,7 +492,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         val form = requestQuickSetForm() ?: return
         viewModelScope.launch {
             val config = form.config
-            val selected = config.selectedConfig()
+            val selected = config.selectedConfig
             val schedule = QuickSetBudgetPlanner.schedule(selected, config.targetSpan, yearMonth.value)
             if (schedule == null) {
                 releaseQuickSetForm { it.copy(state = FormState.Active(QuickSetFormError.CannotGenerate)) }
@@ -503,12 +545,6 @@ class EnvelopeViewModel @AssistedInject constructor(
         if (isNew) memoryBudgets.value
         else repository.observeBudgets(envelopeId = envelopeId, dateSpan = coveredSpan).first()
 
-    private fun QuickSetFormState.selectedConfig(): QuickSetConfig = when (mode) {
-        QuickSetMode.Daily -> dailyConfig
-        QuickSetMode.Weekly -> weeklyConfig
-        QuickSetMode.MonthlyTotal -> monthlyConfig
-    }
-
     /** 末段预算按完整周期产出、不裁剪到显示月，冲突检测须按其实际覆盖的包络重读。 */
     private fun QuickSetSchedule.coveredSpan(): HalfOpenDateSpan = HalfOpenDateSpan(
         startDate = segments.minOf { it.span.startDate },
@@ -534,7 +570,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         ClearDetail -> clearDetail()
 
         OpenQuickSet -> openQuickSet()
-        is UpdateQuickSet -> updateQuickSet(event.config)
+        is UpdateQuickSet -> updateQuickSet(event.field)
         is ApplyQuickSet -> applyQuickSet(event.overwrite)
         CancelOverwrite -> cancelQuickSetOverwrite()
         DismissQuickSet -> dismissQuickSet()

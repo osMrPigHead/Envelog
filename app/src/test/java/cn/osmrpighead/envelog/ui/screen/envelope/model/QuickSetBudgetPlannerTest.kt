@@ -159,7 +159,7 @@ class QuickSetBudgetPlannerTest {
     @Test
     fun schedule_monthly_ignoresSelectionAndCoversWholeMonth() {
         val schedule = QuickSetBudgetPlanner.schedule(
-            config = QuickSetConfig.MonthlyTotal(150_000),
+            config = QuickSetConfig.Monthly(150_000),
             selection = ClosedDateSpan(date(10, 5), date(10, 10)),
             yearMonth = month,
         )!!
@@ -254,7 +254,7 @@ class QuickSetBudgetPlannerTest {
         )
         assertNull(
             QuickSetBudgetPlanner.schedule(
-                QuickSetConfig.MonthlyTotal(0),
+                QuickSetConfig.Monthly(0),
                 wholeMonth,
                 month,
             ),

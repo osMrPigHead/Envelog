@@ -1,9 +1,12 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
+import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
+import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -27,8 +30,27 @@ data object DismissDetail : EnvelopeEvent
 data object ClearDetail : EnvelopeEvent
 
 data object OpenQuickSet : EnvelopeEvent
-data class UpdateQuickSet(val config: QuickSetFormState) : EnvelopeEvent
+data class UpdateQuickSet(val field: QuickSetField) : EnvelopeEvent
 data class ApplyQuickSet(val overwrite: Boolean) : EnvelopeEvent
 data object CancelOverwrite : EnvelopeEvent
 data object DismissQuickSet : EnvelopeEvent
 data object ClearQuickSet : EnvelopeEvent
+
+sealed interface QuickSetField {
+    data class Mode(val mode: QuickSetMode) : QuickSetField
+    data class TargetSpan(val span: ClosedDateSpan) : QuickSetField
+
+    sealed interface Daily : QuickSetField {
+        data class Interval(val days: Long) : Daily
+        data class Amount(val amount: Long) : Daily
+    }
+
+    sealed interface Weekly : QuickSetField {
+        data class DaySpan(val start: DayOfWeek, val end: DayOfWeek) : Weekly
+        data class Amount(val amount: Long) : Weekly
+    }
+
+    sealed interface Monthly : QuickSetField {
+        data class Amount(val amount: Long) : Monthly
+    }
+}
