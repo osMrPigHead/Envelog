@@ -8,6 +8,7 @@ import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.data.repository.EnvelopeDeleteResult
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeField
 import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeForm
 import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeSubmissionError
 import cn.osmrpighead.envelog.util.updateNotNull
@@ -62,7 +63,11 @@ class EnvelopeFormDelegate(
     }
 
     // TODO: 名称校验
-    fun update(envelope: Envelope) = _state.updateNotNull {
+    fun update(field: EnvelopeField) = _state.updateNotNull {
+        val envelope = when (field) {
+            is EnvelopeField.Name -> it.envelope.copy(name = field.name)
+            is EnvelopeField.IsBudgeted -> it.envelope.copy(isBudgeted = field.isBudgeted)
+        }
         it.copy(envelope = envelope, isDirty = true)
     }
 

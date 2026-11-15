@@ -143,7 +143,7 @@ class EnvelopeViewModel @AssistedInject constructor(
         is SelectMonth -> selectMonth(event.yearMonth)
 
         is InitializeNewEnvelope -> envelopeForm.initializeNew(event.name)
-        is UpdateEnvelope -> envelopeForm.update(event.envelope)
+        is UpdateEnvelope -> envelopeForm.update(event.field)
         SaveEnvelope -> envelopeForm.save()
         ArchiveEnvelope -> envelopeForm.archive()
         DeleteEnvelope -> envelopeForm.delete()
@@ -151,7 +151,7 @@ class EnvelopeViewModel @AssistedInject constructor(
 
         is OpenDetailWithExistingBudget -> detailModal.openWithExistingBudget(event.id, event.date)
         is OpenDetailCreatingBudget -> detailModal.openCreatingBudget(event.date)
-        is UpdateBudget -> detailModal.update(event.budget)
+        is UpdateBudget -> detailModal.update(event.field)
         SaveBudget -> detailModal.save()
         DeleteBudget -> detailModal.delete()
         DismissDetail -> detailModal.dismiss()

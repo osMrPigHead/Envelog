@@ -10,20 +10,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.data.model.Envelope
 import cn.osmrpighead.envelog.ui.component.form.LabeledSwitch
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeField
 import cn.osmrpighead.envelog.ui.screen.envelope.EnvelopeForm
 
 @Composable
 fun EnvelopeForm(
     form: EnvelopeForm,
-    update: (Envelope) -> Unit,
+    update: (EnvelopeField) -> Unit,
 ) {
     OutlinedTextField(
         value = form.envelope.name,
         enabled = form.state is FormState.Active,
-        onValueChange = { update(form.envelope.copy(name =  it)) },
+        onValueChange = { update(EnvelopeField.Name(it)) },
         label = { Text(text = stringResource(R.string.common_label_name)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
@@ -32,7 +32,7 @@ fun EnvelopeForm(
     LabeledSwitch(
         checked = form.envelope.isBudgeted,
         enabled = form.state is FormState.Active,
-        onCheckedChange = { update(form.envelope.copy(isBudgeted = it)) },
+        onCheckedChange = { update(EnvelopeField.IsBudgeted(it)) },
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = dimensionResource(R.dimen.spacingMedium)),

@@ -8,6 +8,7 @@ import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 import cn.osmrpighead.envelog.data.repository.BudgetWriteResult
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetField
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFieldError
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetForm
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFormError
@@ -85,26 +86,35 @@ class DetailModalDelegate(
         )
     }
 
-    fun update(budget: Budget) {
+    fun update(field: BudgetField) {
         _state.update {
             if (it == null) return@update it
-            if (it.budgetForm.budget.id != budget.id) return@update it
-            it.copy(
-                budgetForm = it.budgetForm.copy(
-                    state = FormState.Active(null),
-                    fieldErrors = it.budgetForm.fieldErrors
-                        .withElementIf(
+            val budgetForm = it.budgetForm
+            when (field) {
+                is BudgetField.Amount -> it.copy(
+                    budgetForm = budgetForm.copy(
+                        state = FormState.Active(null),
+                        fieldErrors = budgetForm.fieldErrors.withElementIf(
                             BudgetFieldError.AmountNonPositive,
-                            budget.amount <= 0,
-                        )
-                        .withElementIf(
-                            BudgetFieldError.BudgetOverlaps,
-                            budgets.value.any { b -> b.dateSpan overlaps budget.dateSpan && b.id != budget.id },
+                            field.amount <= 0,
                         ),
-                    budget = budget,
-                    isDirty = true,
-                ),
-            )
+                        budget = budgetForm.budget.copy(amount = field.amount),
+                        isDirty = true,
+                    ),
+                )
+
+                is BudgetField.DateSpan -> it.copy(
+                    budgetForm = budgetForm.copy(
+                        state = FormState.Active(null),
+                        fieldErrors = budgetForm.fieldErrors.withElementIf(
+                            BudgetFieldError.BudgetOverlaps,
+                            budgets.value.any { b -> b.dateSpan overlaps field.span && b.id != budgetForm.budget.id },
+                        ),
+                        budget = budgetForm.budget.copy(dateSpan = field.span),
+                        isDirty = true,
+                    ),
+                )
+            }
         }
     }
 

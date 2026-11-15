@@ -11,7 +11,6 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
-import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.ui.component.LabeledBox
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
@@ -22,6 +21,7 @@ import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.FormState
+import cn.osmrpighead.envelog.ui.screen.envelope.BudgetField
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFieldError.*
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetForm
 import cn.osmrpighead.envelog.ui.screen.envelope.BudgetFormError.*
@@ -123,7 +123,7 @@ fun BudgetItemSheet(
 @Composable
 fun DetailModalBottomSheet(
     detailModalState: DetailModalState,
-    update: (Budget) -> Unit,
+    update: (BudgetField) -> Unit,
     close: () -> Unit,
     save: () -> Unit,
     delete: () -> Unit,
@@ -170,8 +170,8 @@ fun DetailModalBottomSheet(
         ) {
             BudgetItemSheet(
                 budgetForm = budgetForm,
-                onSpanChange = { update(budgetForm.budget.copy(dateSpan = it)) },
-                onAmountChange = { update(budgetForm.budget.copy(amount = it)) },
+                onSpanChange = { update(BudgetField.DateSpan(it)) },
+                onAmountChange = { update(BudgetField.Amount(it)) },
                 numKeypadHost = numKeypadHost,
                 save = save,
                 cancel = close,

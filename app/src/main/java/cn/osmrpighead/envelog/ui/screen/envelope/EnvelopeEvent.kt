@@ -1,10 +1,8 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
-import cn.osmrpighead.envelog.data.model.Budget
+import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.BudgetId
-import cn.osmrpighead.envelog.data.model.Envelope
-import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetFormState
 import cn.osmrpighead.envelog.ui.screen.envelope.model.QuickSetMode
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -15,7 +13,7 @@ sealed interface EnvelopeEvent
 data class SelectMonth(val yearMonth: YearMonth) : EnvelopeEvent
 
 data class InitializeNewEnvelope(val name: String) : EnvelopeEvent
-data class UpdateEnvelope(val envelope: Envelope) : EnvelopeEvent
+data class UpdateEnvelope(val field: EnvelopeField) : EnvelopeEvent
 data object SaveEnvelope : EnvelopeEvent
 data object ArchiveEnvelope : EnvelopeEvent
 data object DeleteEnvelope : EnvelopeEvent
@@ -23,7 +21,7 @@ data object DismissEnvelopeFormError : EnvelopeEvent
 
 data class OpenDetailWithExistingBudget(val id: BudgetId, val date: LocalDate?) : EnvelopeEvent
 data class OpenDetailCreatingBudget(val date: LocalDate) : EnvelopeEvent
-data class UpdateBudget(val budget: Budget) : EnvelopeEvent
+data class UpdateBudget(val field: BudgetField) : EnvelopeEvent
 data object SaveBudget : EnvelopeEvent
 data object DeleteBudget : EnvelopeEvent
 data object DismissDetail : EnvelopeEvent
@@ -35,6 +33,16 @@ data class ApplyQuickSet(val overwrite: Boolean) : EnvelopeEvent
 data object CancelOverwrite : EnvelopeEvent
 data object DismissQuickSet : EnvelopeEvent
 data object ClearQuickSet : EnvelopeEvent
+
+sealed interface EnvelopeField {
+    data class Name(val name: String) : EnvelopeField
+    data class IsBudgeted(val isBudgeted: Boolean) : EnvelopeField
+}
+
+sealed interface BudgetField {
+    data class DateSpan(val span: HalfOpenDateSpan) : BudgetField
+    data class Amount(val amount: Long) : BudgetField
+}
 
 sealed interface QuickSetField {
     data class Mode(val mode: QuickSetMode) : QuickSetField
