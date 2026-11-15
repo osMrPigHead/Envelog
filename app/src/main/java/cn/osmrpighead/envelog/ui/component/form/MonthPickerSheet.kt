@@ -72,7 +72,7 @@ sealed interface MonthPickerSheetBuilder {
             minYearMonth: YearMonth?,
             maxYearMonth: YearMonth?,
             hideSheet: () -> Unit,
-            modifier: Modifier
+            modifier: Modifier,
         ) -> Unit,
     ) : MonthPickerSheetBuilder {
         @Composable
@@ -119,6 +119,7 @@ sealed interface MonthPickerSheetBuilder {
             ModalBottomSheet(
                 onDismissRequest = { onDismiss(hideSheetAnimated) },
                 sheetState = sheetState,
+                sheetGesturesEnabled = false,
                 modifier = modifier,
             ) {
                 MonthPickerSheetContent(
@@ -133,6 +134,11 @@ sealed interface MonthPickerSheetBuilder {
                 )
             }
         }
+    }
+
+    companion object {
+        fun of(onYearMonthChange: (YearMonth) -> Unit) =
+            Default(MonthPickerConfirmEventHandler.Default(onYearMonthChange))
     }
 }
 

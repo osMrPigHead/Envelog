@@ -150,7 +150,7 @@ fun DetailModalBottomSheet(
 
     LaunchedEffect(budgetForm.state, detailModalState.dismissed) {
         if (budgetForm.state != FormState.Completed && !detailModalState.dismissed) return@LaunchedEffect
-        if (sheetState.isVisible) sheetState.hide()
+        sheetState.hide()
         clear()
     }
 

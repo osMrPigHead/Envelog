@@ -41,7 +41,7 @@ import java.math.RoundingMode
 import java.time.YearMonth
 
 @Composable
-private fun QuickSetAffix(
+internal fun QuickSetAffix(
     text: String,
     modifier: Modifier = Modifier,
 ) {

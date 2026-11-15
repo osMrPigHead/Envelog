@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 
+import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -33,13 +34,14 @@ fun QuickSetBudgetModalBottomSheet(
 
     LaunchedEffect(modalState.state, modalState.dismissed) {
         if (modalState.state != FormState.Completed && !modalState.dismissed) return@LaunchedEffect
-        if (sheetState.isVisible) sheetState.hide()
+        sheetState.hide()
         clear()
     }
 
     ModalBottomSheet(
         onDismissRequest = dismiss,
         sheetState = sheetState,
+        sheetGesturesEnabled = !sheetState.isAnimationRunning,
     ) {
         QuickSetSheetContent(
             yearMonth, modalState, numKeypadHost, update, dismiss,

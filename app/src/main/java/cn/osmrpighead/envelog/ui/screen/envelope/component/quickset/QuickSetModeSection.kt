@@ -84,6 +84,12 @@ internal fun QuickSetModeSection(
                 ),
                 supportingText = spacer,
                 label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_weekly_label)) },
+                prefix = {
+                    QuickSetAffix(
+                        text = stringResource(R.string.envelope_edit_quick_set_interval_prefix),
+                        modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingThin)),
+                    )
+                },
                 modifier = Modifier
                     .weight(1f)
                     .semantics { contentDescription = weekdayDescription },
