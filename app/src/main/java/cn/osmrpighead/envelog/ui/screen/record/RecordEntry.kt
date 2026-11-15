@@ -13,6 +13,7 @@ fun EntryProviderScope<AppRoute>.recordEntry(
         )
         RecordScreen(
             uiState = viewModel.uiState,
+            submit = viewModel::submit,
             back = { back(key) },
             backEvent = viewModel.backEvent,
         )

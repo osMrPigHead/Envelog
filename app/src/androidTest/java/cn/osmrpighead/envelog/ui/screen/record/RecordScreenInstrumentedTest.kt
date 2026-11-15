@@ -35,12 +35,10 @@ class RecordScreenInstrumentedTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val host = NumKeypadHostState()
-    private val fieldId = Any()
     private val amountState = mutableStateOf(0L)
     private var submitted: Long? = null
-    private var cancelled = 0
 
-    // 生产环境中 ViewModel 在 submit / cancel 内发送 backEvent，屏幕收到事件后才调用 back
+    // 生产环境中 ViewModel 在 submit 内发送 backEvent，屏幕收到事件后才调用 back
     private val backEvents = Channel<Unit>(Channel.BUFFERED)
     private var backCalls = 0
 
@@ -50,29 +48,18 @@ class RecordScreenInstrumentedTest {
     @Before
     fun setUp() {
         submitted = null
-        cancelled = 0
-        val consumer = AmountConsumer(
-            scale = 2,
-            roundingMode = RoundingMode.HALF_UP,
-            submit = {
-                submitted = it
-                amountState.value = it
-                backEvents.trySend(Unit)
-            },
-            cancel = {
-                cancelled++
-                backEvents.trySend(Unit)
-            },
-        )
         composeRule.setContent {
             EnvelogTheme(dynamicColor = false) {
                 RecordScreen(
                     uiState = RecordUiState(
                         numKeypadHost = host,
                         amount = amountState.value,
-                        amountConsumer = consumer,
-                        fieldId = fieldId,
                     ),
+                    submit = {
+                        submitted = it
+                        amountState.value = it
+                        backEvents.trySend(Unit)
+                    },
                     back = { backCalls++ },
                     backEvent = backEvents.receiveAsFlow(),
                     modifier = Modifier.fillMaxSize(),
@@ -110,7 +97,6 @@ class RecordScreenInstrumentedTest {
 
         composeRule.runOnIdle {
             assertEquals(1235L, submitted)
-            assertEquals(0, cancelled)
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
     }
@@ -131,7 +117,6 @@ class RecordScreenInstrumentedTest {
         composeRule.onNodeWithContentDescription(cancelText).performClick()
 
         composeRule.runOnIdle {
-            assertEquals(1, cancelled)
             assertNull(submitted)
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }

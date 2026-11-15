@@ -23,25 +23,37 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHost
 import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import kotlinx.coroutines.flow.Flow
+import java.math.RoundingMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordScreen(
     uiState: RecordUiState,
+    submit: (Long) -> Unit,
     back: () -> Unit,
     backEvent: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
 
+    val fieldId = remember { Any() }
+    val consumer = remember {
+        AmountConsumer(
+            scale = 2,
+            roundingMode = RoundingMode.HALF_UP,
+            submit = submit,
+            cancel = back,
+        )
+    }
+
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         backEvent.collect { back() }
-
     }
 
     Scaffold(
@@ -71,10 +83,10 @@ fun RecordScreen(
             NumKeypadField(
                 value = uiState.amount.formatAsAmount(Formatter.AmountStandard),
                 host = uiState.numKeypadHost,
-                consumer = uiState.amountConsumer,
-                fieldId = uiState.fieldId,
-                isError = uiState.amountConsumer.validationError != null,
-                supportingText = when (uiState.amountConsumer.validationError) {
+                consumer = consumer,
+                fieldId = fieldId,
+                isError = consumer.validationError != null,
+                supportingText = when (consumer.validationError) {
                     null -> null
                     is AmountValidationError.MathError -> null
                     AmountValidationError.NonPositive -> {

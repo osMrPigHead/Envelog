@@ -10,7 +10,6 @@ import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
-import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -19,7 +18,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import java.math.RoundingMode
 import java.time.Clock
 
 @HiltViewModel(assistedFactory = RecordViewModel.Factory::class)
@@ -37,15 +35,11 @@ class RecordViewModel @AssistedInject constructor(
     private var submission: Job? = null
 
     private val host = NumKeypadHostState()
-    private val fieldId = Any()
-    private val consumer = AmountConsumer(2, RoundingMode.HALF_UP, ::submit, ::launchBack)
 
     private val _uiState = mutableStateOf(
         RecordUiState(
             numKeypadHost = host,
             amount = 0,
-            amountConsumer = consumer,
-            fieldId = fieldId,
         ),
     )
     private val _backEvent = Channel<Unit>(Channel.BUFFERED)
@@ -54,10 +48,6 @@ class RecordViewModel @AssistedInject constructor(
 
     private suspend fun sendBack() {
         _backEvent.send(Unit)
-    }
-
-    private fun launchBack() {
-        viewModelScope.launch { sendBack() }
     }
 
     fun submit(amount: Long) {
