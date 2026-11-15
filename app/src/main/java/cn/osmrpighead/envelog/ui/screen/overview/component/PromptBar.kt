@@ -26,7 +26,7 @@ fun PromptBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stringResource(R.string.prompt_main),
+            text = stringResource(R.string.overview_prompt_main),
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -41,8 +41,8 @@ fun PromptBar(
             ) { isManaging ->
                 Icon(
                     imageVector = if (isManaging) Icon.ListAltFilled else Icon.ListAlt,
-                    contentDescription = if (isManaging) stringResource(R.string.prompt_main_manage_finish)
-                    else stringResource(R.string.prompt_main_manage),
+                    contentDescription = if (isManaging) stringResource(R.string.overview_action_manage_finish)
+                    else stringResource(R.string.overview_action_manage),
                 )
             }
         }

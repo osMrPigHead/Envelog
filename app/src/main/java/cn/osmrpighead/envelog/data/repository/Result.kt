@@ -1,11 +1,21 @@
 package cn.osmrpighead.envelog.data.repository
 
-sealed interface ArchiveResult {
-    data object Archived : ArchiveResult
-    data object NotFound : ArchiveResult
+enum class ArchiveResult {
+    Archived, NotFoundOrAlreadyArchived,
 }
 
-sealed interface DeleteResult {
-    data object Deleted : ArchiveResult
-    data object NotFound : ArchiveResult
+enum class EnvelopeDeleteResult {
+    Deleted, NotFound, Constraint,
+}
+
+enum class DeleteResult {
+    Deleted, NotFoundOrAlreadyDeleted,
+}
+
+enum class BudgetWriteResult {
+    EnvelopeArchived, BudgetOverlaps, Success,
+}
+
+enum class EnvelopeUpdateResult {
+    NotFound, Success,
 }

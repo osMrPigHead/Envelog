@@ -11,6 +11,7 @@ sealed interface EnvelopeSummary {
     val allocated: Long
     val currency: CurrencyType
     val archived: Boolean
+    val canDelete: Boolean
 
     data class Budgeted(
         override val id: EnvelopeId,
@@ -18,6 +19,7 @@ sealed interface EnvelopeSummary {
         override val allocated: Long,
         override val currency: CurrencyType,
         override val archived: Boolean,
+        override val canDelete: Boolean,
         val totalBudget: Long,
         val currentBudget: Long?,
         val currentSpan: HalfOpenDateSpan?,
@@ -25,9 +27,26 @@ sealed interface EnvelopeSummary {
         val priorBudget: Long,
         val priorAllocated: Long,
     ) : EnvelopeSummary {
-        val currentAvailable = currentBudget?.minus(currentSpanAllocated) ?: 0
+        val currentAvailable: Long
+        val priorDifference: Long
         val usedProportion = Ratio.of(allocated, totalBudget)
-        val priorDifference = priorBudget - priorAllocated
+
+        init {
+            val realCurrent = (currentBudget ?: 0) - currentSpanAllocated
+            val realPrior = priorBudget - priorAllocated
+            if (realCurrent < 0) {
+                if (-realCurrent < realPrior) {
+                    currentAvailable = 0
+                    priorDifference = realPrior + realCurrent
+                } else {
+                    currentAvailable = realPrior + realCurrent
+                    priorDifference = 0
+                }
+            } else {
+                currentAvailable = realCurrent
+                priorDifference = realPrior
+            }
+        }
     }
 
     data class NonBudget(
@@ -36,5 +55,6 @@ sealed interface EnvelopeSummary {
         override val allocated: Long,
         override val currency: CurrencyType,
         override val archived: Boolean,
+        override val canDelete: Boolean,
     ) : EnvelopeSummary
 }

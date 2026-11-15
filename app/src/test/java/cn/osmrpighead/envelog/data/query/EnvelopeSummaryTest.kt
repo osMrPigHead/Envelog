@@ -26,6 +26,7 @@ class EnvelopeSummaryTest {
         allocated = allocated,
         currency = CurrencyType.CNY,
         archived = archived,
+        canDelete = false,
         totalBudget = totalBudget,
         currentBudget = currentBudget,
         currentSpan = null,

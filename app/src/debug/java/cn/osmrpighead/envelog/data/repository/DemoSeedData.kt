@@ -3,11 +3,11 @@ package cn.osmrpighead.envelog.data.repository
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -22,14 +22,14 @@ import java.util.UUID
 data class DemoSeed(
     val envelopes: List<EnvelopeEntity>,
     val budgets: List<BudgetEntity>,
-    val expenditures: List<ExpenditureEntity>,
-    val allocations: List<ExpenditureAllocationEntity>,
+    val expenses: List<ExpenseEntity>,
+    val allocations: List<ExpenseAllocationEntity>,
 )
 
 object DemoSeedData {
     private fun envelopeId(value: Long): EnvelopeId = EnvelopeId(UUID(0L, value))
     private fun budgetId(value: Long): BudgetId = BudgetId(UUID(0L, value))
-    private fun expenditureId(value: Long): ExpenditureId = ExpenditureId(UUID(0L, value))
+    private fun expenseId(value: Long): ExpenseId = ExpenseId(UUID(0L, value))
 
     private val foodEnvelopeId = envelopeId(0xA001)
     private val transportEnvelopeId = envelopeId(0xA002)
@@ -68,16 +68,16 @@ object DemoSeedData {
         val foodSecondDate = previousDays.getOrNull(0)
         val splitDate = previousDays.getOrNull(1)
 
-        val expenditures = mutableListOf<ExpenditureEntity>()
-        val allocations = mutableListOf<ExpenditureAllocationEntity>()
+        val expenses = mutableListOf<ExpenseEntity>()
+        val allocations = mutableListOf<ExpenseAllocationEntity>()
 
         fun record(
             idValue: Long,
             date: LocalDate,
             shares: List<Pair<EnvelopeId, Long>>,
         ) {
-            val transactionId = expenditureId(idValue)
-            expenditures += ExpenditureEntity(
+            val transactionId = expenseId(idValue)
+            expenses += ExpenseEntity(
                 id = transactionId,
                 happenedAt = date.atTime(LocalTime.NOON).atZone(zone).toInstant(),
                 happenedDate = date,
@@ -85,8 +85,8 @@ object DemoSeedData {
                 deletedAt = null,
             )
             shares.forEach { (envelopeId, share) ->
-                allocations += ExpenditureAllocationEntity(
-                    expenditureId = transactionId,
+                allocations += ExpenseAllocationEntity(
+                    expenseId = transactionId,
                     envelopeId = envelopeId,
                     amount = share,
                 )
@@ -111,7 +111,7 @@ object DemoSeedData {
         return DemoSeed(
             envelopes = envelopes,
             budgets = budgets,
-            expenditures = expenditures,
+            expenses = expenses,
             allocations = allocations,
         )
     }

@@ -7,16 +7,17 @@ import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.db.entity.BudgetEntity
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureAllocationEntity
-import cn.osmrpighead.envelog.data.db.entity.ExpenditureEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseAllocationEntity
+import cn.osmrpighead.envelog.data.db.entity.ExpenseEntity
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
-import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
+import cn.osmrpighead.envelog.data.model.ExpenseId
+import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -87,37 +88,37 @@ class EnvelopeSummaryQueryInstrumentedTest {
         date: LocalDate,
         amount: Long,
         deletedAt: java.time.Instant? = null,
-    ): Pair<ExpenditureEntity, ExpenditureAllocationEntity> {
-        val id = ExpenditureId(UUID(0L, value))
-        val expenditure = ExpenditureEntity(
+    ): Pair<ExpenseEntity, ExpenseAllocationEntity> {
+        val id = ExpenseId(UUID(0L, value))
+        val expense = ExpenseEntity(
             id = id,
             happenedAt = at(date),
             happenedDate = date,
             happenedZone = zone,
             deletedAt = deletedAt,
         )
-        return expenditure to ExpenditureAllocationEntity(id, envelopeId, amount)
+        return expense to ExpenseAllocationEntity(id, envelopeId, amount)
     }
 
     private suspend fun seed(
         envelopes: List<EnvelopeEntity> = emptyList(),
         budgets: List<BudgetEntity> = emptyList(),
-        entries: List<Pair<ExpenditureEntity, ExpenditureAllocationEntity>> = emptyList(),
+        entries: List<Pair<ExpenseEntity, ExpenseAllocationEntity>> = emptyList(),
     ) {
         val seedDao = database.seedDao()
         if (envelopes.isNotEmpty()) seedDao.insertEnvelopes(envelopes)
         if (budgets.isNotEmpty()) seedDao.insertBudgets(budgets)
         if (entries.isNotEmpty()) {
-            seedDao.insertExpenditures(entries.map { it.first })
+            seedDao.insertExpenses(entries.map { it.first })
             seedDao.insertAllocations(entries.map { it.second })
         }
     }
 
-    private suspend fun summaries(): List<EnvelopeSummaryRow> = dao.observeEnvelopeSummariesOverlaps(
+    private suspend fun summaries(): List<EnvelopeSummaryRow> = dao.observeSummaries(
         today = today,
         yearMonth = month,
-        monthStart = monthStart,
-        monthEnd = monthEnd,
+        spanStart = monthStart,
+        spanEnd = monthEnd,
     ).first()
 
     @Test
@@ -172,6 +173,57 @@ class EnvelopeSummaryQueryInstrumentedTest {
     }
 
     @Test
+    fun summaries_countTodayAllocationsWhenNoBudgetCoversToday() = runBlocking {
+        val deletedAt = java.time.Instant.parse("2026-10-20T05:00:00Z")
+        seed(
+            envelopes = listOf(envelope()),
+            budgets = listOf(
+                budget(0xD1, start = LocalDate.of(2026, 10, 1), end = LocalDate.of(2026, 10, 15), amount = 40_000),
+                budget(0xD2, start = LocalDate.of(2026, 10, 22), end = monthEnd, amount = 80_000),
+            ),
+            entries = listOf(
+                record(0xB1, LocalDate.of(2026, 10, 19), 3_000),
+                record(0xB2, today, 7_000),
+                record(0xB3, today, 2_000),
+                record(0xB4, today, 5_000, deletedAt = deletedAt),
+            ),
+        )
+
+        val row = summaries().single()
+
+        assertNull(row.currentBudget)
+        assertNull(row.currentSpanStartDate)
+        assertNull(row.currentSpanEndDate)
+        assertEquals(9_000L, row.currentSpanAllocated)
+        assertEquals(40_000L, row.priorBudget)
+        assertEquals(3_000L, row.priorAllocated)
+        assertEquals(12_000L, row.allocated)
+    }
+
+    @Test
+    fun summaries_keepCurrentSpanAllocatedWhenTodayIsInsideBudget() = runBlocking {
+        seed(
+            envelopes = listOf(envelope()),
+            budgets = listOf(
+                budget(0xD1, start = LocalDate.of(2026, 10, 15), end = LocalDate.of(2026, 10, 22), amount = 60_000),
+            ),
+            entries = listOf(
+                record(0xB1, LocalDate.of(2026, 10, 18), 20_000),
+                record(0xB2, today, 4_000),
+            ),
+        )
+
+        val row = summaries().single()
+
+        assertEquals(60_000L, row.currentBudget)
+        assertEquals(LocalDate.of(2026, 10, 15), row.currentSpanStartDate)
+        assertEquals(LocalDate.of(2026, 10, 22), row.currentSpanEndDate)
+        assertEquals(24_000L, row.currentSpanAllocated)
+        assertNull(row.priorBudget)
+        assertNull(row.priorAllocated)
+    }
+
+    @Test
     fun summaries_ignoreSoftDeletedRows() = runBlocking {
         val deletedAt = java.time.Instant.parse("2026-10-19T04:00:00Z")
         seed(
@@ -191,6 +243,7 @@ class EnvelopeSummaryQueryInstrumentedTest {
         assertEquals(10_000L, row.allocated)
         assertEquals(100_000L, row.totalBudget)
         assertEquals(10_000L, row.currentSpanAllocated)
+        assertFalse("存活的预算与分摊使该信封不可删除", row.canDelete)
     }
 
     @Test

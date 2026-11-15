@@ -1,6 +1,8 @@
 package cn.osmrpighead.envelog.data.model
 
+import cn.osmrpighead.envelog.core.time.toLocalDate
 import cn.osmrpighead.envelog.util.UUIDSerializer
+import cn.osmrpighead.envelog.util.generateUUID
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.LocalDate
@@ -14,8 +16,12 @@ sealed interface EntryId {
 
 @JvmInline
 @Serializable
-value class ExpenditureId(override val value: @Serializable(with = UUIDSerializer::class) UUID) : EntryId {
+value class ExpenseId(override val value: @Serializable(with = UUIDSerializer::class) UUID) : EntryId {
     override fun toString(): String = value.toString()
+
+    companion object {
+        fun generate() = ExpenseId(generateUUID())
+    }
 }
 
 sealed interface Entry {
@@ -25,10 +31,18 @@ sealed interface Entry {
     val happenedZone: ZoneId
 }
 
-data class Expenditure(
-    override val id: ExpenditureId,
+data class ExpenseSubmission(
+    override val id: ExpenseId,
+    override val happenedAt: Instant,
+    override val happenedZone: ZoneId,
+    val allocations: List<ExpenseAllocation>,
+) : Entry {
+    override val happenedDate: LocalDate = happenedAt.toLocalDate(happenedZone)
+}
+
+data class ExpenseMetaInfo(
+    override val id: ExpenseId,
     override val happenedAt: Instant,
     override val happenedDate: LocalDate,
     override val happenedZone: ZoneId,
-    val allocations: List<ExpenditureAllocation>,
 ) : Entry

@@ -47,7 +47,6 @@ fun NumKeypadField(
     val effectiveSource = interactionSource ?: internalSource
 
     val consumer by rememberUpdatedState(consumer)
-    var isFocused by remember { mutableStateOf(false) }
 
     PickerField(
         value = if (host.activeFieldId == fieldId) host.state.text else value,
@@ -55,8 +54,8 @@ fun NumKeypadField(
             if (host.activeFieldId != fieldId) host.request(fieldId, consumer, value)
         },
         modifier = modifier.onFocusChanged {
-            if (isFocused && !it.isFocused) host.safeClose()
-            isFocused = it.isFocused
+            if (!it.isFocused) host.safeClose()
+            if (it.isFocused && host.activeFieldId != fieldId) host.request(fieldId, consumer, value)
         },
         enabled = enabled,
         readOnly = readOnly,

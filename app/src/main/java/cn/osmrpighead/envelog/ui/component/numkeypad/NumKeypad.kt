@@ -22,30 +22,34 @@ import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.style.radialFilledWeight
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
 
-private fun String.trimZero(): String {
-    val s = trimStart('0')
-    return when {
-        s.startsWith('.') -> "0$s"
-        s.isEmpty() -> "0"
-        else -> s
+private fun String.normalize(): String {
+    val s = trimStart('0').run {
+        when {
+            startsWith('.') -> "0$this"
+            isEmpty() -> "0"
+            else -> this
+        }
     }
+    return if (s.toBigDecimalOrNull() == null) "0" else s
 }
 
 private fun numberInput(state: NumKeypadState, number: String): NumKeypadState =
-    if (state.operator == null) state.copy(leftOperand = (state.leftOperand + number).trimZero())
-    else state.copy(rightOperand = (state.rightOperand + number).trimZero())
+    if (state.operator == null) state.copy(leftOperand = (state.leftOperand + number).normalize())
+    else state.copy(rightOperand = (state.rightOperand + number).normalize())
 
 private fun decimalPointInput(state: NumKeypadState): NumKeypadState =
-    if (state.operator == null) state.copy(leftOperand = (state.leftOperand.replace(".", "") + ".").trimZero())
-    else state.copy(rightOperand = (state.rightOperand.replace(".", "") + ".").trimZero())
+    if (state.operator == null) state.copy(leftOperand = (state.leftOperand.replace(".", "") + ".").normalize())
+    else state.copy(rightOperand = (state.rightOperand.replace(".", "") + ".").normalize())
 
 private fun delete(state: NumKeypadState): NumKeypadState =
-    if (state.operator == null) state.copy(leftOperand = state.leftOperand.dropLast(1).trimZero())
-    else if (state.rightOperand.trimZero() != "0") state.copy(rightOperand = state.rightOperand.dropLast(1).trimZero())
+    if (state.operator == null) state.copy(leftOperand = state.leftOperand.dropLast(1).normalize())
+    else if (state.rightOperand.normalize() != "0") state.copy(
+        rightOperand = state.rightOperand.dropLast(1).normalize(),
+    )
     else state.copy(operator = null)
 
 private fun operatorInput(state: NumKeypadState, operator: Operator): NumKeypadState =
-    if (state.operator == null || state.rightOperand.trimZero() == "0")
+    if (state.operator == null || state.rightOperand.normalize() == "0")
         state.copy(operator = operator, rightOperand = "0")
     else when (val result = state.evaluate()) {
         is EvaluatedResult.Success -> state.copy(
@@ -59,7 +63,7 @@ private fun operatorInput(state: NumKeypadState, operator: Operator): NumKeypadS
 
 private fun clear(state: NumKeypadState): NumKeypadState =
     if (state.fatal) state.copy(fatal = false)
-    else if (state.operator == null || state.rightOperand.trimZero() == "0")
+    else if (state.operator == null || state.rightOperand.normalize() == "0")
         state.copy(leftOperand = "0", operator = null, rightOperand = "0")
     else state.copy(rightOperand = "0")
 
@@ -128,8 +132,8 @@ fun ClearButton(
 ) {
     Text(
         text = stringResource(
-            if (state.operator == null || state.rightOperand.trimZero() == "0") R.string.numkeypad_allclear
-            else R.string.numkeypad_clear,
+            if (state.operator == null || state.rightOperand.normalize() == "0") R.string.numkeypad_action_all_clear
+            else R.string.numkeypad_action_clear,
         ),
         style = MaterialTheme.typography.titleLarge,
     )
@@ -144,7 +148,7 @@ fun DeleteButton(
     onClick = { onStateChange(delete(state)) },
     enabled = !state.fatal,
     modifier = modifier,
-) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_backspace)) }
+) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_action_backspace)) }
 
 @Composable
 fun NumKeypad(
@@ -160,7 +164,7 @@ fun NumKeypad(
         Text(
             text = when (result) {
                 is EvaluatedResult.Success -> "= ${result.value.toPlainString()}"
-                EvaluatedResult.DividedByZero -> stringResource(R.string.numkeypad_divided_by_zero)
+                EvaluatedResult.DividedByZero -> stringResource(R.string.numkeypad_msg_divided_by_zero)
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.outline,
@@ -205,7 +209,12 @@ fun NumKeypad(
                         modifier = localModifier.radialFilledWeight(1f),
                         colors = ButtonColor.danger,
                         shape = MaterialTheme.shapes.large,
-                    ) { Icon(imageVector = Icon.Close, contentDescription = stringResource(R.string.cancel)) }
+                    ) {
+                        Icon(
+                            imageVector = Icon.Close,
+                            contentDescription = stringResource(R.string.common_action_cancel),
+                        )
+                    }
                     NumberButton("0", state, onStateChange, Modifier.weight(1f))
                     DecimalPointButton(state, onStateChange, Modifier.weight(1f))
                 }
@@ -217,7 +226,7 @@ fun NumKeypad(
                 shape = MaterialTheme.shapes.large,
             ) {
                 Text(
-                    text = stringResource(R.string.ok),
+                    text = stringResource(R.string.common_action_ok),
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),

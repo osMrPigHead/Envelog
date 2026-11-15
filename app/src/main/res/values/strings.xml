@@ -1,43 +1,100 @@
 <resources>
     <string name="app_name">Envelog</string>
-    <string name="year">%1$04d</string>
-    <string name="month">%1$02d</string>
-    <string name="summary_remaining_title">Remaining</string>
-    <string name="summary_remaining_caption">Used: %1$s</string>
-    <string name="summary_expenses_title">Expenses</string>
-    <string name="summary_balance_title">Balance</string>
-    <string name="envelope_used">(%1$s used)</string>
-    <string name="envelope_caption" translatable="false">%3$s%1$s\u2009/\u2009%2$s%4$s</string>
-    <string name="envelope_available">Available %1$s</string>
-    <string name="time_today">today</string>
+    <string name="common_action_archive">Archive</string>
+    <string name="common_action_back">Back</string>
+    <string name="common_action_cancel">Cancel</string>
+    <string name="common_action_delete">Delete</string>
+    <string name="common_action_ok">OK</string>
+    <string name="common_action_save_and_back">Save and Back</string>
+    <string name="common_label_error">Error</string>
+    <string name="common_label_name">Name</string>
+    <string name="common_msg_amount_positive">Amount should be positive</string>
     <string name="currency_cny_prefix">¥\u2009</string>
     <string name="currency_cny_suffix">\u200b</string>
-    <string name="prompt_main">Tap an envelope to log spending</string>
-    <string name="prompt_main_manage">Manage envelopes</string>
-    <string name="envelope_manage_edit">Edit</string>
-    <string name="envelope_manage_archive">Archive</string>
-    <string name="prompt_main_manage_finish">Finish managing</string>
-    <string name="envelope_caption_non_budget">%2$s%1$s%3$s used</string>
-    <string name="separator_word" translatable="false">\u0020</string>
-    <string name="separator_thin" translatable="false">\u200a</string>
-    <string name="separator_small" translatable="false">\u2009</string>
-    <string name="text_percent_nan" translatable="false">\u2014</string>
-    <string name="time_within_days">within %1$dd</string>
-    <string name="numkeypad_allclear" translatable="false">AC</string>
-    <string name="numkeypad_clear" translatable="false">C</string>
-    <string name="ok">OK</string>
-    <string name="numkeypad_plus" translatable="false">+</string>
-    <string name="numkeypad_minus" translatable="false">\u2212</string>
-    <string name="numkeypad_times" translatable="false">\u00d7</string>
-    <string name="numkeypad_divides" translatable="false">\u00f7</string>
-    <string name="numkeypad_divided_by_zero">ERROR: Divided by Zero</string>
-    <string name="numkeypad_backspace">Backspace</string>
-    <string name="envelope_manage_new">New Envelope</string>
-    <string name="cancel">Cancel</string>
-    <string name="budget_range">Date Range</string>
-    <string name="budget_amount">Amount</string>
-    <string name="budget_should_be_positive">Budget should be positive</string>
-    <string name="name">Name</string>
-    <string name="envelope_budgeted">Budgeted</string>
-    <string name="budget_title">Budget</string>
+    <string name="day_of_week_range_picker_label_end">End</string>
+    <string name="day_of_week_range_picker_label_start">Start</string>
+    <string name="day_of_week_range_picker_title">Select day range</string>
+    <string name="common_action_archive_envelope">Archive Envelope</string>
+    <string name="common_action_delete_envelope">Delete Envelope</string>
+    <string name="envelope_edit_budget_amount_label">Amount</string>
+    <string name="envelope_edit_budget_list_amount">Amount</string>
+    <string name="envelope_edit_budget_list_date_range">Date Range</string>
+    <string name="envelope_edit_budget_range_label">Date Range</string>
+    <string name="envelope_edit_budget_title">Budget</string>
+    <string name="envelope_edit_default_name">New Envelope</string>
+    <string name="envelope_edit_label_budgeted">Budgeted</string>
+    <string name="common_msg_archive_envelope_confirm">Archiving hides the envelope from the overview and excludes its budgets from statistics. Its expenses still count toward the total.</string>
+    <string name="envelope_edit_msg_archived">Edits on archived envelope are prohibited</string>
+    <string name="envelope_edit_msg_budget_overlaps">Budget overlaps</string>
+    <string name="common_msg_delete_envelope_confirm">Deleting removes the envelope together with its budgets and expense records. This cannot be undone.</string>
+    <string name="envelope_edit_quick_set_title">Quick set budget</string>
+    <string name="envelope_edit_quick_set_mode_daily_label">Daily</string>
+    <string name="envelope_edit_quick_set_mode_weekly_label">Weekly</string>
+    <string name="envelope_edit_quick_set_interval_prefix">Every</string>
+    <string name="envelope_edit_quick_set_interval_suffix">day(s)</string>
+    <string name="envelope_edit_quick_set_amount_unit">CNY</string>
+    <string name="envelope_edit_quick_set_range_label">Target range</string>
+    <string name="envelope_edit_quick_set_interval_field">Interval days</string>
+    <string name="envelope_edit_quick_set_daily_amount_field">Daily amount</string>
+    <string name="envelope_edit_quick_set_weekly_amount_field">Weekly amount</string>
+    <string name="envelope_edit_quick_set_monthly_amount_field">Monthly amount</string>
+    <string name="envelope_edit_quick_set_weekday_range_field">Day range</string>
+    <string name="envelope_edit_quick_set_preview_daily">Every %1$d day(s) %2$s · %3$d days · Total %4$s</string>
+    <string name="envelope_edit_quick_set_preview_weekly">Weekly %1$s %2$s · %3$d days · Total %4$s</string>
+    <string name="envelope_edit_quick_set_preview_monthly">Monthly total %1$s · %2$d days</string>
+    <string name="envelope_edit_quick_set_interval_invalid">Interval must be a positive integer</string>
+    <string name="envelope_edit_quick_set_cannot_generate">These settings cannot create budgets</string>
+    <string name="envelope_edit_quick_set_conflict_title">Overwrite existing budgets?</string>
+    <string name="envelope_edit_quick_set_conflict_message">%1$d existing budgets (total %2$s) overlap the target range. Overwrite will delete and replace them.</string>
+    <string name="envelope_edit_quick_set_conflict_confirm">Overwrite</string>
+    <string name="envelope_edit_tab_budget">Budget</string>
+    <string name="envelope_edit_tab_calendar">Calendar</string>
+    <string name="envelope_edit_tab_expenses">Expenses</string>
+    <string name="envelope_edit_title">Edit Envelope</string>
+    <string name="month_picker_label_month">Month</string>
+    <string name="month_picker_label_year">Year</string>
+    <string name="month_picker_title">Select month</string>
+    <string name="numkeypad_action_all_clear" translatable="false">AC</string>
+    <string name="numkeypad_action_backspace">Backspace</string>
+    <string name="numkeypad_action_clear" translatable="false">C</string>
+    <string name="numkeypad_msg_divided_by_zero">ERROR: Divided by Zero</string>
+    <string name="numkeypad_symbol_divides" translatable="false">\u00f7</string>
+    <string name="numkeypad_symbol_minus" translatable="false">\u2212</string>
+    <string name="numkeypad_symbol_plus" translatable="false">+</string>
+    <string name="numkeypad_symbol_times" translatable="false">\u00d7</string>
+    <string name="overview_action_manage">Manage envelopes</string>
+    <string name="overview_action_manage_finish">Finish managing</string>
+    <string name="overview_action_new_envelope">New Envelope</string>
+    <string name="overview_envelope_action_archive">Archive</string>
+    <string name="overview_envelope_action_delete">Delete</string>
+    <string name="overview_envelope_action_edit">Edit</string>
+    <string name="overview_envelope_card_available_title">Available %1$s</string>
+    <string name="overview_envelope_card_budget_caption" translatable="false">%3$s%1$s\u2009/\u2009%2$s%4$s</string>
+    <string name="overview_envelope_card_non_budget_caption">%2$s%1$s%3$s used</string>
+    <string name="overview_envelope_card_used_percent">(%1$s used)</string>
+    <string name="overview_prompt_main">Tap an envelope to log spending</string>
+    <string name="overview_summary_balance_title">Balance</string>
+    <string name="overview_summary_expense_title">Expenses</string>
+    <string name="overview_summary_remaining_caption">Used: %1$s</string>
+    <string name="overview_summary_remaining_title">Remaining</string>
+    <string name="record_expense_title">Record an expense</string>
+    <string name="symbol_en_dash" translatable="false">\u2013</string>
+    <string name="symbol_hair_space" translatable="false">\u200a</string>
+    <string name="symbol_percent_nan" translatable="false">\u2014</string>
+    <string name="symbol_space" translatable="false">\u0020</string>
+    <string name="time_day_of_week_friday">Fri</string>
+    <string name="time_day_of_week_monday">Mon</string>
+    <string name="time_day_of_week_saturday">Sat</string>
+    <string name="time_day_of_week_sunday">Sun</string>
+    <string name="time_day_of_week_thursday">Thu</string>
+    <string name="time_day_of_week_tuesday">Tue</string>
+    <string name="time_day_of_week_wednesday">Wed</string>
+    <string name="time_format_day_of_week_range">%1$s ~ %2$s</string>
+    <string name="time_format_day">%1$02d</string>
+    <string name="time_format_month">%1$02d</string>
+    <string name="time_format_within_days">within %1$dd</string>
+    <string name="time_format_year">%1$04d</string>
+    <string name="time_format_year_month">%1$04d-%2$02d</string>
+    <string name="time_today">today</string>
+    <string name="time_this_week">this week</string>
 </resources>

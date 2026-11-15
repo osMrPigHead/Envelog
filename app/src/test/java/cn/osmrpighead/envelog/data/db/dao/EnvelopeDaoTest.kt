@@ -2,13 +2,14 @@ package cn.osmrpighead.envelog.data.db.dao
 
 import android.app.Application
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
-import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
+import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import cn.osmrpighead.envelog.testing.RoomTestData
 import cn.osmrpighead.envelog.testing.seed
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -37,11 +38,11 @@ class EnvelopeDaoTest {
     }
 
     private suspend fun summaries(): List<EnvelopeSummaryRow> =
-        dao.observeEnvelopeSummariesOverlaps(
+        dao.observeSummaries(
             today = RoomTestData.today,
             yearMonth = RoomTestData.month,
-            monthStart = RoomTestData.monthStart,
-            monthEnd = RoomTestData.monthEnd,
+            spanStart = RoomTestData.monthStart,
+            spanEnd = RoomTestData.monthEnd,
         ).first()
 
     @Test
@@ -53,7 +54,7 @@ class EnvelopeDaoTest {
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(inside, lastDay, nextMonth, previousMonth),
+            expenses = listOf(inside, lastDay, nextMonth, previousMonth),
             allocations = insideShares + lastDayShares + nextMonthShares + previousMonthShares,
         )
 
@@ -87,7 +88,7 @@ class EnvelopeDaoTest {
                     amount = 60_000,
                 ),
             ),
-            expenditures = listOf(beforeMonth, beforeSpan, afterSpan, afterMonth),
+            expenses = listOf(beforeMonth, beforeSpan, afterSpan, afterMonth),
             allocations = beforeMonthShares + beforeSpanShares + afterSpanShares + afterMonthShares,
         )
 
@@ -129,7 +130,7 @@ class EnvelopeDaoTest {
                     amount = 80_000,
                 ),
             ),
-            expenditures = listOf(first, second, third),
+            expenses = listOf(first, second, third),
             allocations = firstShares + secondShares + thirdShares,
         )
 
@@ -146,7 +147,117 @@ class EnvelopeDaoTest {
     }
 
     @Test
-    fun observeEnvelopeSummaries_ignoresSoftDeletedBudgetsAndExpenditures() = runTest {
+    fun observeEnvelopeSummaries_countsTodayAllocationsWhenNoBudgetCoversToday() = runTest {
+        val (past, pastShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 19), RoomTestData.envelopeA to 3_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 7_000)
+        val (anotherToday, anotherTodayShares) = RoomTestData.record(0xB3, RoomTestData.today, RoomTestData.envelopeA to 2_000)
+        val (deletedToday, deletedTodayShares) = RoomTestData.record(0xB4, RoomTestData.today, RoomTestData.envelopeA to 5_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    id = RoomTestData.budgetA,
+                    start = LocalDate.of(2026, 10, 1),
+                    end = LocalDate.of(2026, 10, 15),
+                    amount = 40_000,
+                ),
+                RoomTestData.budget(
+                    id = RoomTestData.budgetB,
+                    start = LocalDate.of(2026, 10, 22),
+                    end = RoomTestData.monthEnd,
+                    amount = 80_000,
+                ),
+            ),
+            expenses = listOf(
+                past,
+                today,
+                anotherToday,
+                deletedToday.copy(deletedAt = Instant.parse("2026-10-20T05:00:00Z")),
+            ),
+            allocations = pastShares + todayShares + anotherTodayShares + deletedTodayShares,
+        )
+
+        val row = summaries().single()
+
+        assertNull(row.currentBudget)
+        assertNull(row.currentSpanStartDate)
+        assertNull(row.currentSpanEndDate)
+        assertEquals(9_000L, row.currentSpanAllocated)
+        assertEquals(40_000L, row.priorBudget)
+        assertEquals(3_000L, row.priorAllocated)
+        assertEquals(12_000L, row.allocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_countsTodayAllocationsWhenEnvelopeHasNoBudget() = runTest {
+        val (past, pastShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 5_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 7_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenses = listOf(past, today),
+            allocations = pastShares + todayShares,
+        )
+
+        val row = summaries().single()
+
+        assertNull(row.totalBudget)
+        assertNull(row.currentBudget)
+        assertNull(row.currentSpanStartDate)
+        assertNull(row.currentSpanEndDate)
+        assertEquals(7_000L, row.currentSpanAllocated)
+        assertNull(row.priorBudget)
+        assertEquals(5_000L, row.priorAllocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_keepsCurrentSpanAllocatedWhenTodayIsInsideBudget() = runTest {
+        val (earlier, earlierShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 18), RoomTestData.envelopeA to 20_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 4_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    start = LocalDate.of(2026, 10, 15),
+                    end = LocalDate.of(2026, 10, 22),
+                    amount = 60_000,
+                ),
+            ),
+            expenses = listOf(earlier, today),
+            allocations = earlierShares + todayShares,
+        )
+
+        val row = summaries().single()
+
+        assertEquals(60_000L, row.currentBudget)
+        assertEquals(LocalDate.of(2026, 10, 15), row.currentSpanStartDate)
+        assertEquals(LocalDate.of(2026, 10, 22), row.currentSpanEndDate)
+        assertEquals(24_000L, row.currentSpanAllocated)
+        assertNull(row.priorBudget)
+        assertNull(row.priorAllocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_ignoresTodayAllocationsWhenEnvelopeIsNotBudgeted() = runTest {
+        val (today, todayShares) = RoomTestData.record(0xB1, RoomTestData.today, RoomTestData.envelopeB to 7_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false)),
+            expenses = listOf(today),
+            allocations = todayShares,
+        )
+
+        val row = summaries().single()
+
+        assertEquals(7_000L, row.allocated)
+        assertNull(row.currentSpanAllocated)
+        assertNull(row.priorAllocated)
+    }
+
+    @Test
+    fun observeEnvelopeSummaries_ignoresSoftDeletedBudgetsAndExpenses() = runTest {
         val (live, liveShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 10), RoomTestData.envelopeA to 10_000)
         val (deleted, deletedShares) = RoomTestData.record(
             0xB2,
@@ -161,7 +272,7 @@ class EnvelopeDaoTest {
                 RoomTestData.budget(id = RoomTestData.budgetA, amount = 100_000),
                 RoomTestData.budget(id = RoomTestData.budgetB, amount = 50_000, deletedAt = deletedAt),
             ),
-            expenditures = listOf(live, deleted.copy(deletedAt = deletedAt)),
+            expenses = listOf(live, deleted.copy(deletedAt = deletedAt)),
             allocations = liveShares + deletedShares,
         )
 
@@ -177,7 +288,7 @@ class EnvelopeDaoTest {
 
     @Test
     fun observeEnvelopeSummaries_countsOnlyAttributedMonthInTotalBudget() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 10_000)
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 10_000)
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
@@ -187,7 +298,7 @@ class EnvelopeDaoTest {
                     attributedMonth = RoomTestData.month.minusMonths(1),
                 ),
             ),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
@@ -209,9 +320,9 @@ class EnvelopeDaoTest {
         val first = Instant.parse("2026-10-20T04:00:00Z")
         val second = Instant.parse("2026-10-21T04:00:00Z")
 
-        assertEquals(1, dao.archiveEnvelopeById(RoomTestData.envelopeA, first))
-        assertEquals(0, dao.archiveEnvelopeById(RoomTestData.envelopeA, second))
-        assertEquals(first, dao.getById(RoomTestData.envelopeA)?.archivedAt)
+        assertEquals(1, dao.archive(RoomTestData.envelopeA, first))
+        assertEquals(0, dao.archive(RoomTestData.envelopeA, second))
+        assertEquals(first, dao.get(RoomTestData.envelopeA)?.archivedAt)
     }
 
     @Test
@@ -223,7 +334,7 @@ class EnvelopeDaoTest {
             ),
         )
 
-        val found = dao.getByIds(setOf(RoomTestData.envelopeA, RoomTestData.envelopeId(0xEE), RoomTestData.envelopeB))
+        val found = dao.get(setOf(RoomTestData.envelopeA, RoomTestData.envelopeId(0xEE), RoomTestData.envelopeB))
 
         assertEquals(
             setOf(RoomTestData.envelopeA, RoomTestData.envelopeB),
@@ -235,13 +346,13 @@ class EnvelopeDaoTest {
     fun getById_returnsNullForUnknownEnvelope() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
-        assertNull(dao.getById(RoomTestData.envelopeId(0xEE)))
+        assertNull(dao.get(RoomTestData.envelopeId(0xEE)))
     }
 
     @Test
     fun observeEnvelopeSummaries_returnsIndependentRowsPerEnvelope() = runTest {
-        val (aExpenditure, aShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
-        val (bExpenditure, bShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 25), RoomTestData.envelopeB to 4_000)
+        val (aExpense, aShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (bExpense, bShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 25), RoomTestData.envelopeB to 4_000)
 
         database.seed(
             envelopes = listOf(
@@ -249,7 +360,7 @@ class EnvelopeDaoTest {
                 RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
             ),
             budgets = listOf(RoomTestData.budget(envelopeId = RoomTestData.envelopeA, amount = 100_000)),
-            expenditures = listOf(aExpenditure, bExpenditure),
+            expenses = listOf(aExpense, bExpense),
             allocations = aShares + bShares,
         )
 
@@ -277,12 +388,12 @@ class EnvelopeDaoTest {
 
     @Test
     fun getByIds_returnsEmptyListWhenDatabaseIsEmpty() = runTest {
-        assertTrue(dao.getByIds(setOf(RoomTestData.envelopeA)).isEmpty())
+        assertTrue(dao.get(setOf(RoomTestData.envelopeA)).isEmpty())
     }
 
     @Test
     fun archiveEnvelopeById_returnsZeroWhenEnvelopeIsMissing() = runTest {
-        assertEquals(0, dao.archiveEnvelopeById(RoomTestData.envelopeA, Instant.parse("2026-10-20T04:00:00Z")))
+        assertEquals(0, dao.archive(RoomTestData.envelopeA, Instant.parse("2026-10-20T04:00:00Z")))
     }
 
     @Test
@@ -290,7 +401,7 @@ class EnvelopeDaoTest {
         val archivedAt = Instant.parse("2026-10-01T04:00:00Z")
         database.seed(envelopes = listOf(RoomTestData.envelope(archivedAt = archivedAt)))
 
-        assertEquals(archivedAt, dao.getById(RoomTestData.envelopeA)?.archivedAt)
+        assertEquals(archivedAt, dao.get(RoomTestData.envelopeA)?.archivedAt)
     }
 
     @Test
@@ -303,10 +414,220 @@ class EnvelopeDaoTest {
             ),
         )
 
-        val found = dao.getByIds(setOf(RoomTestData.envelopeA, RoomTestData.envelopeB))
+        val found = dao.get(setOf(RoomTestData.envelopeA, RoomTestData.envelopeB))
 
         assertEquals(2, found.size)
         assertNull(found.single { it.id == RoomTestData.envelopeA }.archivedAt)
         assertEquals(archivedAt, found.single { it.id == RoomTestData.envelopeB }.archivedAt)
+    }
+
+    @Test
+    fun updateEnvelope_replacesStoredFields() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+        )
+        val archivedAt = Instant.parse("2026-10-20T04:00:00Z")
+        val updated = RoomTestData.envelope(
+            id = RoomTestData.envelopeA,
+            name = "外食",
+            isBudgeted = false,
+            archivedAt = archivedAt,
+        )
+
+        dao.update(updated)
+
+        assertEquals(updated, dao.get(RoomTestData.envelopeA))
+        assertEquals("购物", dao.get(RoomTestData.envelopeB)?.name)
+    }
+
+    @Test
+    fun updateEnvelope_missingEnvelope_isNoOp() = runTest {
+        dao.update(RoomTestData.envelope(name = "新名字"))
+
+        assertNull(dao.get(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun deleteEnvelopeById_removesTheRowAndKeepsOthers() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物", isBudgeted = false),
+            ),
+        )
+
+        assertEquals(1, dao.delete(RoomTestData.envelopeA))
+
+        assertNull(dao.get(RoomTestData.envelopeA))
+        assertEquals("购物", dao.get(RoomTestData.envelopeB)?.name)
+    }
+
+    @Test
+    fun deleteEnvelopeById_removesArchivedEnvelope() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(
+                    RoomTestData.envelopeA,
+                    archivedAt = Instant.parse("2026-09-01T04:00:00Z"),
+                ),
+            ),
+        )
+
+        assertEquals(1, dao.delete(RoomTestData.envelopeA))
+
+        assertNull(dao.get(RoomTestData.envelopeA))
+    }
+
+    @Test
+    fun deleteEnvelopeById_returnsZeroForMissingEnvelope() = runTest {
+        assertEquals(0, dao.delete(RoomTestData.envelopeId(0xEE)))
+    }
+
+    @Test
+    fun isDeletable_trueWhenNoEnvelopeIsReferenced() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope()))
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertTrue(summaries().single().canDelete)
+    }
+
+    @Test
+    fun isDeletable_trueForUnknownEnvelope() = runTest {
+        database.seed(envelopes = listOf(RoomTestData.envelope()))
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeId(0xEE)).first())
+    }
+
+    @Test
+    fun isDeletable_falseWhenALiveBudgetReferencesTheEnvelope() = runTest {
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA)),
+        )
+
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse(summaries().single().canDelete)
+    }
+
+    @Test
+    fun isDeletable_trueWhenEveryBudgetOfTheEnvelopeIsSoftDeleted() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt),
+                RoomTestData.budget(id = RoomTestData.budgetB, deletedAt = deletedAt),
+            ),
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertTrue(summaries().single().canDelete)
+    }
+
+    @Test
+    fun isDeletable_ignoresBudgetsOfOtherEnvelopes() = runTest {
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物"),
+            ),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, envelopeId = RoomTestData.envelopeB)),
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse("同一预算只挡住它所归属的信封", dao.isDeletable(RoomTestData.envelopeB).first())
+
+        val canDelete = summaries().associate { it.id to it.canDelete }
+        assertEquals(mapOf(RoomTestData.envelopeA to true, RoomTestData.envelopeB to false), canDelete)
+    }
+
+    @Test
+    fun isDeletable_falseWhenALiveExpenseAllocatesToTheEnvelope() = runTest {
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenses = listOf(expense),
+            allocations = shares,
+        )
+
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse(summaries().single().canDelete)
+    }
+
+    @Test
+    fun isDeletable_trueWhenEveryAllocationPointsToASoftDeletedExpense() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        val (first, firstShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (second, secondShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 6), RoomTestData.envelopeA to 3_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            expenses = listOf(first.copy(deletedAt = deletedAt), second.copy(deletedAt = deletedAt)),
+            allocations = firstShares + secondShares,
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertTrue(summaries().single().canDelete)
+    }
+
+    @Test
+    fun isDeletable_ignoresAllocationsOfOtherEnvelopes() = runTest {
+        val (expense, shares) = RoomTestData.record(
+            0xB1,
+            LocalDate.of(2026, 10, 5),
+            RoomTestData.envelopeB to 6_000,
+        )
+        database.seed(
+            envelopes = listOf(
+                RoomTestData.envelope(RoomTestData.envelopeA, name = "餐饮"),
+                RoomTestData.envelope(RoomTestData.envelopeB, name = "购物"),
+            ),
+            expenses = listOf(expense),
+            allocations = shares,
+        )
+
+        assertTrue(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse("同一笔支出只挡住它分摊到的信封", dao.isDeletable(RoomTestData.envelopeB).first())
+
+        val canDelete = summaries().associate { it.id to it.canDelete }
+        assertEquals(mapOf(RoomTestData.envelopeA to true, RoomTestData.envelopeB to false), canDelete)
+    }
+
+    @Test
+    fun isDeletable_falseWhenALiveReferenceRemainsAmongSoftDeletedRows() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        val (garbage, garbageShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (alive, aliveShares) = RoomTestData.record(0xB2, LocalDate.of(2026, 10, 6), RoomTestData.envelopeA to 3_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
+            expenses = listOf(garbage.copy(deletedAt = deletedAt), alive),
+            allocations = garbageShares + aliveShares,
+        )
+
+        assertFalse(dao.isDeletable(RoomTestData.envelopeA).first())
+        assertFalse(summaries().single().canDelete)
+    }
+
+    @Test
+    fun isDeletable_trueAfterSoftDeletedRowsAreCleaned() = runTest {
+        val deletedAt = Instant.parse("2026-10-19T04:00:00Z")
+        val (garbage, garbageShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(RoomTestData.budget(id = RoomTestData.budgetA, deletedAt = deletedAt)),
+            expenses = listOf(garbage.copy(deletedAt = deletedAt)),
+            allocations = garbageShares,
+        )
+
+        database.expenseDao().clean(RoomTestData.envelopeA)
+        database.expenseAllocationDao().clean(RoomTestData.envelopeA)
+        database.budgetDao().clean(RoomTestData.envelopeA)
+
+        assertTrue("清理垃圾行后信封应可删除", dao.isDeletable(RoomTestData.envelopeA).first())
+        assertTrue(summaries().single().canDelete)
+        assertEquals(1, dao.delete(RoomTestData.envelopeA))
     }
 }

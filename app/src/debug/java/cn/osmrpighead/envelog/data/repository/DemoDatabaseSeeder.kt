@@ -19,7 +19,7 @@ class DemoDatabaseSeeder @Inject constructor(
         database.withWriteTransaction {
             seedDao.insertEnvelopes(seed.envelopes)
             seedDao.insertBudgets(seed.budgets)
-            seedDao.insertExpenditures(seed.expenditures)
+            seedDao.insertExpenses(seed.expenses)
             seedDao.insertAllocations(seed.allocations)
         }
     }

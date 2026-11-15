@@ -6,10 +6,11 @@ import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.untilExclusive
 import cn.osmrpighead.envelog.data.db.EnvelogDatabase
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.Expenditure
-import cn.osmrpighead.envelog.data.model.ExpenditureAllocation
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseSubmission
+import cn.osmrpighead.envelog.data.model.ExpenseAllocation
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
+import cn.osmrpighead.envelog.data.repository.room.RoomEnvelogRepository
 import cn.osmrpighead.envelog.testing.RoomTestData
 import cn.osmrpighead.envelog.testing.seed
 import kotlinx.coroutines.flow.first
@@ -37,7 +38,7 @@ class RoomEnvelogRepositoryTest {
     private lateinit var database: EnvelogDatabase
     private lateinit var repository: RoomEnvelogRepository
 
-    private val expenditureId = ExpenditureId(RoomTestData.uuid(0xC1))
+    private val expenseId = ExpenseId(RoomTestData.uuid(0xC1))
 
     @Before
     fun setUp() {
@@ -59,22 +60,20 @@ class RoomEnvelogRepositoryTest {
         dateSpan = RoomTestData.month.toHalfOpenDateSpan(),
     ).first()
 
-    private fun newExpenditure(
-        allocations: List<ExpenditureAllocation>,
+    private fun newExpense(
+        allocations: List<ExpenseAllocation>,
         date: LocalDate = RoomTestData.monthStart.plusDays(4),
-        id: ExpenditureId = expenditureId,
+        id: ExpenseId = expenseId,
         happenedAt: Instant = RoomTestData.at(date),
-        happenedDate: LocalDate = date,
-    ): Expenditure = Expenditure(
+    ): ExpenseSubmission = ExpenseSubmission(
         id = id,
         happenedAt = happenedAt,
-        happenedDate = happenedDate,
         happenedZone = RoomTestData.zone,
         allocations = allocations,
     )
 
-    private fun allocation(envelopeId: EnvelopeId, amount: Long): ExpenditureAllocation =
-        ExpenditureAllocation(expenditureId, envelopeId, amount)
+    private fun allocation(envelopeId: EnvelopeId, amount: Long): ExpenseAllocation =
+        ExpenseAllocation(expenseId, envelopeId, amount)
 
     private suspend fun assertRejected(block: suspend () -> Unit) {
         try {
@@ -116,7 +115,7 @@ class RoomEnvelogRepositoryTest {
                     amount = 80_000,
                 ),
             ),
-            expenditures = listOf(first, second, third),
+            expenses = listOf(first, second, third),
             allocations = firstShares + secondShares + thirdShares,
         )
     }
@@ -157,6 +156,7 @@ class RoomEnvelogRepositoryTest {
                 allocated = 39_000,
                 currency = CurrencyType.CNY,
                 archived = false,
+                canDelete = false,
                 totalBudget = 180_000,
                 currentBudget = 60_000,
                 currentSpan = LocalDate.of(2026, 10, 15) untilExclusive LocalDate.of(2026, 10, 22),
@@ -182,27 +182,36 @@ class RoomEnvelogRepositoryTest {
 
     @Test
     fun observeOverview_mapsNonBudgetedSummary() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 12), RoomTestData.envelopeA to 30_000)
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 12), RoomTestData.envelopeA to 30_000)
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope(name = "购物", isBudgeted = false)),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
         assertEquals(
-            listOf(EnvelopeSummary.NonBudget(RoomTestData.envelopeA, "购物", 30_000, CurrencyType.CNY, false)),
+            listOf(
+                EnvelopeSummary.NonBudget(
+                    RoomTestData.envelopeA,
+                    "购物",
+                    30_000,
+                    CurrencyType.CNY,
+                    archived = false,
+                    canDelete = false,
+                ),
+            ),
             overview(),
         )
     }
 
     @Test
     fun observeOverview_mapsBudgetedEnvelopeWithoutBudgetRows() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 3), RoomTestData.envelopeA to 5_000)
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 3), RoomTestData.envelopeA to 5_000)
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
@@ -217,64 +226,78 @@ class RoomEnvelogRepositoryTest {
         // 没有当前预算时，历史窗口的终点回退到 today，因此月初至今的支出都算历史支出
         assertEquals(5_000L, summary.priorAllocated)
         assertFalse(summary.usedProportion.isValid)
+        assertFalse("存活支出的分摊使该信封不可删除", summary.canDelete)
     }
 
     @Test
-    fun archiveEnvelope_archivesOnceThenReportsNotFound() = runTest {
+    fun observeOverview_countsTodayAllocationsWhenNoBudgetCoversToday() = runTest {
+        val (past, pastShares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 10), RoomTestData.envelopeA to 20_000)
+        val (today, todayShares) = RoomTestData.record(0xB2, RoomTestData.today, RoomTestData.envelopeA to 7_000)
+
+        database.seed(
+            envelopes = listOf(RoomTestData.envelope()),
+            budgets = listOf(
+                RoomTestData.budget(
+                    start = LocalDate.of(2026, 10, 1),
+                    end = LocalDate.of(2026, 10, 15),
+                    amount = 40_000,
+                ),
+            ),
+            expenses = listOf(past, today),
+            allocations = pastShares + todayShares,
+        )
+
+        val summary = overview().single() as EnvelopeSummary.Budgeted
+
+        assertNull(summary.currentBudget)
+        assertNull(summary.currentSpan)
+        assertEquals(7_000L, summary.currentSpanAllocated)
+        assertEquals(40_000L, summary.priorBudget)
+        assertEquals(20_000L, summary.priorAllocated)
+        assertEquals(0L, summary.currentAvailable)
+        assertEquals(13_000L, summary.priorDifference)
+    }
+
+    @Test
+    fun archiveEnvelope_archivesOnceThenReportsNotFoundOrAlreadyArchived() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertEquals(ArchiveResult.Archived, repository.archiveEnvelope(RoomTestData.envelopeA))
-        assertNotNull(database.envelopeDao().getById(RoomTestData.envelopeA)?.archivedAt)
-        assertEquals(ArchiveResult.NotFound, repository.archiveEnvelope(RoomTestData.envelopeA))
+        assertNotNull(database.envelopeDao().get(RoomTestData.envelopeA)?.archivedAt)
+        assertEquals(ArchiveResult.NotFoundOrAlreadyArchived, repository.archiveEnvelope(RoomTestData.envelopeA))
     }
 
     @Test
-    fun archiveEnvelope_reportsNotFoundForUnknownEnvelope() = runTest {
-        assertEquals(ArchiveResult.NotFound, repository.archiveEnvelope(RoomTestData.envelopeA))
+    fun archiveEnvelope_reportsNotFoundOrAlreadyArchivedForUnknownEnvelope() = runTest {
+        assertEquals(ArchiveResult.NotFoundOrAlreadyArchived, repository.archiveEnvelope(RoomTestData.envelopeA))
     }
 
     @Test
-    fun recordExpenditure_writesExpenditureAndAllocations() = runTest {
+    fun recordExpense_writesExpenseAndAllocations() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope(RoomTestData.envelopeA)))
 
-        repository.recordExpenditure(
-            newExpenditure(allocations = listOf(allocation(RoomTestData.envelopeA, 6_000))),
+        repository.recordExpense(
+            newExpense(allocations = listOf(allocation(RoomTestData.envelopeA, 6_000))),
         )
 
         assertEquals(6_000L, overview().single().allocated)
     }
 
     @Test
-    fun recordExpenditure_rejectsEmptyAllocations() = runTest {
+    fun recordExpense_rejectsEmptyAllocations() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
-        assertRejected { repository.recordExpenditure(newExpenditure(allocations = emptyList())) }
+        assertRejected { repository.recordExpense(newExpense(allocations = emptyList())) }
         assertNothingRecorded()
     }
 
     @Test
-    fun recordExpenditure_rejectsHappenedDateMismatch() = runTest {
+    fun recordExpense_rejectsDuplicateEnvelopes() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertRejected {
-            repository.recordExpenditure(
-                newExpenditure(
-                    allocations = listOf(allocation(RoomTestData.envelopeA, 10_000)),
-                    date = RoomTestData.monthStart.plusDays(4),
-                    happenedDate = RoomTestData.monthStart.plusDays(5),
-                ),
-            )
-        }
-        assertNothingRecorded()
-    }
-
-    @Test
-    fun recordExpenditure_rejectsDuplicateEnvelopes() = runTest {
-        database.seed(envelopes = listOf(RoomTestData.envelope()))
-
-        assertRejected {
-            repository.recordExpenditure(
-                newExpenditure(
+            repository.recordExpense(
+                newExpense(
                     allocations = listOf(
                         allocation(RoomTestData.envelopeA, 5_000),
                         allocation(RoomTestData.envelopeA, 5_000),
@@ -286,27 +309,27 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
-    fun recordExpenditure_rejectsNonPositiveAmount() = runTest {
+    fun recordExpense_rejectsNonPositiveAmount() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertRejected {
-            repository.recordExpenditure(
-                newExpenditure(allocations = listOf(allocation(RoomTestData.envelopeA, 0))),
+            repository.recordExpense(
+                newExpense(allocations = listOf(allocation(RoomTestData.envelopeA, 0))),
             )
         }
         assertNothingRecorded()
     }
 
     @Test
-    fun recordExpenditure_rejectsAllocationOfAnotherExpenditure() = runTest {
+    fun recordExpense_rejectsAllocationOfAnotherExpense() = runTest {
         database.seed(envelopes = listOf(RoomTestData.envelope()))
 
         assertRejected {
-            repository.recordExpenditure(
-                newExpenditure(
+            repository.recordExpense(
+                newExpense(
                     allocations = listOf(
-                        ExpenditureAllocation(
-                            expenditureId = ExpenditureId(RoomTestData.uuid(0xC2)),
+                        ExpenseAllocation(
+                            expenseId = ExpenseId(RoomTestData.uuid(0xC2)),
                             envelopeId = RoomTestData.envelopeA,
                             amount = 10_000,
                         ),
@@ -318,7 +341,7 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
-    fun recordExpenditure_rejectsArchivedEnvelope() = runTest {
+    fun recordExpense_rejectsArchivedEnvelope() = runTest {
         database.seed(
             envelopes = listOf(
                 RoomTestData.envelope(archivedAt = Instant.parse("2026-10-01T04:00:00Z")),
@@ -326,8 +349,8 @@ class RoomEnvelogRepositoryTest {
         )
 
         assertRejected {
-            repository.recordExpenditure(
-                newExpenditure(allocations = listOf(allocation(RoomTestData.envelopeA, 10_000))),
+            repository.recordExpense(
+                newExpense(allocations = listOf(allocation(RoomTestData.envelopeA, 10_000))),
             )
         }
         assertNothingRecorded()
@@ -335,11 +358,11 @@ class RoomEnvelogRepositoryTest {
 
     @Test
     fun observeOverview_derivesNegativePriorDifferenceWithoutPriorBudget() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 3), RoomTestData.envelopeA to 5_000)
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 3), RoomTestData.envelopeA to 5_000)
 
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
@@ -356,11 +379,11 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
-    fun recordExpenditure_countsIntoCurrentSpanAllocated() = runTest {
+    fun recordExpense_countsIntoCurrentSpanAllocated() = runTest {
         seedCurrentSpanBudgets()
 
-        repository.recordExpenditure(
-            newExpenditure(
+        repository.recordExpense(
+            newExpense(
                 allocations = listOf(allocation(RoomTestData.envelopeA, 6_000)),
                 date = LocalDate.of(2026, 10, 18),
             ),
@@ -377,11 +400,11 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
-    fun recordExpenditure_countsBeforeCurrentSpanInPriorAllocated() = runTest {
+    fun recordExpense_countsBeforeCurrentSpanInPriorAllocated() = runTest {
         seedCurrentSpanBudgets()
 
-        repository.recordExpenditure(
-            newExpenditure(
+        repository.recordExpense(
+            newExpense(
                 allocations = listOf(allocation(RoomTestData.envelopeA, 5_000)),
                 date = LocalDate.of(2026, 10, 5),
             ),
@@ -395,7 +418,7 @@ class RoomEnvelogRepositoryTest {
     }
 
     @Test
-    fun recordExpenditure_splitsOneExpenditureAcrossEnvelopes() = runTest {
+    fun recordExpense_splitsOneExpenseAcrossEnvelopes() = runTest {
         database.seed(
             envelopes = listOf(
                 RoomTestData.envelope(RoomTestData.envelopeA),
@@ -403,8 +426,8 @@ class RoomEnvelogRepositoryTest {
             ),
         )
 
-        repository.recordExpenditure(
-            newExpenditure(
+        repository.recordExpense(
+            newExpense(
                 allocations = listOf(
                     allocation(RoomTestData.envelopeA, 6_000),
                     allocation(RoomTestData.envelopeB, 4_000),
@@ -420,18 +443,18 @@ class RoomEnvelogRepositoryTest {
 
     @Test
     fun archiveEnvelope_reportsArchivedForEnvelopeWithData() = runTest {
-        val (expenditure, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
+        val (expense, shares) = RoomTestData.record(0xB1, LocalDate.of(2026, 10, 5), RoomTestData.envelopeA to 6_000)
         database.seed(
             envelopes = listOf(RoomTestData.envelope()),
             budgets = listOf(RoomTestData.budget(amount = 100_000)),
-            expenditures = listOf(expenditure),
+            expenses = listOf(expense),
             allocations = shares,
         )
 
         assertEquals(ArchiveResult.Archived, repository.archiveEnvelope(RoomTestData.envelopeA))
         assertEquals(
             RoomTestData.at(RoomTestData.today),
-            database.envelopeDao().getById(RoomTestData.envelopeA)?.archivedAt,
+            database.envelopeDao().get(RoomTestData.envelopeA)?.archivedAt,
         )
     }
 }

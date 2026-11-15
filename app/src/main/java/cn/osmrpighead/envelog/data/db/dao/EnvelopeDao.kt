@@ -1,11 +1,12 @@
 package cn.osmrpighead.envelog.data.db.dao
 
 import androidx.room3.Dao
+import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Update
 import cn.osmrpighead.envelog.data.db.entity.EnvelopeEntity
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.query.EnvelopeSummaryRow
+import cn.osmrpighead.envelog.data.db.row.EnvelopeSummaryRow
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
@@ -26,11 +27,12 @@ interface EnvelopeDao {
                 GROUP BY envelopeId
             ),
             currentBudget AS (
-                SELECT envelopeId, amount, startDate, endDate
+                SELECT envelopeId, SUM(amount) as amount, startDate, endDate
                 FROM budget
                 WHERE deletedAt IS NULL
                   AND :today >= startDate
                   AND :today < endDate
+                GROUP BY envelopeId
             ),
             priorBudget AS ( -- TODO: 是否与budgetAgg合并 需要验证
                 SELECT envelopeId, SUM(amount) AS total
@@ -42,41 +44,60 @@ interface EnvelopeDao {
             ),
             allocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
-                FROM expenditureAllocation ea
+                FROM expenseAllocation ea
                 LEFT JOIN budgetAgg ba ON ea.envelopeId = ba.envelopeId
-                JOIN expenditure ex
+                JOIN expense ex
                   ON ex.deletedAt IS NULL
-                 AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
-                 AND ex.happenedDate < COALESCE(MAX(ba.maxEnd, :monthEnd), :monthEnd)
+                 AND ea.expenseId = ex.id
+                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :spanStart), :spanStart)
+                 AND ex.happenedDate < COALESCE(MAX(ba.maxEnd, :spanEnd), :spanEnd)
                 GROUP BY ea.envelopeId
             ),
             currentAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
-                FROM expenditureAllocation ea
-                JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
-                JOIN expenditure ex
+                FROM expenseAllocation ea
+                LEFT JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
+                JOIN envelope ev ON ev.id = ea.envelopeId
+                JOIN expense ex
                   ON ex.deletedAt IS NULL
-                 AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= cb.startDate
-                 AND ex.happenedDate < cb.endDate
+                 AND ea.expenseId = ex.id
+                 AND (
+                        -- today 落在某个预算区间内：统计该区间内的全部分摊
+                        (ex.happenedDate >= cb.startDate AND ex.happenedDate < cb.endDate)
+                        -- today 不在任何预算区间内：预算型信封只统计今天的开销
+                        OR (cb.envelopeId IS NULL AND ev.isBudgeted = 1 AND ex.happenedDate = :today)
+                 )
                 GROUP BY ea.envelopeId
             ),
             priorAllocated AS (
                 SELECT ea.envelopeId, SUM(ea.amount) AS total
-                FROM expenditureAllocation ea
+                FROM expenseAllocation ea
                 LEFT JOIN budgetAgg ba ON ea.envelopeId = ba.envelopeId
                 LEFT JOIN currentBudget cb ON ea.envelopeId = cb.envelopeId
-                JOIN expenditure ex
+                JOIN expense ex
                   ON ex.deletedAt IS NULL
-                 AND ea.expenditureId = ex.id
-                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :monthStart), :monthStart)
+                 AND ea.expenseId = ex.id
+                 AND ex.happenedDate >= COALESCE(MIN(ba.minStart, :spanStart), :spanStart)
                  AND ex.happenedDate < COALESCE(cb.startDate, :today)
                 GROUP BY ea.envelopeId
             )
 
             SELECT
                 ev.id, ev.name, ev.isBudgeted, (ev.archivedAt IS NOT NULL) AS archived,
+                -- TODO 可能需要整理
+                NOT EXISTS (
+                    SELECT 1
+                    FROM budget
+                    WHERE envelopeId = ev.id
+                      AND deletedAt IS NULL
+                ) AND NOT EXISTS (
+                    SELECT 1
+                    FROM expenseAllocation ea
+                    JOIN expense ex
+                      ON ex.deletedAt IS NULL
+                     AND ea.expenseId = ex.id
+                    WHERE ea.envelopeId = ev.id
+                ) AS canDelete,
                 ac.total AS allocated,
                 ba.total AS totalBudget,
                 cb.amount AS currentBudget,
@@ -94,22 +115,53 @@ interface EnvelopeDao {
             LEFT JOIN priorAllocated     pa ON ev.id = pa.envelopeId
         """,
     )
-    fun observeEnvelopeSummariesOverlaps(
+    fun observeSummaries(
         today: LocalDate,
         yearMonth: YearMonth,
-        monthStart: LocalDate,
-        monthEnd: LocalDate,
+        spanStart: LocalDate,
+        spanEnd: LocalDate,
     ): Flow<List<EnvelopeSummaryRow>>
 
+    @Query("SELECT archivedAt FROM envelope WHERE id = :id")
+    suspend fun getArchived(id: EnvelopeId): Instant?
+
     @Query("SELECT * FROM envelope WHERE id = :id")
-    suspend fun getById(id: EnvelopeId): EnvelopeEntity?
+    suspend fun get(id: EnvelopeId): EnvelopeEntity?
 
     @Query("SELECT * FROM envelope WHERE id IN (:ids)")
-    suspend fun getByIds(ids: Set<EnvelopeId>): List<EnvelopeEntity>
+    suspend fun get(ids: Set<EnvelopeId>): List<EnvelopeEntity>
 
     @Query("UPDATE envelope SET archivedAt = :now WHERE id = :id AND archivedAt IS NULL")
-    suspend fun archiveEnvelopeById(id: EnvelopeId, now: Instant): Int
+    suspend fun archive(id: EnvelopeId, now: Instant): Int
+
+    @Query("DELETE FROM envelope WHERE id = :id")
+    suspend fun delete(id: EnvelopeId): Int
+
+    // budget 与 expenseAllocation 对 envelope 的外键均为 RESTRICT：
+    // 只有存活预算、以及指向存活支出的分摊会真正挡住删除，故软删除行不计入引用。
+    @Query(
+        """
+            SELECT NOT EXISTS (
+                       SELECT 1
+                       FROM budget
+                       WHERE envelopeId = :id
+                         AND deletedAt IS NULL
+                   )
+               AND NOT EXISTS (
+                       SELECT 1
+                       FROM expenseAllocation ea
+                       JOIN expense ex
+                         ON ex.deletedAt IS NULL
+                        AND ea.expenseId = ex.id
+                       WHERE ea.envelopeId = :id
+                   )
+        """,
+    )
+    fun isDeletable(id: EnvelopeId): Flow<Boolean>
 
     @Update
-    suspend fun updateEnvelope(entity: EnvelopeEntity)
+    suspend fun update(entity: EnvelopeEntity): Int
+
+    @Insert
+    suspend fun insert(entity: EnvelopeEntity)
 }

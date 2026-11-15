@@ -1,0 +1,128 @@
+package cn.osmrpighead.envelog.ui.screen.record
+
+import android.content.Context
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.testing.hasButtonRole
+import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
+import cn.osmrpighead.envelog.ui.model.AmountConsumer
+import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.math.RoundingMode
+
+@RunWith(AndroidJUnit4::class)
+class RecordScreenInstrumentedTest {
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val host = NumKeypadHostState()
+    private val amountState = mutableStateOf(0L)
+    private var submitted: Long? = null
+
+    // 生产环境中 ViewModel 在 submit 内发送 backEvent，屏幕收到事件后才调用 back
+    private val backEvents = Channel<Unit>(Channel.BUFFERED)
+    private var backCalls = 0
+
+    private val okText: String get() = context.getString(R.string.common_action_ok)
+    private val cancelText: String get() = context.getString(R.string.common_action_cancel)
+
+    @Before
+    fun setUp() {
+        submitted = null
+        composeRule.setContent {
+            EnvelogTheme(dynamicColor = false) {
+                RecordScreen(
+                    uiState = RecordUiState(
+                        numKeypadHost = host,
+                        amount = amountState.value,
+                    ),
+                    submit = {
+                        submitted = it
+                        amountState.value = it
+                        backEvents.trySend(Unit)
+                    },
+                    back = { backCalls++ },
+                    backEvent = backEvents.receiveAsFlow(),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        composeRule.waitForIdle()
+        openKeypad()
+    }
+
+    /**
+     * 通过点击输入框打开键盘，而不是提前调用 [NumKeypadHostState.request]。
+     *
+     * `NumKeypadField` 在“未获得焦点”时会关闭会话，而输入框第一次挂载时会收到一次 `Inactive`
+     * 焦点事件；若在组合前就打开会话，这次事件会把会话关掉，键盘随即播放退出动画消失。
+     */
+    private fun openKeypad() {
+        // 金额为零时输入框显示的就是 Formatter.AmountStandard 的结果（定点两位小数）
+        composeRule.onNode(hasText("0.00") and hasClickAction()).performClick()
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun recordScreen_roundsHalfUpAndSubmitsCents() {
+        clickKey("1")
+        clickKey("2")
+        clickKey(".")
+        clickKey("3")
+        clickKey("4")
+        clickKey("5")
+
+        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole())
+            .assertIsEnabled()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1235L, submitted)
+        }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
+    }
+
+    @Test
+    fun recordScreen_zeroAmountCannotSubmit() {
+        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).assertIsNotEnabled()
+
+        clickKey("0")
+
+        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).assertIsNotEnabled()
+        composeRule.runOnIdle { assertNull(submitted) }
+    }
+
+    @Test
+    fun recordScreen_cancelDiscardsInput() {
+        clickKey("5")
+        composeRule.onNodeWithContentDescription(cancelText).performClick()
+
+        composeRule.runOnIdle {
+            assertNull(submitted)
+        }
+        composeRule.waitUntil(timeoutMillis = 5_000) { backCalls == 1 }
+    }
+
+    private fun clickKey(text: String) {
+        composeRule.onNode(hasText(text) and hasClickAction() and hasButtonRole()).performClick()
+    }
+}

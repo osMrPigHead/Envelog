@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import cn.osmrpighead.envelog.ui.text.AutoSizedTextStyle
 import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
 
@@ -22,7 +23,15 @@ private fun Slot(
         is StatItemSlot.Text -> Box(
             modifier = modifier.height(style.lineHeightAsDp),
             contentAlignment = alignment,
-        ) { Text(text = slot.text, maxLines = 1, style = style.textStyle, autoSize = style.autoSize) }
+        ) {
+            Text(
+                text = slot.text,
+                maxLines = 1,
+                style = style.textStyle,
+                autoSize = style.autoSize,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
 
         is StatItemSlot.Space -> Spacer(modifier.height(style.lineHeightAsDp))
         is StatItemSlot.Empty -> {}

@@ -11,4 +11,8 @@ object ButtonColor {
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
         )
+    val outlinedDanger: ButtonColors
+        @Composable get() = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.error,
+        )
 }

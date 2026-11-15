@@ -10,6 +10,7 @@ import androidx.compose.material3.DatePickerFormatter
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldColors
@@ -27,17 +28,18 @@ import androidx.compose.ui.text.input.VisualTransformation
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
+import cn.osmrpighead.envelog.core.time.toUtcMillis
 import java.time.LocalDate
 
-sealed interface ConfirmEventHandler {
+sealed interface DateRangePickerConfirmEventHandler {
     fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit)
 
-    class Custom(private val handler: (LocalDate?, LocalDate?, hideDialog: () -> Unit) -> Unit) : ConfirmEventHandler {
+    class Custom(private val handler: (LocalDate?, LocalDate?, hideDialog: () -> Unit) -> Unit) : DateRangePickerConfirmEventHandler {
         override fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit) =
             handler(start, end, hideDialog)
     }
 
-    class Default(private val onSpanChange: (ClosedDateSpan) -> Unit) : ConfirmEventHandler {
+    class Default(private val onSpanChange: (ClosedDateSpan) -> Unit) : DateRangePickerConfirmEventHandler {
         override fun onConfirm(start: LocalDate?, end: LocalDate?, hideDialog: () -> Unit) {
             if (start == null || end == null) return
             onSpanChange(ClosedDateSpan(start, end))
@@ -56,10 +58,12 @@ sealed interface DateRangePickerDialogBuilder {
     }
 
     class Default(
-        private val confirmEventHandler: ConfirmEventHandler,
+        private val confirmEventHandler: DateRangePickerConfirmEventHandler,
         private val onDismiss: (hideDialog: () -> Unit) -> Unit = { it() },
+        private val initialSpan: ClosedDateSpan? = null,
+        private val selectableDates: SelectableDates? = null,
         private val dismissButton: (@Composable (hideDialog: () -> Unit) -> Unit)? = {
-            TextButton(onClick = it) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) }
         },
         private val dateFormatter: DatePickerFormatter? = null,
         private val colors: DatePickerColors? = null,
@@ -68,7 +72,11 @@ sealed interface DateRangePickerDialogBuilder {
     ) : DateRangePickerDialogBuilder {
         @Composable
         override fun Composable(hideDialog: () -> Unit, modifier: Modifier) {
-            val dateRangePickerState = rememberDateRangePickerState()
+            val dateRangePickerState = rememberDateRangePickerState(
+                initialSelectedStartDateMillis = initialSpan?.startDate?.toUtcMillis(),
+                initialSelectedEndDateMillis = initialSpan?.endDate?.toUtcMillis(),
+                selectableDates = selectableDates ?: object : SelectableDates {},
+            )
             DatePickerDialog(
                 onDismissRequest = { onDismiss(hideDialog) },
                 confirmButton = {
@@ -80,7 +88,7 @@ sealed interface DateRangePickerDialogBuilder {
                                 hideDialog,
                             )
                         },
-                    ) { Text(stringResource(R.string.ok)) }
+                    ) { Text(stringResource(R.string.common_action_ok)) }
                 },
                 modifier = modifier,
                 dismissButton = dismissButton?.let { { it(hideDialog) } },
@@ -96,11 +104,23 @@ sealed interface DateRangePickerDialogBuilder {
             }
         }
     }
+
+    companion object {
+        fun of(
+            onSpanChange: (ClosedDateSpan) -> Unit,
+            initialSpan: ClosedDateSpan? = null,
+            selectableDates: SelectableDates? = null,
+        ) = Default(
+            confirmEventHandler = DateRangePickerConfirmEventHandler.Default(onSpanChange),
+            initialSpan = initialSpan,
+            selectableDates = selectableDates,
+        )
+    }
 }
 
 @Composable
 fun DateRangePickerField(
-    period: ClosedDateSpan,
+    span: ClosedDateSpan,
     dialogBuilder: DateRangePickerDialogBuilder,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -123,6 +143,7 @@ fun DateRangePickerField(
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = OutlinedTextFieldDefaults.shape,
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
+    onOpen: () -> Unit = {},
 ) {
     val internalSource = remember { MutableInteractionSource() }
     val effectiveSource = interactionSource ?: internalSource
@@ -130,8 +151,11 @@ fun DateRangePickerField(
     var showPicker by remember { mutableStateOf(false) }
 
     PickerField(
-        value = period.format(),
-        onClick = { showPicker = true },
+        value = span.format(),
+        onClick = {
+            onOpen()
+            showPicker = true
+        },
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,

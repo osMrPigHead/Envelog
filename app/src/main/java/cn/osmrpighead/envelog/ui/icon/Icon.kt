@@ -2,6 +2,7 @@ package cn.osmrpighead.envelog.ui.icon
 
 object Icon {
     val AddCircle = add_circle
+    val ArrowBack = arrow_back
     val Backspace = backspace
     val CalendarToday = calendar_today
     val Close = close

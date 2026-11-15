@@ -2,7 +2,7 @@ package cn.osmrpighead.envelog.core.di
 
 import cn.osmrpighead.envelog.data.db.DatabaseSeeder
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
-import cn.osmrpighead.envelog.data.repository.RoomEnvelogRepository
+import cn.osmrpighead.envelog.data.repository.room.RoomEnvelogRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

@@ -18,6 +18,7 @@ fun EntryProviderScope<AppRoute>.overviewEntry(
         OverviewScreen(
             uiState = uiState,
             onArchiveClick = viewModel::archiveEnvelope,
+            onDeleteClick = viewModel::deleteEnvelope,
             onEditClick = { onNavigateToEnvelopeWithId(key, it) },
             onNewClick = { onNavigateToEnvelopeWithoutId(key) },
             onEnvelopeClick = { onNavigateToRecord(key, it) },

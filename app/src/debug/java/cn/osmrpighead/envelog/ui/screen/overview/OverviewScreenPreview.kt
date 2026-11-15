@@ -13,6 +13,7 @@ private fun OverviewScreenPreview() {
         OverviewScreen(
             uiState = OverviewPreviewData.uiState,
             onArchiveClick = {},
+            onDeleteClick = {},
             onEditClick = {},
             onNewClick = {},
             onEnvelopeClick = {},
@@ -28,6 +29,7 @@ private fun OverviewScreenEmptyPreview() {
         OverviewScreen(
             uiState = OverviewPreviewData.emptyUiState,
             onArchiveClick = {},
+            onDeleteClick = {},
             onEditClick = {},
             onNewClick = {},
             onEnvelopeClick = {},

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.number.CurrencyType
+import cn.osmrpighead.envelog.core.time.next
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.ui.component.statitem.*
 import cn.osmrpighead.envelog.ui.icon.Icon
@@ -30,6 +31,7 @@ import cn.osmrpighead.envelog.ui.text.orDefault
 import cn.osmrpighead.envelog.ui.text.relativeDate
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.math.BigDecimal
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Composable
@@ -52,7 +54,7 @@ private fun EnvelopeCardShell(
                     title = StatItemSlot.Empty,
                     value = buildAnnotatedString {
                         append(model.name)
-                        append(stringResource(R.string.separator_word))
+                        append(stringResource(R.string.symbol_space))
                         if (model is EnvelopeSummary.Budgeted)
                             withStyle(
                                 MaterialTheme.typography.bodyMedium.copy(
@@ -61,22 +63,22 @@ private fun EnvelopeCardShell(
                             ) {
                                 append(
                                     stringResource(
-                                        R.string.envelope_used,
+                                        R.string.overview_envelope_card_used_percent,
                                         model.usedProportion
                                             .formatAsPercent(Formatter.PercentInteger)
-                                            .orDefault(R.string.text_percent_nan),
+                                            .orDefault(R.string.symbol_percent_nan),
                                     ),
                                 )
                             }
                     }.asSlot(),
                     caption = (if (model is EnvelopeSummary.Budgeted) stringResource(
-                        R.string.envelope_caption,
+                        R.string.overview_envelope_card_budget_caption,
                         model.allocated.formatAsAmount(Formatter.AmountConcise),
                         model.totalBudget.formatAsAmount(Formatter.AmountConcise),
                         model.currency.prefix,
                         model.currency.suffix,
                     ) else stringResource(
-                        R.string.envelope_caption_non_budget,
+                        R.string.overview_envelope_card_non_budget_caption,
                         model.allocated.formatAsAmount(Formatter.AmountConcise),
                         model.currency.prefix, model.currency.suffix,
                     )).asSlot(),
@@ -104,7 +106,7 @@ private val CurrencyType.suffix: String
 @Composable
 private fun EnvelopeSummary.Budgeted.relativeDate(today: LocalDate): String =
     if (currentSpan?.endDate == null) stringResource(R.string.time_today)
-    else relativeDate(today, currentSpan.endDate)
+    else relativeDate(today, currentSpan.endDate, today.next(DayOfWeek.MONDAY))
 
 @Composable
 private fun EnvelopeCardViewContent(
@@ -117,14 +119,14 @@ private fun EnvelopeCardViewContent(
         style = StatItemStyle.MediumCenterEnd,
         content = StatItemContent(
             title = stringResource(
-                R.string.envelope_available,
+                R.string.overview_envelope_card_available_title,
                 model.relativeDate(today),
             ).asSlot(),
             value = buildAnnotatedString {
                 append(model.currentAvailable.formatAsAmount(Formatter.AmountInteger))
                 val formattedDiff = model.priorDifference.formattedAmount(Formatter.AmountSignedInteger)
                 if (formattedDiff.toBigDecimal().compareTo(BigDecimal.ZERO) != 0) {
-                    append(stringResource(R.string.separator_thin))
+                    append(stringResource(R.string.symbol_hair_space))
                     withStyle(
                         MaterialTheme.typography.bodyMedium.copy(
                             color = diffColor(model.priorDifference),
@@ -143,21 +145,28 @@ private fun EnvelopeCardViewContent(
 
 @Composable
 private fun EnvelopeCardManageContent(
+    canDelete: Boolean,
     onArchiveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier) {
-        IconButton(onClick = onArchiveClick) {
+        if (canDelete) IconButton(onClick = onDeleteClick) {
+            Icon(
+                imageVector = Icon.Delete,
+                contentDescription = stringResource(R.string.overview_envelope_action_delete),
+            )
+        } else IconButton(onClick = onArchiveClick) {
             Icon(
                 imageVector = Icon.Inventory2,
-                contentDescription = stringResource(R.string.envelope_manage_archive),
+                contentDescription = stringResource(R.string.overview_envelope_action_archive),
             )
         }
         IconButton(onClick = onEditClick) {
             Icon(
                 imageVector = Icon.Edit,
-                contentDescription = stringResource(R.string.envelope_manage_edit),
+                contentDescription = stringResource(R.string.overview_envelope_action_edit),
             )
         }
     }
@@ -171,6 +180,7 @@ fun EnvelopeCard(
     diffColor: @Composable (diffAmount: Long) -> Color,
     onClick: () -> Unit,
     onArchiveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -197,7 +207,9 @@ fun EnvelopeCard(
         ) { isManaging ->
             Box(contentAlignment = Alignment.CenterEnd) {
                 if (isManaging) EnvelopeCardManageContent(
+                    canDelete = model.canDelete,
                     onArchiveClick = onArchiveClick,
+                    onDeleteClick = onDeleteClick,
                     onEditClick = onEditClick,
                     modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingMedium)),
                 )

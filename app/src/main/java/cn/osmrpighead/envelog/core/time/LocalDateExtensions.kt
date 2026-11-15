@@ -10,12 +10,14 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 infix fun LocalDate.countDaysTo(other: LocalDate): Long = other.toEpochDay() - toEpochDay()
+infix fun LocalDate.countMonthsTo(other: LocalDate): Long = yearMonth countMonthsTo other.yearMonth
 
 infix fun LocalDate.untilExclusive(end: LocalDate): HalfOpenDateSpan = HalfOpenDateSpan(this, end)
 infix fun LocalDate.untilInclusive(end: LocalDate): ClosedDateSpan = ClosedDateSpan(this, end)
 
 val LocalDate.yearMonth: YearMonth get() = YearMonth.from(this)
 
+fun LocalDate.toHalfOpenDateSpan(): HalfOpenDateSpan = this untilExclusive plusDays(1)
 fun LocalDate.next(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.next(dayOfWeek))
 fun LocalDate.nextOrSame(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.nextOrSame(dayOfWeek))
 fun LocalDate.previous(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdjusters.previous(dayOfWeek))

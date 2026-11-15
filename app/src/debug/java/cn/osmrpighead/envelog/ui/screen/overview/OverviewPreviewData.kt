@@ -41,6 +41,7 @@ internal object OverviewPreviewData {
         allocated = 200_000,
         currency = CurrencyType.CNY,
         archived = false,
+        canDelete = false,
         totalBudget = 300_000,
         currentBudget = 180_000,
         currentSpan = budgetSpan,
@@ -55,6 +56,7 @@ internal object OverviewPreviewData {
         allocated = 120_000,
         currency = CurrencyType.CNY,
         archived = false,
+        canDelete = false,
         totalBudget = 200_000,
         currentBudget = 100_000,
         currentSpan = budgetSpan,
@@ -69,6 +71,7 @@ internal object OverviewPreviewData {
         allocated = 30_000,
         currency = CurrencyType.CNY,
         archived = false,
+        canDelete = false,
     )
 
     val zeroBudgetEnvelope: EnvelopeSummary = EnvelopeSummary.Budgeted(
@@ -77,6 +80,7 @@ internal object OverviewPreviewData {
         allocated = 0,
         currency = CurrencyType.CNY,
         archived = false,
+        canDelete = true,
         totalBudget = 0,
         currentBudget = 0,
         currentSpan = budgetSpan,

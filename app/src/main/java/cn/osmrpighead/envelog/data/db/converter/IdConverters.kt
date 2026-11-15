@@ -3,7 +3,7 @@ package cn.osmrpighead.envelog.data.db.converter
 import androidx.room3.ColumnTypeConverter
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
-import cn.osmrpighead.envelog.data.model.ExpenditureId
+import cn.osmrpighead.envelog.data.model.ExpenseId
 import java.util.UUID
 
 class IdConverters {
@@ -20,8 +20,8 @@ class IdConverters {
     fun toBudgetId(value: String): BudgetId = BudgetId(UUID.fromString(value))
 
     @ColumnTypeConverter
-    fun fromExpenditureId(value: ExpenditureId): String = value.toString()
+    fun fromExpenseId(value: ExpenseId): String = value.toString()
 
     @ColumnTypeConverter
-    fun toExpenditureId(value: String): ExpenditureId = ExpenditureId(UUID.fromString(value))
+    fun toExpenseId(value: String): ExpenseId = ExpenseId(UUID.fromString(value))
 }
