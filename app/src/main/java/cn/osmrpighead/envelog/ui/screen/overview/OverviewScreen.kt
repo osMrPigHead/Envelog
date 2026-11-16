@@ -72,22 +72,22 @@ private fun Success(
             yearMonth = uiState.yearMonth,
             items = uiState.summaryItems,
             modifier = Modifier
-                .padding(horizontal = dimensionResource(R.dimen.spacingBold))
+                .padding(horizontal = dimensionResource(R.dimen.spacing8))
                 .padding(
-                    top = dimensionResource(R.dimen.spacingBold),
-                    bottom = dimensionResource(R.dimen.spacingMedium),
+                    top = dimensionResource(R.dimen.spacing8),
+                    bottom = dimensionResource(R.dimen.spacing4),
                 ),
         )
         PromptBar(
             managing = managing,
             onManageButtonClick = { managing = !managing },
-            modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+            modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacing8)),
         )
         val cardModifier = Modifier.padding(
-            horizontal = dimensionResource(R.dimen.spacingLarge),
-            vertical = dimensionResource(R.dimen.spacingSmall),
+            horizontal = dimensionResource(R.dimen.spacing6),
+            vertical = dimensionResource(R.dimen.spacing3),
         )
-        LazyColumn(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacingMedium))) {
+        LazyColumn(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacing4))) {
             items(uiState.envelopes, key = { it.id.toString() }) {
                 EnvelopeCard(
                     model = it,
@@ -124,7 +124,7 @@ private fun Success(
                     if (it) Card(onClick = onNewClick, modifier = cardModifier) {
                         Row(
                             modifier = Modifier
-                                .padding(dimensionResource(R.dimen.spacingBold))
+                                .padding(dimensionResource(R.dimen.spacing8))
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -137,7 +137,7 @@ private fun Success(
                                             MaterialTheme.typography.titleLarge.lineHeight.toDp()
                                         },
                                     )
-                                    .padding(end = dimensionResource(R.dimen.spacingThin)),
+                                    .padding(end = dimensionResource(R.dimen.spacing2)),
                             )
                             Text(
                                 text = stringResource(R.string.overview_action_new_envelope),

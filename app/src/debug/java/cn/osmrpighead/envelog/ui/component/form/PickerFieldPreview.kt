@@ -20,8 +20,8 @@ private fun PickerFieldPreview() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             PickerFieldSample("Default") {
                 PickerField(
@@ -59,8 +59,8 @@ private fun PickerFieldStatePreview() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             PickerFieldSample("Error") {
                 PickerField(
@@ -88,7 +88,7 @@ private fun PickerFieldSample(
     name: String,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingThin))) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing2))) {
         Text(
             text = name,
             style = MaterialTheme.typography.labelSmall,

@@ -72,8 +72,8 @@ private fun EnvelopeCardSample(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                horizontal = dimensionResource(R.dimen.spacingLarge),
-                vertical = dimensionResource(R.dimen.spacingSmall),
+                horizontal = dimensionResource(R.dimen.spacing6),
+                vertical = dimensionResource(R.dimen.spacing3),
             ),
     )
 }

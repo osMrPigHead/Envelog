@@ -182,16 +182,16 @@ private fun MonthPickerSheetContent(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = dimensionResource(R.dimen.spacingBold))
-            .padding(bottom = dimensionResource(R.dimen.spacingBold)),
+            .padding(horizontal = dimensionResource(R.dimen.spacing8))
+            .padding(bottom = dimensionResource(R.dimen.spacing8)),
     ) {
         title?.invoke()
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingSmall)),
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(top = dimensionResource(R.dimen.spacing3)),
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             WheelLabel(
                 text = stringResource(R.string.month_picker_label_year),
@@ -206,7 +206,7 @@ private fun MonthPickerSheetContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingMini))
+                .padding(top = dimensionResource(R.dimen.spacing1))
                 .height(wheelHeight),
         ) {
             Box(
@@ -219,7 +219,7 @@ private fun MonthPickerSheetContent(
             )
             Row(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
             ) {
                 PickerWheel(
                     items = years,
@@ -253,7 +253,7 @@ private fun MonthPickerSheetContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingBold)),
+                .padding(top = dimensionResource(R.dimen.spacing8)),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -261,7 +261,7 @@ private fun MonthPickerSheetContent(
             Button(
                 onClick = { onConfirm(selected) },
                 enabled = range.contains(selected),
-                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingMedium)),
+                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing4)),
             ) {
                 Text(text = stringResource(R.string.common_action_ok))
             }

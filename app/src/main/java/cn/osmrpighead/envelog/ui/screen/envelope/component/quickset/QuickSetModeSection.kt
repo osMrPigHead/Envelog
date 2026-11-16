@@ -88,7 +88,7 @@ internal fun QuickSetModeSection(
                 prefix = {
                     QuickSetAffix(
                         text = stringResource(R.string.envelope_edit_quick_set_interval_prefix),
-                        modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingThin)),
+                        modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing2)),
                     )
                 },
                 modifier = Modifier
@@ -133,13 +133,13 @@ private fun QuickSetModeRow(
                 onClick = { update(QuickSetField.Mode(mode)) },
                 role = Role.RadioButton,
             )
-            .padding(vertical = dimensionResource(R.dimen.spacingMini)),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
+            .padding(vertical = dimensionResource(R.dimen.spacing1)),
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
         verticalAlignment = Alignment.CenterVertically,
         content = {
             RadioButton(selected = selected, enabled = enabled, onClick = null)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
                 verticalAlignment = Alignment.Bottom,
             ) {
                 content {

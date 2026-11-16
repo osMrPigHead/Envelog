@@ -85,8 +85,8 @@ private fun EnvelopeCardShell(
                 ),
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = dimensionResource(R.dimen.spacingBold))
-                    .padding(vertical = dimensionResource(R.dimen.spacingBold)),
+                    .padding(start = dimensionResource(R.dimen.spacing8))
+                    .padding(vertical = dimensionResource(R.dimen.spacing8)),
             )
             rightSlot()
         }
@@ -211,13 +211,13 @@ fun EnvelopeCard(
                     onArchiveClick = onArchiveClick,
                     onDeleteClick = onDeleteClick,
                     onEditClick = onEditClick,
-                    modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingMedium)),
+                    modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing4)),
                 )
                 else if (model is EnvelopeSummary.Budgeted) EnvelopeCardViewContent(
                     model = model,
                     today = today,
                     diffColor = diffColor,
-                    modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingBold)),
+                    modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing8)),
                 )
             }
         }

@@ -1,7 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,14 +30,19 @@ private fun AllocationRow(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val blank = allocation.note.isBlank()
+        val value =
+            if (!blank) allocation.note
+            else allocation.expense.happenedDate.format()
+        val caption =
+            if (!blank) allocation.expense.happenedAtLocal.format()
+            else allocation.expense.happenedTimeLocal.format()
         StatItem(
             style = StatItemStyle.MediumCenterStart,
             content = StatItemContent(
                 title = StatItemSlot.Empty,
-                value = StatItemSlot.Text("XXX"),
-                caption = allocation.expense.happenedAt
-                    .format(allocation.expense.happenedZone)
-                    .asSlot(),
+                value = value.asSlot(),
+                caption = caption.asSlot(),
             ),
             modifier = Modifier.weight(1f),
         )
@@ -49,7 +53,7 @@ private fun AllocationRow(
                 value = allocation.amount.formatAsAmount(Formatter.AmountConcise).asSlot(),
                 caption = StatItemSlot.Empty,
             ),
-            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingMedium)),
+            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing4)),
         )
     }
 }
@@ -62,11 +66,11 @@ fun AllocationList(
     if (allocations.isEmpty()) return
     LazyColumn(
         modifier = modifier
-            .padding(horizontal = dimensionResource(R.dimen.spacingExtra))
+            .padding(horizontal = dimensionResource(R.dimen.spacing10))
             .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
     ) {
-        items(allocations, { it.expense.id.toString() }) {
+        items(allocations.sortedBy { it.expense.happenedAtLocal }, { it.expense.id.toString() }) {
             AllocationRow(it)
         }
     }

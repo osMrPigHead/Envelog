@@ -78,6 +78,7 @@
     <string name="overview_summary_remaining_caption">Used: %1$s</string>
     <string name="overview_summary_remaining_title">Remaining</string>
     <string name="record_expense_title">Record an expense</string>
+    <string name="record_expense_note_label">Note</string>
     <string name="symbol_en_dash" translatable="false">\u2013</string>
     <string name="symbol_hair_space" translatable="false">\u200a</string>
     <string name="symbol_percent_nan" translatable="false">\u2014</string>

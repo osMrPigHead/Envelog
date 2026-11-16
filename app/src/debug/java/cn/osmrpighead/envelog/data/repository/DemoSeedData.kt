@@ -89,6 +89,7 @@ object DemoSeedData {
                     expenseId = transactionId,
                     envelopeId = envelopeId,
                     amount = share,
+                    note = "",
                 )
             }
         }

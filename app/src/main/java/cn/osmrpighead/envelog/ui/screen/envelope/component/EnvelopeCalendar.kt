@@ -79,7 +79,7 @@ private fun BudgetCapsule(
                 )
                 .clickable(onClick = onClick)
                 .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(horizontal = dimensionResource(R.dimen.spacingSmall))
+                .padding(horizontal = dimensionResource(R.dimen.spacing3))
                 .then(if (fill) Modifier.fillMaxWidth() else Modifier),
         )
     }
@@ -96,7 +96,7 @@ fun EnvelopeCalendar(
     val spacerModifier = Modifier.height(MaterialTheme.typography.labelSmall.lineHeightAsDp)
     Column(modifier = modifier) {
         for ((before, after, week, budgets) in model.weeks) {
-            Row(modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall))) {
+            Row(modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing3))) {
                 if (before > 0) Spacer(modifier = spacerModifier.weight(before.toFloat()))
                 for (date in week) {
                     val budgetId = model.dates[date]?.budgetId
@@ -122,7 +122,7 @@ fun EnvelopeCalendar(
                         fill = budget.length != 1L,
                         onClick = { onBudgetClick(budget.id, null) },
                         modifier = Modifier
-                            .padding(horizontal = dimensionResource(R.dimen.spacingMedium))
+                            .padding(horizontal = dimensionResource(R.dimen.spacing4))
                             .weight(budget.length.toFloat()),
                     )
 

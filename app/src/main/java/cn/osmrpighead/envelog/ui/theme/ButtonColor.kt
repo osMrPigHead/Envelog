@@ -15,4 +15,12 @@ object ButtonColor {
         @Composable get() = ButtonDefaults.outlinedButtonColors(
             contentColor = MaterialTheme.colorScheme.error,
         )
+    val textDanger: ButtonColors
+        @Composable get() = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.error,
+        )
+    val textNormal: ButtonColors
+        @Composable get() = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
 }

@@ -22,16 +22,16 @@ import cn.osmrpighead.envelog.R
 fun LabeledBox(
     label: String,
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = dimensionResource(R.dimen.cornerRadiusLarge),
+    cornerRadius: Dp = dimensionResource(R.dimen.cornerRadius6),
     borderWidth: Dp = dimensionResource(R.dimen.borderWidth),
     borderColor: Color = MaterialTheme.colorScheme.outlineVariant,
     labelColor: Color = MaterialTheme.colorScheme.primary,
     labelBackground: Color = MaterialTheme.colorScheme.surface,
-    contentPadding: PaddingValues = PaddingValues(dimensionResource(R.dimen.spacingBold)),
+    contentPadding: PaddingValues = PaddingValues(dimensionResource(R.dimen.spacing8)),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val labelSize = remember { intArrayOf(0, 0) }
-    val startGap = dimensionResource(R.dimen.spacingBold)
+    val startGap = dimensionResource(R.dimen.spacing8)
 
     Layout(
         modifier = modifier.drawBehind {
@@ -55,7 +55,7 @@ fun LabeledBox(
                 color = labelColor,
                 modifier = Modifier
                     .background(labelBackground)
-                    .padding(horizontal = dimensionResource(R.dimen.spacingMedium))
+                    .padding(horizontal = dimensionResource(R.dimen.spacing4))
             )
             Column(
                 modifier = Modifier.padding(contentPadding),

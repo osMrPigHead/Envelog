@@ -31,8 +31,8 @@ private fun NumKeypadFieldPreview() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             NumKeypadField(
                 value = amount.formatAsAmount(Formatter.AmountInteger),

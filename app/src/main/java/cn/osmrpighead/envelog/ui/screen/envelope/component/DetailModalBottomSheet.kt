@@ -1,8 +1,6 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.runtime.*
@@ -97,7 +95,7 @@ fun BudgetItemSheet(
             label = { Text(stringResource(R.string.envelope_edit_budget_amount_label)) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                .padding(top = dimensionResource(R.dimen.spacing4)),
         )
         if (budgetForm.state is FormState.Active && budgetForm.state.error != null) Text(
             text = when (budgetForm.state.error) {
@@ -109,7 +107,7 @@ fun BudgetItemSheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                .padding(top = dimensionResource(R.dimen.spacing4)),
         ) {
             if (!budgetForm.isNew) TextButton(
                 onClick = delete,
@@ -202,13 +200,13 @@ fun DetailModalBottomSheet(
                 save = save,
                 dismiss = dismiss,
                 delete = delete,
-                modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingLarge)),
+                modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacing6)),
             )
             AllocationList(
                 allocations = detailModalState.allocations,
                 modifier = Modifier.padding(
-                    top = dimensionResource(R.dimen.spacingBold),
-                    bottom = dimensionResource(R.dimen.spacingBold),
+                    top = dimensionResource(R.dimen.spacing8),
+                    bottom = dimensionResource(R.dimen.spacing8),
                 ),
             )
         }

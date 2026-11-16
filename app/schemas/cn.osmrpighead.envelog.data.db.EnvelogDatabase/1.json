@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "7d3863c0c9cfd5da07e216ef658e0e22",
+    "identityHash": "8c7a83b010d858afd59eaeb1d16a41fe",
     "entities": [
       {
         "tableName": "envelope",
@@ -159,7 +159,7 @@
       },
       {
         "tableName": "expenseAllocation",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`expenseId` TEXT NOT NULL, `envelopeId` TEXT NOT NULL, `amount` INTEGER NOT NULL, PRIMARY KEY(`expenseId`, `envelopeId`), FOREIGN KEY(`expenseId`) REFERENCES `expense`(`id`) ON UPDATE CASCADE ON DELETE CASCADE , FOREIGN KEY(`envelopeId`) REFERENCES `envelope`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`expenseId` TEXT NOT NULL, `envelopeId` TEXT NOT NULL, `amount` INTEGER NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`expenseId`, `envelopeId`), FOREIGN KEY(`expenseId`) REFERENCES `expense`(`id`) ON UPDATE CASCADE ON DELETE CASCADE , FOREIGN KEY(`envelopeId`) REFERENCES `envelope`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "expenseId",
@@ -177,6 +177,12 @@
             "fieldPath": "amount",
             "columnName": "amount",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -226,7 +232,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7d3863c0c9cfd5da07e216ef658e0e22')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8c7a83b010d858afd59eaeb1d16a41fe')"
     ]
   }
 }

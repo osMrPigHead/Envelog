@@ -106,7 +106,7 @@ class RoomEnvelogRepositoryInstrumentedTest {
             happenedDate = happenedDate,
             happenedZone = zone,
             deletedAt = softDeletedAt,
-        ) to ExpenseAllocationEntity(id, envelopeId, amount)
+        ) to ExpenseAllocationEntity(id, envelopeId, amount, "")
     }
 
     @Test
@@ -117,8 +117,8 @@ class RoomEnvelogRepositoryInstrumentedTest {
             happenedAt = at(happenedDate),
             happenedZone = zone,
             allocations = listOf(
-                ExpenseAllocation(expenseId, envelopeA, 6_000),
-                ExpenseAllocation(expenseId, envelopeB, 4_000),
+                ExpenseAllocation(expenseId, envelopeA, 6_000, ""),
+                ExpenseAllocation(expenseId, envelopeB, 4_000, ""),
             ),
         )
 

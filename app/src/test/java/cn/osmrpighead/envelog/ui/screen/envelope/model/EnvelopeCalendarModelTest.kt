@@ -12,7 +12,7 @@ import org.junit.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-class BudgetCalendarModelTest {
+class EnvelopeCalendarModelTest {
     private val envelopeId = RoomTestData.envelopeA
     private val month = RoomTestData.month
 

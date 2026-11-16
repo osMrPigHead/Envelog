@@ -31,8 +31,8 @@ fun LabeledSwitch(
                 onValueChange = onCheckedChange,
             )
             .padding(
-                horizontal = dimensionResource(R.dimen.spacingBold),
-                vertical = dimensionResource(R.dimen.spacingLarge),
+                horizontal = dimensionResource(R.dimen.spacing8),
+                vertical = dimensionResource(R.dimen.spacing6),
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {

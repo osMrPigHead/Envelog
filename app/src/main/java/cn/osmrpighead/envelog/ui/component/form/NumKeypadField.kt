@@ -22,6 +22,8 @@ fun NumKeypadField(
     consumer: NumKeypadConsumer,
     modifier: Modifier = Modifier,
     fieldId: Any = remember { Any() },
+    listenFocus: Boolean = true,
+    listenUnfocus: Boolean = true,
     enabled: Boolean = true,
     readOnly: Boolean = true,
     textStyle: TextStyle = LocalTextStyle.current,
@@ -54,8 +56,8 @@ fun NumKeypadField(
             if (host.activeFieldId != fieldId) host.request(fieldId, consumer, value)
         },
         modifier = modifier.onFocusChanged {
-            if (!it.isFocused) host.safeClose()
-            if (it.isFocused && host.activeFieldId != fieldId) host.request(fieldId, consumer, value)
+            if (listenUnfocus && !it.isFocused) host.safeClose()
+            if (listenFocus && it.isFocused && host.activeFieldId != fieldId) host.request(fieldId, consumer, value)
         },
         enabled = enabled,
         readOnly = readOnly,

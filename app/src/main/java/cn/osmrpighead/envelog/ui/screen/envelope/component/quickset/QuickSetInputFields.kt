@@ -26,7 +26,6 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerConfirmEventHandler
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
 import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
@@ -92,13 +91,13 @@ internal fun QuickSetIntervalField(
         prefix = {
             QuickSetAffix(
                 text = stringResource(R.string.envelope_edit_quick_set_interval_prefix),
-                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingThin)),
+                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing2)),
             )
         },
         suffix = {
             QuickSetAffix(
                 text = stringResource(R.string.envelope_edit_quick_set_interval_suffix),
-                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingThin)),
+                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing2)),
             )
         },
         keyboardOptions = KeyboardOptions(
@@ -157,7 +156,7 @@ internal fun QuickSetAmountField(
         suffix = {
             QuickSetAffix(
                 text = stringResource(R.string.envelope_edit_quick_set_amount_unit),
-                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingThin)),
+                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing2)),
             )
         },
         modifier = modifier.semantics { this.contentDescription = description },
@@ -192,6 +191,6 @@ internal fun QuickSetTargetRangeField(
         label = { Text(text = stringResource(R.string.envelope_edit_quick_set_range_label)) },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacingMedium)),
+            .padding(top = dimensionResource(R.dimen.spacing4)),
     )
 }

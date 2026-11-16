@@ -47,7 +47,7 @@ internal fun ColumnScope.QuickSetSheetContent(
     ) {
         LabeledBox(
             label = stringResource(R.string.envelope_edit_quick_set_title),
-            modifier = Modifier.padding(dimensionResource(R.dimen.spacingLarge)),
+            modifier = Modifier.padding(dimensionResource(R.dimen.spacing6)),
         ) {
             QuickSetModeSection(
                 enabled = modalState.state is FormState.Active && !modalState.dismissed,
@@ -56,7 +56,7 @@ internal fun ColumnScope.QuickSetSheetContent(
                 numKeypadHost = numKeypadHost,
                 maxIntervalDays = config.targetSpan.length,
                 update = update,
-                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing3)),
             )
             QuickSetTargetRangeField(
                 yearMonth = yearMonth,
@@ -92,14 +92,14 @@ private fun QuickSetFeedback(
         text = preview.asText(),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing4)),
     )
     val feedback = error?.asFeedbackText()
     if (feedback != null) Text(
         text = feedback,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.error,
-        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingSmall)),
+        modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing3)),
     )
 }
 
@@ -113,7 +113,7 @@ private fun QuickSetActions(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacingMedium)),
+            .padding(top = dimensionResource(R.dimen.spacing4)),
         horizontalArrangement = Arrangement.End,
     ) {
         TextButton(

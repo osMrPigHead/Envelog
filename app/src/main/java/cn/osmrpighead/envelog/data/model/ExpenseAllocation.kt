@@ -4,4 +4,5 @@ data class ExpenseAllocation(
     val expenseId: ExpenseId,
     val envelopeId: EnvelopeId,
     val amount: Long,
+    val note: String,
 )

@@ -13,4 +13,5 @@ data class AllocationWithInfoRow(
     val happenedZone: ZoneId,
     val envelopeId: EnvelopeId,
     val amount: Long,
+    val note: String,
 )

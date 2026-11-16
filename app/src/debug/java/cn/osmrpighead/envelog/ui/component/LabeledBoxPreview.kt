@@ -21,13 +21,13 @@ private fun LabeledBoxPreview() {
             label = "Budget",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
+                .padding(dimensionResource(R.dimen.spacing8)),
         ) {
             Text(
                 text = "2026/9/1 ~ 2026/9/30",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Spacer(Modifier.height(dimensionResource(R.dimen.spacingThin)))
+            Spacer(Modifier.height(dimensionResource(R.dimen.spacing2)))
             Text(
                 text = "Placeholder content used to check how the label notch and border follow " +
                     "the content width on different screen sizes.",

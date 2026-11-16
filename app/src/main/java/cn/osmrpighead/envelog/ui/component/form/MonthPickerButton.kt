@@ -42,7 +42,7 @@ fun MonthPickerButton(
         Icon(
             imageVector = Icon.KeyboardArrowDown,
             contentDescription = null,
-            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingThin)),
+            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing2)),
         )
     }
 

@@ -8,8 +8,7 @@ import cn.osmrpighead.envelog.data.query.AllocationWithInfo
 
 fun AllocationWithInfoRow.toDomain() = AllocationWithInfo(
     ExpenseMetaInfo(expenseId, happenedAt, happenedDate, happenedZone),
-    envelopeId,
-    amount,
+    envelopeId, amount, note,
 )
 
-fun ExpenseAllocation.toEntity() = ExpenseAllocationEntity(expenseId, envelopeId, amount)
+fun ExpenseAllocation.toEntity() = ExpenseAllocationEntity(expenseId, envelopeId, amount, note)

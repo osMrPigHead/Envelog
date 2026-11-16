@@ -34,7 +34,6 @@ class RecordScreenInstrumentedTest {
     val composeRule = createComposeRule()
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val host = NumKeypadHostState()
     private val amountState = mutableStateOf(0L)
     private var submitted: Long? = null
 
@@ -51,13 +50,9 @@ class RecordScreenInstrumentedTest {
         composeRule.setContent {
             EnvelogTheme(dynamicColor = false) {
                 RecordScreen(
-                    uiState = RecordUiState(
-                        numKeypadHost = host,
-                        amount = amountState.value,
-                    ),
-                    submit = {
-                        submitted = it
-                        amountState.value = it
+                    submit = { amount, note ->
+                        submitted = amount
+                        amountState.value = amount
                         backEvents.trySend(Unit)
                     },
                     back = { backCalls++ },

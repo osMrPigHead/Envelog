@@ -1,22 +1,18 @@
 package cn.osmrpighead.envelog.ui.component.numkeypad
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.style.radialFilledWeight
@@ -72,15 +68,17 @@ private fun KeypadButton(
     onClick: () -> Unit,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    colors: ButtonColors = ButtonColor.textNormal,
     content: @Composable RowScope.() -> Unit,
 ) {
-    FilledTonalButton(
+    TextButton(
         onClick = onClick,
         modifier = modifier
             .height(IntrinsicSize.Max)
-            .padding(dimensionResource(R.dimen.spacingMini)),
+            .padding(dimensionResource(R.dimen.spacing1)),
         enabled = enabled,
         shape = MaterialTheme.shapes.large,
+        colors = colors,
         content = content,
     )
 }
@@ -118,6 +116,7 @@ fun OperatorButton(
     onClick = { onStateChange(operatorInput(state, operator)) },
     enabled = !state.fatal,
     modifier = modifier,
+    colors = ButtonDefaults.textButtonColors(),
 ) { Text(text = operator.text, style = MaterialTheme.typography.titleLarge) }
 
 @Composable
@@ -129,6 +128,7 @@ fun ClearButton(
     onClick = { onStateChange(clear(state)) },
     enabled = true,
     modifier = modifier,
+    colors = ButtonColor.textDanger,
 ) {
     Text(
         text = stringResource(
@@ -148,6 +148,7 @@ fun DeleteButton(
     onClick = { onStateChange(delete(state)) },
     enabled = !state.fatal,
     modifier = modifier,
+    colors = ButtonColor.textDanger,
 ) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_action_backspace)) }
 
 @Composable
@@ -160,7 +161,7 @@ fun NumKeypad(
     modifier: Modifier = Modifier,
 ) {
     val result = state.evaluate()
-    Column(modifier = modifier) {
+    Column(modifier = modifier.padding(horizontal = dimensionResource(R.dimen.spacing10))) {
         Text(
             text = when (result) {
                 is EvaluatedResult.Success -> "= ${result.value.toPlainString()}"
@@ -171,7 +172,7 @@ fun NumKeypad(
             textAlign = TextAlign.End,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingLarge), dimensionResource(R.dimen.spacingSmall)),
+                .padding(dimensionResource(R.dimen.spacing12), dimensionResource(R.dimen.spacing3)),
         )
         Row(modifier = Modifier.radialFilledWeight(1f, fill = false)) {
             ClearButton(state, onStateChange, Modifier.weight(1f))
@@ -196,7 +197,7 @@ fun NumKeypad(
                 .radialFilledWeight(2f, fill = false)
                 .height(IntrinsicSize.Max),
         ) {
-            val localModifier = Modifier.padding(dimensionResource(R.dimen.spacingMini))
+            val localModifier = Modifier.padding(dimensionResource(R.dimen.spacing1))
             Column(modifier = Modifier.weight(3f)) {
                 Row(modifier = Modifier.radialFilledWeight(1f, fill = false)) {
                     NumberButton("7", state, onStateChange, Modifier.weight(1f))
@@ -204,11 +205,11 @@ fun NumKeypad(
                     NumberButton("9", state, onStateChange, Modifier.weight(1f))
                 }
                 Row(modifier = Modifier.radialFilledWeight(1f, fill = false)) {
-                    Button(
+                    KeypadButton(
                         onClick = onCancel,
-                        modifier = localModifier.radialFilledWeight(1f),
-                        colors = ButtonColor.danger,
-                        shape = MaterialTheme.shapes.large,
+                        enabled = true,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonColor.textDanger,
                     ) {
                         Icon(
                             imageVector = Icon.Close,
@@ -227,7 +228,7 @@ fun NumKeypad(
             ) {
                 Text(
                     text = stringResource(R.string.common_action_ok),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )

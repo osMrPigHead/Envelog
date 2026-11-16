@@ -1,6 +1,8 @@
 package cn.osmrpighead.envelog.data.model
 
 import cn.osmrpighead.envelog.core.time.toLocalDate
+import cn.osmrpighead.envelog.core.time.toLocalDateTime
+import cn.osmrpighead.envelog.core.time.toLocalTime
 import cn.osmrpighead.envelog.util.UUIDSerializer
 import cn.osmrpighead.envelog.util.generateUUID
 import kotlinx.serialization.Serializable
@@ -45,4 +47,7 @@ data class ExpenseMetaInfo(
     override val happenedAt: Instant,
     override val happenedDate: LocalDate,
     override val happenedZone: ZoneId,
-) : Entry
+) : Entry {
+    val happenedAtLocal = happenedAt.toLocalDateTime(happenedZone)
+    val happenedTimeLocal = happenedAt.toLocalTime(happenedZone)
+}

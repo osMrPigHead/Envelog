@@ -27,8 +27,8 @@ private fun DayOfWeekRangePickerFieldPreview() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             DayOfWeekRangePickerFieldSample("Wrapped range (Fri ~ Tue)") {
                 DayOfWeekRangePickerField(
@@ -71,8 +71,8 @@ private fun DayOfWeekRangePickerFieldStatePreview() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             DayOfWeekRangePickerFieldSample("Same day") {
                 DayOfWeekRangePickerField(
@@ -107,7 +107,7 @@ private fun DayOfWeekRangePickerFieldSample(
     name: String,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingThin))) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing2))) {
         Text(
             text = name,
             style = MaterialTheme.typography.labelSmall,

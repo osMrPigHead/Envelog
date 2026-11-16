@@ -3,6 +3,8 @@ package cn.osmrpighead.envelog.core.time
 import cn.osmrpighead.envelog.core.locale.AppLocale
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -25,3 +27,11 @@ fun LocalDate.previousOrSame(dayOfWeek: DayOfWeek): LocalDate = with(TemporalAdj
 
 fun LocalDate.format(style: FormatStyle = FormatStyle.SHORT, locale: Locale = AppLocale.current()): String =
     format(DateTimeFormatter.ofLocalizedDate(style).withLocale(locale))
+fun LocalDateTime.format(
+    style: FormatStyle = FormatStyle.SHORT,
+    locale: Locale = AppLocale.current(),
+): String = format(DateTimeFormatter.ofLocalizedDateTime(style).withLocale(locale))
+fun LocalTime.format(
+    style: FormatStyle = FormatStyle.SHORT,
+    locale: Locale = AppLocale.current(),
+): String = format(DateTimeFormatter.ofLocalizedTime(style).withLocale(locale))

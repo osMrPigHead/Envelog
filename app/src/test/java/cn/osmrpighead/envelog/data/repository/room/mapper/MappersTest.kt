@@ -39,7 +39,7 @@ class MappersTest {
         happenedAt = happenedAt,
         happenedZone = zone,
         allocations = listOf(
-            ExpenseAllocation(expenseId, envelopeId, 12_345),
+            ExpenseAllocation(expenseId, envelopeId, 12_345, "Note"),
         ),
     )
 
@@ -119,7 +119,7 @@ class MappersTest {
 
     @Test
     fun expenseAllocationToEntity_keepsAmountIndependentOfOtherAllocations() {
-        val other = ExpenseAllocation(expenseId, EnvelopeId(UUID(0L, 3L)), 1)
+        val other = ExpenseAllocation(expenseId, EnvelopeId(UUID(0L, 3L)), 1, "Note")
 
         assertEquals(12_345L, expense.allocations.single().toEntity().amount)
         assertEquals(1L, other.toEntity().amount)
@@ -233,6 +233,7 @@ class MappersTest {
             happenedZone = zone,
             envelopeId = envelopeId,
             amount = 6_000,
+            note = "",
         )
 
         assertEquals(
@@ -245,6 +246,7 @@ class MappersTest {
                 ),
                 envelopeId = envelopeId,
                 amount = 6_000,
+                note = "",
             ),
             row.toDomain(),
         )

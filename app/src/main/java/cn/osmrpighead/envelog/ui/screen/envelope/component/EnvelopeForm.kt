@@ -38,7 +38,7 @@ fun EnvelopeForm(
         onCheckedChange = { update(EnvelopeField.IsBudgeted(it)) },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacingMedium)),
+            .padding(top = dimensionResource(R.dimen.spacing4)),
     ) {
         Text(
             text = stringResource(R.string.envelope_edit_label_budgeted),

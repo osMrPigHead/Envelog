@@ -123,8 +123,8 @@ private fun LabeledSwitchSample(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline,
             modifier = Modifier.padding(
-                start = dimensionResource(R.dimen.spacingBold),
-                top = dimensionResource(R.dimen.spacingLarge),
+                start = dimensionResource(R.dimen.spacing8),
+                top = dimensionResource(R.dimen.spacing6),
             ),
         )
         content()

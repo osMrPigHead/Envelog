@@ -62,7 +62,7 @@ private fun TopBar(
             MonthPickerButton(
                 yearMonth,
                 MonthPickerSheetBuilder.of(selectMonth),
-                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacingExtra)),
+                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing10)),
             )
         },
         modifier = modifier,
@@ -93,7 +93,7 @@ private fun SuccessBody(
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacingBold))) {
+        Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacing8))) {
             EnvelopeForm(
                 form = detail.envelopeForm,
                 dismissed = dismissed,
@@ -105,12 +105,12 @@ private fun SuccessBody(
                 enabled = detail.envelopeForm.envelope.isBudgeted && yearMonth >= YearMonth.from(today),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacingMedium)),
+                    .padding(top = dimensionResource(R.dimen.spacing4)),
             ) { Text(text = stringResource(R.string.envelope_edit_quick_set_title)) }
 
             SecondaryTabRow(
                 selectedTabIndex = visibleTabs.indexOf(activeTab),
-                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacingMedium)),
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing4)),
             ) {
                 for (tab in visibleTabs) Tab(
                     selected = activeTab == tab,
@@ -130,12 +130,12 @@ private fun SuccessBody(
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingSmall)),
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = dimensionResource(R.dimen.spacingExtra),
-                    vertical = dimensionResource(R.dimen.spacingThin),
+                    horizontal = dimensionResource(R.dimen.spacing10),
+                    vertical = dimensionResource(R.dimen.spacing2),
                 ),
         ) {
             if (detail.envelopeForm.isNew)

@@ -26,8 +26,8 @@ private fun MonthPickerFieldPreview() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             MonthPickerFieldSample("Default") {
                 MonthPickerField(
@@ -61,8 +61,8 @@ private fun MonthPickerFieldRangePreview() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacingBold)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(dimensionResource(R.dimen.spacing8)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             MonthPickerFieldSample("Range 2026-03..2026-09") {
                 MonthPickerField(
@@ -93,7 +93,7 @@ private fun MonthPickerFieldSample(
     name: String,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingThin))) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing2))) {
         Text(
             text = name,
             style = MaterialTheme.typography.labelSmall,

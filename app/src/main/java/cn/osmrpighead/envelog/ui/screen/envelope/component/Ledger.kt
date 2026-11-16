@@ -10,8 +10,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -36,7 +34,7 @@ fun Ledger(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacingMedium)),
+            .padding(top = dimensionResource(R.dimen.spacing4)),
     ) {
         AnimatedContent(
             targetState = activeTab,
@@ -59,16 +57,16 @@ fun Ledger(
                     yearMonth = yearMonth,
                     onBudgetClick = { onBudgetClick(it, null) },
                     modifier = Modifier.padding(
-                        top = dimensionResource(R.dimen.spacingMedium),
-                        bottom = dimensionResource(R.dimen.spacingBold),
+                        top = dimensionResource(R.dimen.spacing4),
+                        bottom = dimensionResource(R.dimen.spacing8),
                     ),
                 )
 
                 EnvelopeTab.Allocation -> AllocationList(
                     allocations = ledgerState.allocations,
                     modifier = Modifier.padding(
-                        top = dimensionResource(R.dimen.spacingMedium),
-                        bottom = dimensionResource(R.dimen.spacingBold),
+                        top = dimensionResource(R.dimen.spacing4),
+                        bottom = dimensionResource(R.dimen.spacing8),
                     ),
                 )
 
@@ -78,7 +76,7 @@ fun Ledger(
                     onBudgetClick = onBudgetClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = dimensionResource(R.dimen.spacingBold)),
+                        .padding(horizontal = dimensionResource(R.dimen.spacing8)),
                 )
             }
         }}

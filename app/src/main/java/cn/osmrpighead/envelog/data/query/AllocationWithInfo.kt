@@ -7,4 +7,5 @@ data class AllocationWithInfo(
     val expense: ExpenseMetaInfo,
     val envelopeId: EnvelopeId,
     val amount: Long,
+    val note: String,
 )

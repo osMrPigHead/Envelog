@@ -159,16 +159,16 @@ private fun DayOfWeekRangePickerSheetContent(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = dimensionResource(R.dimen.spacingBold))
-            .padding(bottom = dimensionResource(R.dimen.spacingBold)),
+            .padding(horizontal = dimensionResource(R.dimen.spacing8))
+            .padding(bottom = dimensionResource(R.dimen.spacing8)),
     ) {
         title?.invoke()
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingSmall)),
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                .padding(top = dimensionResource(R.dimen.spacing3)),
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         ) {
             WheelLabel(
                 text = stringResource(R.string.day_of_week_range_picker_label_start),
@@ -183,7 +183,7 @@ private fun DayOfWeekRangePickerSheetContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingMini))
+                .padding(top = dimensionResource(R.dimen.spacing1))
                 .height(wheelHeight),
         ) {
             Box(
@@ -196,7 +196,7 @@ private fun DayOfWeekRangePickerSheetContent(
             )
             Row(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
             ) {
                 PickerWheel(
                     items = days,
@@ -230,14 +230,14 @@ private fun DayOfWeekRangePickerSheetContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.spacingBold)),
+                .padding(top = dimensionResource(R.dimen.spacing8)),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             dismissButton?.invoke(onDismiss)
             Button(
                 onClick = { onConfirm(selectedStart, selectedEnd) },
-                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingMedium)),
+                modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing4)),
             ) {
                 Text(text = stringResource(R.string.common_action_ok))
             }

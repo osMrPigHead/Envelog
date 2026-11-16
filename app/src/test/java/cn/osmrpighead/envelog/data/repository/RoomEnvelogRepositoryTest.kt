@@ -73,7 +73,7 @@ class RoomEnvelogRepositoryTest {
     )
 
     private fun allocation(envelopeId: EnvelopeId, amount: Long): ExpenseAllocation =
-        ExpenseAllocation(expenseId, envelopeId, amount)
+        ExpenseAllocation(expenseId, envelopeId, amount, "")
 
     private suspend fun assertRejected(block: suspend () -> Unit) {
         try {
@@ -332,6 +332,7 @@ class RoomEnvelogRepositoryTest {
                             expenseId = ExpenseId(RoomTestData.uuid(0xC2)),
                             envelopeId = RoomTestData.envelopeA,
                             amount = 10_000,
+                            note = "",
                         ),
                     ),
                 ),

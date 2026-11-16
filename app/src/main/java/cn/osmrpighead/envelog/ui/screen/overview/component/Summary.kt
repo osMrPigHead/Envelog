@@ -28,7 +28,7 @@ fun Summary(
 ) {
     Row(
         modifier = modifier.height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge)),
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
         verticalAlignment = Alignment.Bottom,
     ) {
         StatItem(
@@ -43,8 +43,8 @@ fun Summary(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(
-                    top = dimensionResource(R.dimen.spacingThin),
-                    bottom = dimensionResource(R.dimen.spacingMini),
+                    top = dimensionResource(R.dimen.spacing2),
+                    bottom = dimensionResource(R.dimen.spacing1),
                 ),
         )
         val statItemStyle = StatItemStyle.LargeCenterStart

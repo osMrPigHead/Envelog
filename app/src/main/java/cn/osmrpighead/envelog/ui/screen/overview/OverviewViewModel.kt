@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 // TODO: User rule
 private fun List<EnvelopeSummary>.toSummaryItems(): List<SummaryItem> {
-    val budgetedAllocated = sumOf { if (it is EnvelopeSummary.Budgeted) it.allocated else 0 }
+    val budgetedAllocated = sumOf { if (it is EnvelopeSummary.Budgeted && !it.archived) it.allocated else 0 }
     val allocated = sumOf { it.allocated }
     val budget = sumOf { if (it is EnvelopeSummary.Budgeted && !it.archived) it.totalBudget else 0 }
     return listOf(

@@ -19,10 +19,10 @@ private fun SummaryPreview() {
             items = OverviewPreviewData.summaryItems,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = dimensionResource(R.dimen.spacingBold))
+                .padding(horizontal = dimensionResource(R.dimen.spacing8))
                 .padding(
-                    top = dimensionResource(R.dimen.spacingBold),
-                    bottom = dimensionResource(R.dimen.spacingMedium),
+                    top = dimensionResource(R.dimen.spacing8),
+                    bottom = dimensionResource(R.dimen.spacing4),
                 ),
         )
     }
@@ -37,10 +37,10 @@ private fun SummaryWithoutBudgetPreview() {
             items = OverviewPreviewData.zeroSummaryItems,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = dimensionResource(R.dimen.spacingBold))
+                .padding(horizontal = dimensionResource(R.dimen.spacing8))
                 .padding(
-                    top = dimensionResource(R.dimen.spacingBold),
-                    bottom = dimensionResource(R.dimen.spacingMedium),
+                    top = dimensionResource(R.dimen.spacing8),
+                    bottom = dimensionResource(R.dimen.spacing4),
                 ),
         )
     }

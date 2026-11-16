@@ -12,7 +12,6 @@ fun EntryProviderScope<AppRoute>.recordEntry(
             creationCallback = { it.create(key) },
         )
         RecordScreen(
-            uiState = viewModel.uiState,
             submit = viewModel::submit,
             back = { back(key) },
             backEvent = viewModel.backEvent,

@@ -1,7 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.record
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.osmrpighead.envelog.core.navigation.AppRoute
@@ -9,7 +7,6 @@ import cn.osmrpighead.envelog.data.model.ExpenseAllocation
 import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.repository.EnvelogRepository
-import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -34,23 +31,14 @@ class RecordViewModel @AssistedInject constructor(
     private val expenseId = ExpenseId.generate()
     private var submission: Job? = null
 
-    private val host = NumKeypadHostState()
-
-    private val _uiState = mutableStateOf(
-        RecordUiState(
-            numKeypadHost = host,
-            amount = 0,
-        ),
-    )
     private val _backEvent = Channel<Unit>(Channel.BUFFERED)
-    val uiState: RecordUiState by _uiState
     val backEvent = _backEvent.receiveAsFlow()
 
     private suspend fun sendBack() {
         _backEvent.send(Unit)
     }
 
-    fun submit(amount: Long) {
+    fun submit(amount: Long, note: String) {
         if (submission?.isActive == true || submission?.isCompleted == true) return
         submission = viewModelScope.launch {
             repository.recordExpense(
@@ -63,11 +51,11 @@ class RecordViewModel @AssistedInject constructor(
                             expenseId = expenseId,
                             envelopeId = envelopeId,
                             amount = amount,
+                            note = note,
                         ),
                     ),
                 ),
             )
-            _uiState.value = _uiState.value.copy(amount = amount)
             sendBack()
         }
     }

@@ -17,7 +17,7 @@ interface ExpenseAllocationDao {
 
     @Query(
         """
-            SELECT ea.expenseId, ea.envelopeId, ea.amount,
+            SELECT ea.expenseId, ea.envelopeId, ea.amount, ea.note,
                    ex.happenedAt, ex.happenedDate, ex.happenedZone
             FROM expenseAllocation ea
             JOIN expense ex

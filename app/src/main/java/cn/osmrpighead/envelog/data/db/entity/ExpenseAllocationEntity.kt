@@ -34,4 +34,5 @@ data class ExpenseAllocationEntity(
     val expenseId: ExpenseId,
     val envelopeId: EnvelopeId,
     val amount: Long,
+    val note: String,
 )

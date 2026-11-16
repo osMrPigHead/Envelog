@@ -15,9 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.BaselineShift
-import androidx.compose.ui.text.style.LineHeightStyle
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
@@ -61,7 +59,7 @@ private fun BudgetRow(
                 value = budget.amount.formatAsAmount(Formatter.AmountConcise).asSlot(),
                 caption = StatItemSlot.Empty,
             ),
-            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingMedium)),
+            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing4)),
         )
     }
 }
@@ -88,7 +86,7 @@ private fun BudgetListHeader(modifier: Modifier = Modifier) {
                 value = StatItemSlot.Empty,
                 caption = StatItemSlot.Empty,
             ),
-            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacingMedium)),
+            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing4)),
         )
     }
 }
@@ -106,11 +104,11 @@ fun BudgetList(
     if (visibleBudgets.isEmpty()) return
     Column(
         modifier = modifier
-            .padding(horizontal = dimensionResource(R.dimen.spacingExtra))
+            .padding(horizontal = dimensionResource(R.dimen.spacing10))
             .fillMaxWidth(),
     ) {
-        BudgetListHeader(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacingSmall)))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacingLarge))) {
+        BudgetListHeader(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacing3)))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6))) {
             items(visibleBudgets, { it.id.toString() }) {
                 BudgetRow(
                     budget = it,
