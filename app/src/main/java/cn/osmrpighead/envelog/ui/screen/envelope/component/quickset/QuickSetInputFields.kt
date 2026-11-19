@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,6 +84,9 @@ internal fun QuickSetIntervalField(
         value = TextFieldValue(text, TextRange(text.length)),
         onValueChange = { input -> input.sanitizedIntervalDays(maxDays)?.let(onValueChange) },
         modifier = modifier.semantics { this.contentDescription = description },
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        ),
         enabled = enabled,
         singleLine = true,
         isError = isError,
@@ -145,6 +149,9 @@ internal fun QuickSetAmountField(
         fieldId = fieldId,
         enabled = selected,
         isError = error && selected,
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        ),
         supportingText =
             if (nonPositive && selected) {
                 { Text(text = stringResource(R.string.common_msg_amount_positive)) }

@@ -65,19 +65,19 @@ private val Boolean.Empty: StatItemSlot
 fun SummaryItem.statItemContent(reserveCaption: Boolean): StatItemContent = when (this) {
     is SummaryItem.Balance -> StatItemContent(
         title = stringResource(R.string.overview_summary_balance_title).asSlot(),
-        value = cents.formatAsAmount(Formatter.AmountStandard).asSlot(),
+        value = cents.formatAsAmount(Formatter.AmountConcise).asSlot(),
         caption = reserveCaption.Empty,
     )
 
     is SummaryItem.Expenses -> StatItemContent(
         title = stringResource(R.string.overview_summary_expense_title).asSlot(),
-        value = cents.formatAsAmount(Formatter.AmountStandard).asSlot(),
+        value = cents.formatAsAmount(Formatter.AmountConcise).asSlot(),
         caption = reserveCaption.Empty,
     )
 
     is SummaryItem.Remaining -> StatItemContent(
         title = stringResource(R.string.overview_summary_remaining_title).asSlot(),
-        value = cents.formatAsAmount(Formatter.AmountStandard).asSlot(),
+        value = cents.formatAsAmount(Formatter.AmountConcise).asSlot(),
         caption = stringResource(
             R.string.overview_summary_remaining_caption,
             usedProportion.formatAsPercent(Formatter.PercentInteger).orDefault(R.string.symbol_percent_nan),

@@ -10,6 +10,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -52,6 +54,16 @@ fun Ledger(
             },
         ) { tab ->
             when (tab) {
+                EnvelopeTab.Calendar -> EnvelopeCalendar(
+                    model = ledgerState.calendar,
+                    onDateClick = onDateClick,
+                    onBudgetClick = onBudgetClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensionResource(R.dimen.spacing8))
+                        .verticalScroll(rememberScrollState()),
+                )
+
                 EnvelopeTab.Budget -> BudgetList(
                     budgets = ledgerState.budgets,
                     yearMonth = yearMonth,
@@ -69,15 +81,7 @@ fun Ledger(
                         bottom = dimensionResource(R.dimen.spacing8),
                     ),
                 )
-
-                EnvelopeTab.Calendar -> EnvelopeCalendar(
-                    model = ledgerState.calendar,
-                    onDateClick = onDateClick,
-                    onBudgetClick = onBudgetClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = dimensionResource(R.dimen.spacing8)),
-                )
             }
-        }}
+        }
+    }
 }

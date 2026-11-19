@@ -112,7 +112,7 @@ fun BudgetItemSheet(
             if (!budgetForm.isNew) TextButton(
                 onClick = delete,
                 enabled = enabled,
-                colors = ButtonColor.outlinedDanger,
+                colors = ButtonColor.textDanger,
             ) {
                 Text(text = stringResource(R.string.common_action_delete))
             }

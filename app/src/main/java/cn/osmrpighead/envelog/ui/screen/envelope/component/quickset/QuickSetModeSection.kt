@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerField
 import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerSheetBuilder
@@ -83,6 +85,9 @@ internal fun QuickSetModeSection(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
                 ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                ),
                 supportingText = spacer,
                 label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_weekly_label)) },
                 prefix = {
@@ -103,10 +108,7 @@ internal fun QuickSetModeSection(
             amountField = QuickSetField.Monthly::Amount,
             amountDescription = stringResource(R.string.envelope_edit_quick_set_monthly_amount_field),
             mode = QuickSetMode.Monthly,
-        ) {
-            it(true)
-            Spacer(modifier = Modifier.weight(1f))
-        }
+        ) { it(true) }
     }
 }
 
@@ -133,28 +135,30 @@ private fun QuickSetModeRow(
                 onClick = { update(QuickSetField.Mode(mode)) },
                 role = Role.RadioButton,
             )
+            .height(IntrinsicSize.Min)
             .padding(vertical = dimensionResource(R.dimen.spacing1)),
         horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
-        verticalAlignment = Alignment.CenterVertically,
-        content = {
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(bottom = MaterialTheme.typography.bodySmall.lineHeightAsDp),
+            contentAlignment = Alignment.Center,
+        ) {
             RadioButton(selected = selected, enabled = enabled, onClick = null)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                content {
-                    QuickSetAmountField(
-                        amount = amount,
-                        fieldErrors = fieldErrors,
-                        host = numKeypadHost,
-                        update = { amount -> update(amountField(amount)) },
-                        selected = selected && enabled,
-                        description = amountDescription,
-                        modifier = Modifier.weight(1f),
-                        label = if (it) amountDescription else null,
-                    )
-                }
-            }
-        },
-    )
+        }
+        content {
+            QuickSetAmountField(
+                amount = amount,
+                fieldErrors = fieldErrors,
+                host = numKeypadHost,
+                update = { amount -> update(amountField(amount)) },
+                selected = selected && enabled,
+                description = amountDescription,
+                modifier = Modifier.weight(1f),
+                label = if (it) amountDescription else null,
+            )
+        }
+    }
 }

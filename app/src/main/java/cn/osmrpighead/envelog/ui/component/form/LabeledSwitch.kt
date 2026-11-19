@@ -2,6 +2,7 @@ package cn.osmrpighead.envelog.ui.component.form
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
@@ -23,7 +24,6 @@ fun LabeledSwitch(
 ) {
     Row(
         modifier = modifier
-            .fillMaxWidth()
             .toggleable(
                 value = checked,
                 enabled = enabled,
@@ -32,14 +32,14 @@ fun LabeledSwitch(
             )
             .padding(
                 horizontal = dimensionResource(R.dimen.spacing8),
-                vertical = dimensionResource(R.dimen.spacing6),
+                vertical = dimensionResource(R.dimen.spacing2),
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.weight(1f)) { label() }
+        Box(modifier = Modifier.weight(1f).padding(end = dimensionResource(R.dimen.spacing4))) { label() }
         Switch(
             checked = checked,
-            onCheckedChange = null,
+            onCheckedChange = onCheckedChange,
             enabled = enabled,
         )
     }

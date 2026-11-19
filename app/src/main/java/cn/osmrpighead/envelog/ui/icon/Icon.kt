@@ -13,4 +13,5 @@ object Icon {
     val List = list
     val ListAlt = list_alt
     val ListAltFilled = list_alt_filled
+    val Tune = tune
 }

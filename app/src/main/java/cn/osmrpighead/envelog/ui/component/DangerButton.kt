@@ -1,13 +1,11 @@
 package cn.osmrpighead.envelog.ui.component
 
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.dimensionResource
-import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
 
 @Composable
@@ -16,9 +14,9 @@ fun DangerButton(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    Button(
+    OutlinedButton(
         onClick = onClick,
-        colors = ButtonColor.danger,
+        colors = ButtonColor.outlinedDanger,
         modifier = modifier,
         content = content
     )

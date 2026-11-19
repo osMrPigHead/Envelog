@@ -95,23 +95,15 @@ private fun SuccessBody(
     Column(modifier = modifier) {
         Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacing8))) {
             EnvelopeForm(
+                yearMonth = yearMonth,
+                today = today,
                 form = detail.envelopeForm,
                 dismissed = dismissed,
                 update = { onEvent(UpdateEnvelope(it)) },
+                quickset = { onEvent(OpenQuickSet) },
             )
 
-            OutlinedButton(
-                onClick = { onEvent(OpenQuickSet) },
-                enabled = detail.envelopeForm.envelope.isBudgeted && yearMonth >= YearMonth.from(today),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = dimensionResource(R.dimen.spacing4)),
-            ) { Text(text = stringResource(R.string.envelope_edit_quick_set_title)) }
-
-            SecondaryTabRow(
-                selectedTabIndex = visibleTabs.indexOf(activeTab),
-                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing4)),
-            ) {
+            SecondaryTabRow(selectedTabIndex = visibleTabs.indexOf(activeTab)) {
                 for (tab in visibleTabs) Tab(
                     selected = activeTab == tab,
                     onClick = { selectedTab = tab },
@@ -153,7 +145,7 @@ private fun SuccessBody(
                     onClick = { showArchiveConfirmation = true },
                     modifier = Modifier.weight(1f),
                 ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
-            Button(
+            FilledTonalButton(
                 onClick = { onEvent(SaveEnvelope) },
                 modifier = Modifier.weight(1f),
             ) { Text(text = stringResource(R.string.common_action_save_and_back)) }

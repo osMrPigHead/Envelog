@@ -116,7 +116,6 @@ fun BudgetList(
                         span = it.dateSpan.toClosed(),
                         diffStyle = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.primary,
-                            baselineShift = BaselineShift(.2f),
                         ),
                     ),
                     onBudgetClick = onBudgetClick,

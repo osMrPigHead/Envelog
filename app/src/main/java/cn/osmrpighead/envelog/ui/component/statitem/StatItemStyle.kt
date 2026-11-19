@@ -6,6 +6,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.sp
 import cn.osmrpighead.envelog.ui.text.AutoSizedTextStyle
 
 @Immutable
@@ -63,13 +64,14 @@ data class StatItemStyle(
             containerAlignment = containerAlignment,
             contentAlignment = contentAlignment,
             title = AutoSizedTextStyle(
-                MaterialTheme.typography.labelMedium.copy(
+                MaterialTheme.typography.labelSmall.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 20.0.sp,
                 ),
             ),
             value = AutoSizedTextStyle(
                 MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 ),
             ),
