@@ -1,20 +1,23 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.quickset
 
-import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalFocusManager
 import cn.osmrpighead.envelog.ui.component.numkeypad.rememberNumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetField
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFormModalState
+import cn.osmrpighead.envelog.ui.util.hideAndThen
 import java.time.YearMonth
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun QuickSetBudgetModalBottomSheet(
     yearMonth: YearMonth,
@@ -34,18 +37,19 @@ fun QuickSetBudgetModalBottomSheet(
 
     LaunchedEffect(modalState.state, modalState.dismissed) {
         if (modalState.state != FormState.Completed && !modalState.dismissed) return@LaunchedEffect
-        try {
-            sheetState.hide()
-        } finally {
-            clear()
-        }
+        sheetState.hideAndThen(clear)
     }
 
     ModalBottomSheet(
         onDismissRequest = dismiss,
         sheetState = sheetState,
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
         sheetGesturesEnabled = !sheetState.isAnimationRunning,
     ) {
+        val imeVisible = WindowInsets.isImeVisible
+        BackHandler {
+            if (!imeVisible) dismiss()
+        }
         QuickSetSheetContent(
             yearMonth, modalState, numKeypadHost, update, dismiss,
             apply = {

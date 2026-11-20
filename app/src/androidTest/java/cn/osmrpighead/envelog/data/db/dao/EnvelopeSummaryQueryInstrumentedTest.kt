@@ -97,7 +97,7 @@ class EnvelopeSummaryQueryInstrumentedTest {
             happenedZone = zone,
             deletedAt = deletedAt,
         )
-        return expense to ExpenseAllocationEntity(id, envelopeId, amount)
+        return expense to ExpenseAllocationEntity(id, envelopeId, amount, note = "")
     }
 
     private suspend fun seed(

@@ -26,11 +26,6 @@ sealed interface AppRoute : NavKey {
     }
 
     @Serializable
-    data class Record(override val navId: NavId, val id: EnvelopeId) : AppRoute {
-        constructor(id: EnvelopeId) : this(NavId.generate(), id)
-    }
-
-    @Serializable
     data class Envelope(
         override val navId: NavId, val id: NavigationTarget<EnvelopeId>,
     ) : AppRoute {

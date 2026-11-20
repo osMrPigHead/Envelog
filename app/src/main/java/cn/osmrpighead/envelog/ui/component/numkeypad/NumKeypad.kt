@@ -1,22 +1,27 @@
 package cn.osmrpighead.envelog.ui.component.numkeypad
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Constraints
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.style.radialFilledWeight
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
+import cn.osmrpighead.envelog.ui.theme.MotionTokens
 
 private fun String.normalize(): String {
     val s = trimStart('0').run {
@@ -75,7 +80,7 @@ private fun KeypadButton(
         onClick = onClick,
         modifier = modifier
             .height(IntrinsicSize.Max)
-            .padding(dimensionResource(R.dimen.spacing1)),
+            .padding(dimensionResource(R.dimen.space2)),
         enabled = enabled,
         shape = MaterialTheme.shapes.large,
         colors = colors,
@@ -91,7 +96,7 @@ fun NumberButton(
     modifier: Modifier = Modifier,
 ) = KeypadButton(
     onClick = { onStateChange(numberInput(state, number)) },
-    enabled = !state.fatal,
+    enabled = state.enabled && !state.fatal,
     modifier = modifier,
 ) { Text(text = number, style = MaterialTheme.typography.titleLarge) }
 
@@ -102,7 +107,7 @@ fun DecimalPointButton(
     modifier: Modifier = Modifier,
 ) = KeypadButton(
     onClick = { onStateChange(decimalPointInput(state)) },
-    enabled = !state.fatal,
+    enabled = state.enabled && !state.fatal,
     modifier = modifier,
 ) { Text(text = ".", style = MaterialTheme.typography.titleLarge) }
 
@@ -114,7 +119,7 @@ fun OperatorButton(
     modifier: Modifier = Modifier,
 ) = KeypadButton(
     onClick = { onStateChange(operatorInput(state, operator)) },
-    enabled = !state.fatal,
+    enabled = state.enabled && !state.fatal,
     modifier = modifier,
     colors = ButtonDefaults.textButtonColors(),
 ) { Text(text = operator.text, style = MaterialTheme.typography.titleLarge) }
@@ -126,7 +131,7 @@ fun ClearButton(
     modifier: Modifier = Modifier,
 ) = KeypadButton(
     onClick = { onStateChange(clear(state)) },
-    enabled = true,
+    enabled = state.enabled,
     modifier = modifier,
     colors = ButtonColor.textDanger,
 ) {
@@ -146,7 +151,7 @@ fun DeleteButton(
     modifier: Modifier = Modifier,
 ) = KeypadButton(
     onClick = { onStateChange(delete(state)) },
-    enabled = !state.fatal,
+    enabled = state.enabled && !state.fatal,
     modifier = modifier,
     colors = ButtonColor.textDanger,
 ) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_action_backspace)) }
@@ -161,7 +166,7 @@ fun NumKeypad(
     modifier: Modifier = Modifier,
 ) {
     val result = state.evaluate()
-    Column(modifier = modifier.padding(horizontal = dimensionResource(R.dimen.spacing10))) {
+    Column(modifier = modifier.padding(horizontal = dimensionResource(R.dimen.space20))) {
         Text(
             text = when (result) {
                 is EvaluatedResult.Success -> "= ${result.value.toPlainString()}"
@@ -172,7 +177,10 @@ fun NumKeypad(
             textAlign = TextAlign.End,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(dimensionResource(R.dimen.spacing12), dimensionResource(R.dimen.spacing3)),
+                .padding(
+                    horizontal = dimensionResource(R.dimen.space24),
+                    vertical = dimensionResource(R.dimen.space8),
+                ),
         )
         Row(modifier = Modifier.radialFilledWeight(1f, fill = false)) {
             ClearButton(state, onStateChange, Modifier.weight(1f))
@@ -197,7 +205,6 @@ fun NumKeypad(
                 .radialFilledWeight(2f, fill = false)
                 .height(IntrinsicSize.Max),
         ) {
-            val localModifier = Modifier.padding(dimensionResource(R.dimen.spacing1))
             Column(modifier = Modifier.weight(3f)) {
                 Row(modifier = Modifier.radialFilledWeight(1f, fill = false)) {
                     NumberButton("7", state, onStateChange, Modifier.weight(1f))
@@ -207,12 +214,12 @@ fun NumKeypad(
                 Row(modifier = Modifier.radialFilledWeight(1f, fill = false)) {
                     KeypadButton(
                         onClick = onCancel,
-                        enabled = true,
+                        enabled = state.enabled,
                         modifier = Modifier.weight(1f),
                         colors = ButtonColor.textDanger,
                     ) {
                         Icon(
-                            imageVector = Icon.Close,
+                            imageVector = Icon.KeyboardArrowDown,
                             contentDescription = stringResource(R.string.common_action_cancel),
                         )
                     }
@@ -222,17 +229,60 @@ fun NumKeypad(
             }
             Button(
                 onClick = onConfirm,
-                modifier = localModifier.radialFilledWeight(1f),
-                enabled = confirmEnabled,
+                modifier = Modifier
+                    .padding(dimensionResource(R.dimen.space2))
+                    .radialFilledWeight(1f),
+                enabled = state.enabled && confirmEnabled,
                 shape = MaterialTheme.shapes.large,
             ) {
                 Text(
-                    text = stringResource(R.string.common_action_ok),
+                    text = stringResource(R.string.common_action_finish),
                     style = MaterialTheme.typography.titleMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun BottomAnimatedNumKeypad(
+    visibleState: MutableTransitionState<Boolean>,
+    state: NumKeypadState,
+    onStateChange: (NumKeypadState) -> Unit,
+    confirmEnabled: Boolean,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+    surfaceBackground: Color = MaterialTheme.colorScheme.surfaceContainer,
+) {
+    AnimatedVisibility(
+        visibleState = visibleState,
+        enter = slideInVertically(
+            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
+            initialOffsetY = { it },
+        ) + expandVertically(
+            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
+            expandFrom = Alignment.Bottom,
+        ),
+        exit = slideOutVertically(
+            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
+            targetOffsetY = { it },
+        ) + shrinkVertically(
+            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
+            shrinkTowards = Alignment.Bottom,
+        ),
+        modifier = modifier,
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = surfaceBackground,
+        ) {
+            NumKeypad(
+                state, onStateChange, confirmEnabled, onConfirm, onCancel,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

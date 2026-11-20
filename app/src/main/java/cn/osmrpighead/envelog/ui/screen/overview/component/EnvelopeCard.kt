@@ -3,25 +3,19 @@ package cn.osmrpighead.envelog.ui.screen.overview.component
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.core.time.next
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
-import cn.osmrpighead.envelog.ui.component.statitem.*
+import cn.osmrpighead.envelog.ui.component.AutoSizeText
 import cn.osmrpighead.envelog.ui.icon.Icon
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
@@ -29,6 +23,7 @@ import cn.osmrpighead.envelog.ui.text.Formatter.formatAsPercent
 import cn.osmrpighead.envelog.ui.text.Formatter.formattedAmount
 import cn.osmrpighead.envelog.ui.text.orDefault
 import cn.osmrpighead.envelog.ui.text.relativeDate
+import cn.osmrpighead.envelog.ui.theme.AppTheme
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.math.BigDecimal
 import java.time.DayOfWeek
@@ -39,39 +34,46 @@ private fun EnvelopeCardShell(
     model: EnvelopeSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    rightSlot: @Composable RowScope.() -> Unit,
+    rightSlot: @Composable BoxScope.() -> Unit,
 ) {
     Card(onClick = onClick, modifier = modifier) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(dimensionResource(R.dimen.space16)),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space16)),
         ) {
-            StatItem(
-                style = StatItemStyle.LargeCenterStart.update(
-                    value = { copy(textStyle = textStyle.copy(fontWeight = FontWeight.Normal)) },
-                ),
-                content = StatItemContent(
-                    title = StatItemSlot.Empty,
-                    value = buildAnnotatedString {
-                        append(model.name)
-                        append(stringResource(R.string.symbol_space))
-                        if (model is EnvelopeSummary.Budgeted)
-                            withStyle(
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ).toSpanStyle(),
-                            ) {
-                                append(
-                                    stringResource(
-                                        R.string.overview_envelope_card_used_percent,
-                                        model.usedProportion
-                                            .formatAsPercent(Formatter.PercentInteger)
-                                            .orDefault(R.string.symbol_percent_nan),
-                                    ),
-                                )
-                            }
-                    }.asSlot(),
-                    caption = (if (model is EnvelopeSummary.Budgeted) stringResource(
+            Column(modifier = Modifier.weight(3f)) {
+                Row {
+                    Text(
+                        text = model.name,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .alignByBaseline(),
+                    )
+                    if (model is EnvelopeSummary.Budgeted) {
+                        Spacer(modifier = Modifier.width(dimensionResource(R.dimen.space8)))
+                        Text(
+                            text = stringResource(
+                                R.string.overview_envelope_card_used_percent,
+                                model.usedProportion
+                                    .formatAsPercent(Formatter.PercentInteger)
+                                    .orDefault(R.string.symbol_percent_nan),
+                            ),
+                            overflow = TextOverflow.MiddleEllipsis,
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                    }
+                }
+                AutoSizeText(
+                    text = if (model is EnvelopeSummary.Budgeted) stringResource(
                         R.string.overview_envelope_card_budget_caption,
                         model.allocated.formatAsAmount(Formatter.AmountConcise),
                         model.totalBudget.formatAsAmount(Formatter.AmountConcise),
@@ -81,14 +83,15 @@ private fun EnvelopeCardShell(
                         R.string.overview_envelope_card_non_budget_caption,
                         model.allocated.formatAsAmount(Formatter.AmountConcise),
                         model.currency.prefix, model.currency.suffix,
-                    )).asSlot(),
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = dimensionResource(R.dimen.spacing8))
-                    .padding(vertical = dimensionResource(R.dimen.spacing8)),
-            )
-            rightSlot()
+                    ),
+                    overflow = TextOverflow.MiddleEllipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Box(modifier = Modifier.weight(2f)) {
+                rightSlot()
+            }
         }
     }
 }
@@ -110,37 +113,58 @@ private fun EnvelopeSummary.Budgeted.relativeDate(today: LocalDate): String =
 
 @Composable
 private fun EnvelopeCardViewContent(
-    model: EnvelopeSummary.Budgeted,
+    model: EnvelopeSummary,
     today: LocalDate,
     diffColor: @Composable (diffAmount: Long) -> Color,
     modifier: Modifier = Modifier,
-) {
-    StatItem(
-        style = StatItemStyle.MediumCenterEnd,
-        content = StatItemContent(
-            title = stringResource(
-                R.string.overview_envelope_card_available_title,
-                model.relativeDate(today),
-            ).asSlot(),
-            value = buildAnnotatedString {
-                append(model.currentAvailable.formatAsAmount(Formatter.AmountInteger))
-                val formattedDiff = model.priorDifference.formattedAmount(Formatter.AmountSignedInteger)
+) = when (model) {
+    is EnvelopeSummary.Budgeted -> {
+        val formattedDiff = model.priorDifference.formattedAmount(Formatter.AmountSignedInteger)
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.End,
+        ) {
+            Text(
+                text = stringResource(
+                    R.string.overview_envelope_card_available_title,
+                    model.relativeDate(today),
+                ),
+                color = AppTheme.colorScheme.onSurfaceTertiary,
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Row {
+                AutoSizeText(
+                    text = model.currentAvailable.formatAsAmount(Formatter.AmountInteger),
+                    style = MaterialTheme.typography.titleLarge,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false).alignByBaseline(),
+                )
                 if (formattedDiff.toBigDecimal().compareTo(BigDecimal.ZERO) != 0) {
-                    append(stringResource(R.string.symbol_hair_space))
-                    withStyle(
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = diffColor(model.priorDifference),
-                            letterSpacing = 0.0.sp,
-                        ).toSpanStyle(),
-                    ) {
-                        append(formattedDiff.toString())
-                    }
+                    Spacer(modifier = Modifier.width(dimensionResource(R.dimen.space2)))
+                    AutoSizeText(
+                        text = formattedDiff.toString(),
+                        color = diffColor(model.priorDifference),
+                        style = MaterialTheme.typography.bodyMedium,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false).alignByBaseline(),
+                    )
                 }
-            }.asSlot(),
-            caption = StatItemSlot.Empty,
-        ),
-        modifier = modifier,
-    )
+            }
+        }
+    }
+
+    is EnvelopeSummary.NonBudget -> {
+        Box(
+            modifier = modifier.fillMaxHeight(),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            Text(
+                text = stringResource(R.string.overview_envelope_card_no_budget),
+                color = AppTheme.colorScheme.onSurfaceTertiary,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
 }
 
 @Composable
@@ -205,19 +229,22 @@ fun EnvelopeCard(
                 (enter togetherWith exit).using(null)
             },
         ) { isManaging ->
-            Box(contentAlignment = Alignment.CenterEnd) {
+            Box(
+                contentAlignment = Alignment.CenterEnd,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(dimensionResource(R.dimen.minTouchTarget)),
+            ) {
                 if (isManaging) EnvelopeCardManageContent(
                     canDelete = model.canDelete,
                     onArchiveClick = onArchiveClick,
                     onDeleteClick = onDeleteClick,
                     onEditClick = onEditClick,
-                    modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing4)),
                 )
-                else if (model is EnvelopeSummary.Budgeted) EnvelopeCardViewContent(
+                else EnvelopeCardViewContent(
                     model = model,
                     today = today,
                     diffColor = diffColor,
-                    modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing8)),
                 )
             }
         }

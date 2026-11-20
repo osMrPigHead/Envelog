@@ -76,7 +76,7 @@ class AllocationQueryInstrumentedTest {
             deletedAt = deletedAt,
         )
         return expense to shares.map { (envelopeId, amount) ->
-            ExpenseAllocationEntity(id, envelopeId, amount)
+            ExpenseAllocationEntity(id, envelopeId, amount, note = "")
         }
     }
 
@@ -122,6 +122,7 @@ class AllocationQueryInstrumentedTest {
                     zone,
                     envelopeA,
                     2_000,
+                    note = "",
                 ),
                 AllocationWithInfoRow(
                     ExpenseId(UUID(0L, 0xB2)),
@@ -130,6 +131,7 @@ class AllocationQueryInstrumentedTest {
                     zone,
                     envelopeA,
                     6_000,
+                    note = "",
                 ),
                 AllocationWithInfoRow(
                     ExpenseId(UUID(0L, 0xB3)),
@@ -138,6 +140,7 @@ class AllocationQueryInstrumentedTest {
                     zone,
                     envelopeA,
                     5_000,
+                    note = "",
                 ),
             ),
             rows.toSet(),

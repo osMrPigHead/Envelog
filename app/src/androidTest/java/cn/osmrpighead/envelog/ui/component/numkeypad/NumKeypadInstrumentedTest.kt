@@ -31,7 +31,7 @@ class NumKeypadInstrumentedTest {
     private val state = mutableStateOf(NumKeypadState())
     private var confirmed = 0
 
-    private val okText: String get() = context.getString(R.string.common_action_ok)
+    private val finishText: String get() = context.getString(R.string.common_action_finish)
 
     @Test
     fun keypad_evaluatesChainedArithmetic() {
@@ -43,7 +43,7 @@ class NumKeypadInstrumentedTest {
         clickKey("4")
 
         composeRule.onNodeWithText("= 12").assertIsDisplayed()
-        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).performClick()
+        composeRule.onNode(hasText(finishText) and hasClickAction() and hasButtonRole()).performClick()
         composeRule.runOnIdle { assertEquals(1, confirmed) }
     }
 
@@ -55,7 +55,7 @@ class NumKeypadInstrumentedTest {
         clickKey("0")
 
         composeRule.onNodeWithText(context.getString(R.string.numkeypad_msg_divided_by_zero)).assertIsDisplayed()
-        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).assertIsNotEnabled()
+        composeRule.onNode(hasText(finishText) and hasClickAction() and hasButtonRole()).assertIsNotEnabled()
         composeRule.runOnIdle { assertEquals(0, confirmed) }
     }
 

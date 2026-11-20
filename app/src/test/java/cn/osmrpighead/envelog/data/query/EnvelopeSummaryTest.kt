@@ -74,4 +74,17 @@ class EnvelopeSummaryTest {
         assertEquals(30_000L, budgeted(priorBudget = 50_000, priorAllocated = 20_000).priorDifference)
         assertEquals(-5_000L, budgeted(priorBudget = 5_000, priorAllocated = 10_000).priorDifference)
     }
+
+    @Test
+    fun currentAvailable_keepsBothNegativesWhenPriorAlsoOverdrawn() {
+        val summary = budgeted(
+            currentBudget = 20_000,
+            currentSpanAllocated = 30_000,
+            priorBudget = 5_000,
+            priorAllocated = 10_000,
+        )
+
+        assertEquals(-10_000L, summary.currentAvailable)
+        assertEquals(-5_000L, summary.priorDifference)
+    }
 }

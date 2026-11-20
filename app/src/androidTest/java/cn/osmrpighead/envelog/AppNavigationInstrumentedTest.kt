@@ -64,7 +64,7 @@ class AppNavigationInstrumentedTest {
     private lateinit var span: HalfOpenDateSpan
     private var envelopeId: EnvelopeId = EnvelopeId(UUID.randomUUID())
 
-    private val okText: String get() = context.getString(R.string.common_action_ok)
+    private val finishText: String get() = context.getString(R.string.common_action_finish)
     private val manageText: String get() = context.getString(R.string.overview_action_manage)
     private val editText: String get() = context.getString(R.string.overview_envelope_action_edit)
     private val newText: String get() = context.getString(R.string.overview_action_new_envelope)
@@ -110,11 +110,16 @@ class AppNavigationInstrumentedTest {
         clickKey("1")
         clickKey("0")
         clickKey("0")
-        composeRule.onNode(hasText(okText) and hasClickAction() and hasButtonRole()).performClick()
+        composeRule.onNode(hasText(finishText) and hasClickAction() and hasButtonRole()).performClick()
 
         waitForRepository {
             repository.observeOverview(today, month, span).first()
                 .singleOrNull()?.allocated == 10_000L
+        }
+        // 提交完成后弹层随键盘一起收起
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(context.getString(R.string.record_expense_note_label))
+                .fetchSemanticsNodes().isEmpty()
         }
         waitForText(envelopeName)
 

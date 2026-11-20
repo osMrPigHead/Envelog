@@ -132,9 +132,8 @@ class EnvelopeViewModel @AssistedInject constructor(
     val uiState =
         combine(yearMonth, today, detail) { yearMonth, today, detail -> EnvelopeUiState(yearMonth, today, detail) }
             .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = EnvelopeUiState(yearMonth.value, today.value, detailNotReady),
+                viewModelScope, SharingStarted.WhileSubscribed(5000),
+                EnvelopeUiState(yearMonth.value, today.value, detailNotReady),
             )
 
     init {

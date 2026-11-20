@@ -3,8 +3,11 @@ package cn.osmrpighead.envelog.ui.screen.envelope
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -169,6 +172,7 @@ private fun SuccessBody(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Body(
     yearMonth: YearMonth,
@@ -179,7 +183,9 @@ private fun Body(
     modifier: Modifier = Modifier,
 ) {
     var dismissed by remember { mutableStateOf(false) }
+    val imeVisible = WindowInsets.isImeVisible
     BackHandler {
+        if (imeVisible) return@BackHandler
         if (detail.saveAndQuit) onEvent(SaveEnvelope) else {
             dismissed = true
             back()

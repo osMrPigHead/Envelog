@@ -79,6 +79,7 @@ class RoomEnvelogRepositoryQueryTest {
                     ),
                     envelopeId = RoomTestData.envelopeA,
                     amount = 6_000,
+                    note = "",
                 ),
             ),
             repository.observeAllocations(

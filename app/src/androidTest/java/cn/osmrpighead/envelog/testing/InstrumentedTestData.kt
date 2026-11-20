@@ -7,6 +7,9 @@ import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
+import cn.osmrpighead.envelog.ui.screen.overview.model.Balance
+import cn.osmrpighead.envelog.ui.screen.overview.model.Expenses
+import cn.osmrpighead.envelog.ui.screen.overview.model.Remaining
 import cn.osmrpighead.envelog.ui.screen.overview.model.SummaryItem
 import java.time.LocalDate
 import java.time.YearMonth
@@ -30,10 +33,15 @@ object InstrumentedTestData {
     val envelopeA: EnvelopeId = envelopeId(0xA1)
     val envelopeB: EnvelopeId = envelopeId(0xA2)
 
-    val summaryItems: List<SummaryItem> = listOf(
-        SummaryItem.Remaining(cents = 150_000, usedProportion = 350_000L.ratioOf(500_000L)),
-        SummaryItem.Expenses(cents = 350_000),
-        SummaryItem.Balance(cents = -350_000),
+    val headlineSummary: Remaining = Remaining(
+        cents = 150_000,
+        total = 500_000,
+        usedProportion = 350_000L.ratioOf(500_000L),
+    )
+
+    val viceSummary: List<SummaryItem> = listOf(
+        Expenses(cents = 350_000),
+        Balance(cents = -350_000),
     )
 
     fun budgetedEnvelope(

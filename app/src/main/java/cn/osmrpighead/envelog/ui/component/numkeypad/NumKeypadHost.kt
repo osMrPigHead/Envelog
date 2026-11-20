@@ -1,27 +1,10 @@
 package cn.osmrpighead.envelog.ui.component.numkeypad
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.dimensionResource
-import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.locale.AppLocale
-import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -64,6 +47,10 @@ class NumKeypadHostState {
             ),
             consumer,
         )
+    }
+
+    fun setEnabled(enabled: Boolean) {
+        updateState(state.copy(enabled = enabled))
     }
 
     fun updateState(newState: NumKeypadState) {
@@ -115,44 +102,18 @@ fun NumKeypadHost(
     host: NumKeypadHostState,
     modifier: Modifier = Modifier,
 ) {
-    // 初次组合时键盘可能已经打开，因此从隐藏开始播放上滑动画
     val visibility = remember { MutableTransitionState(false) }
     visibility.targetState = host.isOpen
 
-    BackHandler(enabled = host.isOpen) { host.cancel() }
+    BackHandler(visibility.targetState) { if (host.isOpen) host.cancel() }
 
-    AnimatedVisibility(
+    BottomAnimatedNumKeypad(
         visibleState = visibility,
-        enter = slideInVertically(
-            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
-            initialOffsetY = { it },
-        ) + expandVertically(
-            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
-            expandFrom = Alignment.Bottom,
-        ),
-        exit = slideOutVertically(
-            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
-            targetOffsetY = { it },
-        ) + shrinkVertically(
-            animationSpec = tween(durationMillis = MotionTokens.DurationKeypadSlide),
-            shrinkTowards = Alignment.Bottom,
-        ),
+        state = host.state,
+        onStateChange = host::updateState,
+        confirmEnabled = host.confirmEnabled,
+        onConfirm = host::confirm,
+        onCancel = host::cancel,
         modifier = modifier,
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            tonalElevation = dimensionResource(R.dimen.elevation1),
-            shadowElevation = dimensionResource(R.dimen.elevation1),
-            // TODO: tonalElevation, shadowElevation
-        ) {
-            NumKeypad(
-                state = host.state,
-                onStateChange = host::updateState,
-                confirmEnabled = host.confirmEnabled,
-                onConfirm = host::confirm,
-                onCancel = host::cancel,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+    )
 }

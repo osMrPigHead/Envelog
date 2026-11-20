@@ -5,6 +5,7 @@
     <string name="common_action_back">返回</string>
     <string name="common_action_cancel">取消</string>
     <string name="common_action_delete">删除</string>
+    <string name="common_action_finish">完成</string>
     <string name="common_action_ok">确认</string>
     <string name="common_action_save_and_back">保存并返回</string>
     <string name="common_label_error">错误</string>
@@ -64,13 +65,14 @@
     <string name="overview_envelope_action_delete">删除</string>
     <string name="overview_envelope_action_edit">编辑</string>
     <string name="overview_envelope_card_available_title">%1$s可用</string>
+    <string name="overview_envelope_card_no_budget">无预算</string>
     <string name="overview_envelope_card_non_budget_caption">已用 %2$s%1$s%3$s</string>
     <string name="overview_envelope_card_used_percent">(已用 %1$s)</string>
     <string name="overview_prompt_main">点击信封记账</string>
     <string name="overview_summary_balance_title">结余</string>
     <string name="overview_summary_expense_title">支出</string>
-    <string name="overview_summary_remaining_caption">已用 %1$s</string>
-    <string name="overview_summary_remaining_title">可用预算</string>
+    <string name="overview_summary_remaining_percent">已用 %1$s</string>
+    <string name="overview_summary_remaining_title">剩余预算</string>
     <string name="record_expense_note_label">添加备注</string>
     <string name="record_expense_title">记支出</string>
     <string name="time_day_of_week_friday">周五</string>

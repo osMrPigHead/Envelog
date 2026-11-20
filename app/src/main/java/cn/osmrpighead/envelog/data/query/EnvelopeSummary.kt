@@ -34,7 +34,7 @@ sealed interface EnvelopeSummary {
         init {
             val realCurrent = (currentBudget ?: 0) - currentSpanAllocated
             val realPrior = priorBudget - priorAllocated
-            if (realCurrent < 0) {
+            if (realCurrent < 0 && realPrior >= 0) {
                 if (-realCurrent < realPrior) {
                     currentAvailable = 0
                     priorDifference = realPrior + realCurrent

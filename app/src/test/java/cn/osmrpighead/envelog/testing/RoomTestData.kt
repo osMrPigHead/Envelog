@@ -97,10 +97,12 @@ object RoomTestData {
         expenseId: ExpenseId,
         envelopeId: EnvelopeId = envelopeA,
         amount: Long = 10_000,
+        note: String = "",
     ): ExpenseAllocationEntity = ExpenseAllocationEntity(
         expenseId = expenseId,
         envelopeId = envelopeId,
         amount = amount,
+        note = note,
     )
 
     /**

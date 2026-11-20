@@ -31,6 +31,7 @@ data class NumKeypadState(
     val scale: Int = 2,
     val roundingMode: RoundingMode = RoundingMode.HALF_UP,
     val fatal: Boolean = false,
+    val enabled: Boolean = true,
     val leftOperand: String = "0",
     val rightOperand: String = "0",
     val operator: Operator? = null,

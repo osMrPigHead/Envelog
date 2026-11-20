@@ -1,11 +1,7 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -15,16 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.style.BaselineShift
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.data.model.Budget
 import cn.osmrpighead.envelog.data.model.BudgetId
-import cn.osmrpighead.envelog.ui.component.statitem.StatItem
-import cn.osmrpighead.envelog.ui.component.statitem.StatItemContent
-import cn.osmrpighead.envelog.ui.component.statitem.StatItemSlot
-import cn.osmrpighead.envelog.ui.component.statitem.StatItemStyle
-import cn.osmrpighead.envelog.ui.component.statitem.asSlot
+import cn.osmrpighead.envelog.ui.component.statitem.*
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.text.dayRangeText
@@ -107,7 +98,7 @@ fun BudgetList(
             .padding(horizontal = dimensionResource(R.dimen.spacing10))
             .fillMaxWidth(),
     ) {
-        BudgetListHeader(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacing3)))
+        BudgetListHeader(modifier = Modifier.padding(bottom = dimensionResource(R.dimen.spacing4)))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6))) {
             items(visibleBudgets, { it.id.toString() }) {
                 BudgetRow(

@@ -3,6 +3,7 @@ package cn.osmrpighead.envelog.ui.screen.overview.component
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -10,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.icon.Icon
@@ -27,7 +29,9 @@ fun PromptBar(
     ) {
         Text(
             text = stringResource(R.string.overview_prompt_main),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = dimensionResource(R.dimen.space12)),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

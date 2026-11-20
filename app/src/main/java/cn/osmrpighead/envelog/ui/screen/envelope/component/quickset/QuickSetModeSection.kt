@@ -135,8 +135,7 @@ private fun QuickSetModeRow(
                 onClick = { update(QuickSetField.Mode(mode)) },
                 role = Role.RadioButton,
             )
-            .height(IntrinsicSize.Min)
-            .padding(vertical = dimensionResource(R.dimen.spacing1)),
+            .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
         verticalAlignment = Alignment.Bottom,
     ) {

@@ -30,6 +30,7 @@ import cn.osmrpighead.envelog.ui.style.disableVerticalDrag
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
+import cn.osmrpighead.envelog.ui.util.hideAndThen
 import cn.osmrpighead.envelog.ui.util.nonPositiveToError
 import java.math.RoundingMode
 
@@ -159,13 +160,9 @@ fun DetailModalBottomSheet(
     }
 
     LaunchedEffect(numKeypadHost.isOpen, budgetForm.state, detailModalState.dismissed) {
-        if (detailModalState.dismissed || budgetForm.state == FormState.Completed) {
-            try {
-                sheetState.hide()
-            } finally {
-                clear()
-            }
-        } else
+        if (detailModalState.dismissed || budgetForm.state == FormState.Completed)
+            sheetState.hideAndThen(clear)
+        else
             if (numKeypadHost.isOpen) sheetState.expand()
             else sheetState.partialExpand()
     }

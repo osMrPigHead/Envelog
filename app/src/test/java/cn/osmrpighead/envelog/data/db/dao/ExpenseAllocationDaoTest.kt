@@ -121,6 +121,7 @@ class ExpenseAllocationDaoTest {
                     happenedZone = RoomTestData.zone,
                     envelopeId = RoomTestData.envelopeA,
                     amount = 2_000,
+                    note = "",
                 ),
                 AllocationWithInfoRow(
                     expenseId = RoomTestData.expenseId(0xB2),
@@ -129,6 +130,7 @@ class ExpenseAllocationDaoTest {
                     happenedZone = RoomTestData.zone,
                     envelopeId = RoomTestData.envelopeA,
                     amount = 6_000,
+                    note = "",
                 ),
                 AllocationWithInfoRow(
                     expenseId = RoomTestData.expenseId(0xB3),
@@ -137,6 +139,7 @@ class ExpenseAllocationDaoTest {
                     happenedZone = RoomTestData.zone,
                     envelopeId = RoomTestData.envelopeA,
                     amount = 1_000,
+                    note = "",
                 ),
                 AllocationWithInfoRow(
                     expenseId = RoomTestData.expenseId(0xB4),
@@ -145,6 +148,7 @@ class ExpenseAllocationDaoTest {
                     happenedZone = RoomTestData.zone,
                     envelopeId = RoomTestData.envelopeA,
                     amount = 5_000,
+                    note = "",
                 ),
             ),
             rows.toSet(),

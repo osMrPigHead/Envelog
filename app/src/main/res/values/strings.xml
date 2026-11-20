@@ -4,6 +4,7 @@
     <string name="common_action_back">Back</string>
     <string name="common_action_cancel">Cancel</string>
     <string name="common_action_delete">Delete</string>
+    <string name="common_action_finish">Finish</string>
     <string name="common_action_ok">OK</string>
     <string name="common_action_save_and_back">Save and Back</string>
     <string name="common_label_error">Error</string>
@@ -70,14 +71,16 @@
     <string name="overview_envelope_action_edit">Edit</string>
     <string name="overview_envelope_card_available_title">Available %1$s</string>
     <string name="overview_envelope_card_budget_caption" translatable="false">%3$s%1$s\u2009/\u2009%2$s%4$s</string>
+    <string name="overview_envelope_card_no_budget">No budget</string>
     <string name="overview_envelope_card_non_budget_caption">%2$s%1$s%3$s used</string>
     <string name="overview_envelope_card_used_percent">(%1$s used)</string>
     <string name="overview_prompt_main">Tap an envelope to log spending</string>
     <string name="overview_summary_balance_title">Balance</string>
     <string name="overview_summary_expense_title">Expenses</string>
-    <string name="overview_summary_remaining_caption">Used: %1$s</string>
+    <string name="overview_summary_remaining_percent">Used: %1$s</string>
     <string name="overview_summary_remaining_title">Remaining</string>
-    <string name="record_expense_note_label">Add notes\u8230</string>
+    <string name="overview_summary_remaining_total" translatable="false">/\u2006%1$s</string>
+    <string name="record_expense_note_label">Add notes</string>
     <string name="record_expense_title">Record an expense</string>
     <string name="symbol_en_dash" translatable="false">\u2013</string>
     <string name="symbol_hair_space" translatable="false">\u200a</string>

@@ -18,6 +18,7 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.testing.hasButtonRole
 import cn.osmrpighead.envelog.testing.InstrumentedTestData
+import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
@@ -35,8 +36,8 @@ class OverviewScreenInstrumentedTest {
     private val archived = mutableListOf<EnvelopeId>()
     private val deleted = mutableListOf<EnvelopeId>()
     private val edited = mutableListOf<EnvelopeId>()
-    private val clicked = mutableListOf<EnvelopeId>()
     private var newClicks = 0
+    private var expenseFormRequests = 0
 
     @Test
     fun overview_rendersSummaryAndEnvelopes() {
@@ -47,7 +48,7 @@ class OverviewScreenInstrumentedTest {
         composeRule.onNodeWithText(context.getString(R.string.overview_summary_balance_title)).assertIsDisplayed()
         composeRule.onNodeWithText("餐饮", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("购物", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText(150_000L.formatAsAmount(Formatter.AmountStandard)).assertIsDisplayed()
+        composeRule.onNodeWithText(150_000L.formatAsAmount(Formatter.AmountConcise)).assertIsDisplayed()
     }
 
     @Test
@@ -138,22 +139,30 @@ class OverviewScreenInstrumentedTest {
     }
 
     @Test
-    fun overview_envelopeClickReportsId() {
+    fun overview_envelopeClickRequestsExpenseFormAndOpensRecordSheet() {
         setScreen(successState())
 
         composeRule.onNodeWithText("餐饮", substring = true).performClick()
 
-        assertEquals(listOf(InstrumentedTestData.envelopeA), clicked)
+        assertEquals(1, expenseFormRequests)
+        // 记账弹层出现：备注输入框与键盘完成按钮可见
+        composeRule.onNodeWithText(context.getString(R.string.record_expense_note_label)).assertIsDisplayed()
+        composeRule.onNode(hasText(context.getString(R.string.common_action_finish)) and hasClickAction() and hasButtonRole())
+            .assertIsDisplayed()
     }
 
     @Test
     fun overview_emptyStateShowsNewEnvelopeCard() {
         setScreen(
-            OverviewUiState.Success(
+            OverviewUiState(
                 yearMonth = InstrumentedTestData.month,
                 today = InstrumentedTestData.today,
-                summaryItems = emptyList(),
-                envelopes = emptyList(),
+                loadState = LoadState.Success(
+                    headlineSummary = InstrumentedTestData.headlineSummary,
+                    viceSummary = emptyList(),
+                    envelopes = emptyList(),
+                ),
+                expenseFormState = FormState.Active(Unit),
             ),
         )
 
@@ -169,11 +178,13 @@ class OverviewScreenInstrumentedTest {
             EnvelogTheme(dynamicColor = false) {
                 OverviewScreen(
                     uiState = state,
-                    onArchiveClick = { archived += it },
-                    onDeleteClick = { deleted += it },
-                    onEditClick = { edited += it },
-                    onNewClick = { newClicks++ },
-                    onEnvelopeClick = { clicked += it },
+                    selectMonth = {},
+                    archiveEnvelope = { archived += it },
+                    deleteEnvelope = { deleted += it },
+                    requireExpenseFormState = { expenseFormRequests++ },
+                    submitExpense = {},
+                    editEnvelope = { edited += it },
+                    newEnvelope = { newClicks++ },
                 )
             }
         }
@@ -193,13 +204,17 @@ class OverviewScreenInstrumentedTest {
     private fun successState(
         canDeleteA: Boolean = false,
         canDeleteB: Boolean = false,
-    ): OverviewUiState.Success = OverviewUiState.Success(
+    ): OverviewUiState = OverviewUiState(
         yearMonth = InstrumentedTestData.month,
         today = InstrumentedTestData.today,
-        summaryItems = InstrumentedTestData.summaryItems,
-        envelopes = listOf(
-            InstrumentedTestData.budgetedEnvelope(canDelete = canDeleteA),
-            InstrumentedTestData.nonBudgetedEnvelope(canDelete = canDeleteB),
+        loadState = LoadState.Success(
+            headlineSummary = InstrumentedTestData.headlineSummary,
+            viceSummary = InstrumentedTestData.viceSummary,
+            envelopes = listOf(
+                InstrumentedTestData.budgetedEnvelope(canDelete = canDeleteA),
+                InstrumentedTestData.nonBudgetedEnvelope(canDelete = canDeleteB),
+            ),
         ),
+        expenseFormState = FormState.Active(Unit),
     )
 }

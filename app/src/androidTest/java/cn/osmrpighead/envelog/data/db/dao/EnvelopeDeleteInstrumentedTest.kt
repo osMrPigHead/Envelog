@@ -109,7 +109,7 @@ class EnvelopeDeleteInstrumentedTest {
             deletedAt = deletedAt,
         )
         return expense to shares.map { (envelopeId, amount) ->
-            ExpenseAllocationEntity(id, envelopeId, amount)
+            ExpenseAllocationEntity(id, envelopeId, amount, note = "")
         }
     }
 
