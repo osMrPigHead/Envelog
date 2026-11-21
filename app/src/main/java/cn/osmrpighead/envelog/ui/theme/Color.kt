@@ -10,21 +10,21 @@ val DarkColorScheme = darkColorScheme()
 val LightColorScheme = lightColorScheme()
 
 @Immutable
-data class AppColorScheme(
+data class EnvelogColorScheme(
     val onSurfaceTertiary: Color,
     val positive: Color,
     val health: Color,
 )
 
-val AppDarkColorScheme = AppColorScheme(
+val EnvelogDarkColorScheme = EnvelogColorScheme(
     onSurfaceTertiary = Color(red = 147, green = 143, blue = 153),
     positive = Color(0xff9dcafc),
     health = Color(0xff9dcafc),
 )
-val AppLightColorScheme = AppColorScheme(
+val EnvelogLightColorScheme = EnvelogColorScheme(
     onSurfaceTertiary = Color(red = 121, green = 116, blue = 126),
     positive = Color(0xff32618d),
     health = Color(0xff32618d),
 )
 
-val LocalAppColorScheme = staticCompositionLocalOf { AppLightColorScheme }
+val LocalEnvelogColorScheme = staticCompositionLocalOf { EnvelogLightColorScheme }

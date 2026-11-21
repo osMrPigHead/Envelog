@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.component.form
+package cn.osmrpighead.envelog.ui.component.pickerwheel
 
 import java.time.YearMonth
 
@@ -28,7 +28,7 @@ internal data class MonthPickerRange(
         }
     }
 
-    fun effectiveYearRange(reference: YearMonth, radius: Int = DEFAULT_YEAR_RADIUS): IntRange {
+    fun effectiveYearRange(reference: YearMonth, radius: Int = DefaultYearRadius): IntRange {
         require(radius >= 0) { "radius must not be negative" }
         val target = coerce(reference)
         val first = minYearMonth?.year ?: (target.year - radius)
@@ -43,6 +43,6 @@ internal data class MonthPickerRange(
     }
 
     private companion object {
-        const val DEFAULT_YEAR_RADIUS = 100
+        const val DefaultYearRadius = 100
     }
 }

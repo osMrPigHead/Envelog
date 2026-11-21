@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,10 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerField
-import cn.osmrpighead.envelog.ui.component.form.DayOfWeekRangePickerSheetBuilder
+import cn.osmrpighead.envelog.ui.component.form.textfield.interactionfield.OutlinedDayOfWeekRangeField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetField
 import cn.osmrpighead.envelog.ui.screen.envelope.QuickSetFieldError
@@ -75,19 +72,17 @@ internal fun QuickSetModeSection(
             mode = QuickSetMode.Weekly,
         ) {
             val weekdayDescription = stringResource(R.string.envelope_edit_quick_set_weekday_range_field)
-            DayOfWeekRangePickerField(
+            OutlinedDayOfWeekRangeField(
                 startDayOfWeek = config.weeklyConfig.startDayOfWeek,
                 endDayOfWeek = config.weeklyConfig.endDayOfWeek,
-                sheetBuilder = DayOfWeekRangePickerSheetBuilder.of { start, end ->
-                    update(QuickSetField.Weekly.DaySpan(start, end))
-                },
+                onDayOfWeekRangeChange = { start, end -> update(QuickSetField.Weekly.DaySpan(start, end)) },
                 enabled = weeklySelected && enabled,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
                 ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                ),
+//                colors = OutlinedTextFieldDefaults.colors(
+//                    disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+//                ),
                 supportingText = spacer,
                 label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_weekly_label)) },
                 prefix = {

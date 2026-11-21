@@ -1,31 +1,11 @@
-package cn.osmrpighead.envelog.ui.component.form
+package cn.osmrpighead.envelog.ui.component.pickerwheel
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +14,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.text.dayOfWeekText
+import cn.osmrpighead.envelog.ui.util.hideAndThen
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 
@@ -57,96 +38,16 @@ object DayOfWeekRangePickerDefaults {
     )
 }
 
-sealed interface DayOfWeekRangePickerSheetBuilder {
-    @Composable
-    fun Composable(
-        startDayOfWeek: DayOfWeek,
-        endDayOfWeek: DayOfWeek,
-        hideSheet: () -> Unit,
-        modifier: Modifier = Modifier,
-    )
-
-    class Custom(
-        private val composable: @Composable (
-            startDayOfWeek: DayOfWeek,
-            endDayOfWeek: DayOfWeek,
-            hideSheet: () -> Unit,
-            modifier: Modifier,
-        ) -> Unit,
-    ) : DayOfWeekRangePickerSheetBuilder {
-        @Composable
-        override fun Composable(
-            startDayOfWeek: DayOfWeek,
-            endDayOfWeek: DayOfWeek,
-            hideSheet: () -> Unit,
-            modifier: Modifier,
-        ) = composable(startDayOfWeek, endDayOfWeek, hideSheet, modifier)
-    }
-
-    class Default(
-        private val confirmEventHandler: DayOfWeekRangePickerConfirmEventHandler,
-        private val onDismiss: (hideSheet: () -> Unit) -> Unit = { it() },
-        private val dismissButton: (@Composable (hideSheet: () -> Unit) -> Unit)? = {
-            TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) }
-        },
-        private val title: (@Composable () -> Unit)? = {
-            Text(
-                text = stringResource(R.string.day_of_week_range_picker_title),
-                style = MaterialTheme.typography.titleLarge,
-            )
-        },
-        private val colors: DayOfWeekRangePickerColors? = null,
-    ) : DayOfWeekRangePickerSheetBuilder {
-        @OptIn(ExperimentalMaterial3Api::class)
-        @Composable
-        override fun Composable(
-            startDayOfWeek: DayOfWeek,
-            endDayOfWeek: DayOfWeek,
-            hideSheet: () -> Unit,
-            modifier: Modifier,
-        ) {
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            val scope = rememberCoroutineScope()
-            val hideSheetAnimated: () -> Unit = {
-                scope.launch { sheetState.hide() }.invokeOnCompletion { hideSheet() }
-            }
-
-            LaunchedEffect(sheetState) { sheetState.show() }
-
-            ModalBottomSheet(
-                onDismissRequest = { onDismiss(hideSheetAnimated) },
-                sheetState = sheetState,
-                modifier = modifier,
-            ) {
-                DayOfWeekRangePickerSheetContent(
-                    startDayOfWeek = startDayOfWeek,
-                    endDayOfWeek = endDayOfWeek,
-                    onConfirm = { start, end -> confirmEventHandler.onConfirm(start, end, hideSheetAnimated) },
-                    onDismiss = hideSheetAnimated,
-                    dismissButton = dismissButton,
-                    title = title,
-                    colors = colors ?: DayOfWeekRangePickerDefaults.colors(),
-                )
-            }
-        }
-    }
-
-    companion object {
-        fun of(onDayOfWeekRangeChange: (DayOfWeek, DayOfWeek) -> Unit) =
-            Default(DayOfWeekRangePickerConfirmEventHandler.Default(onDayOfWeekRangeChange))
-    }
-}
-
 @Composable
-private fun DayOfWeekRangePickerSheetContent(
+fun DayOfWeekRangePicker(
     startDayOfWeek: DayOfWeek,
     endDayOfWeek: DayOfWeek,
     onConfirm: (DayOfWeek, DayOfWeek) -> Unit,
     onDismiss: () -> Unit,
     dismissButton: (@Composable (hideSheet: () -> Unit) -> Unit)?,
     title: (@Composable () -> Unit)?,
-    colors: DayOfWeekRangePickerColors,
     modifier: Modifier = Modifier,
+    colors: DayOfWeekRangePickerColors = DayOfWeekRangePickerDefaults.colors(),
 ) {
     val days = DayOfWeek.entries
     var selectedStart by remember(startDayOfWeek) { mutableStateOf(startDayOfWeek) }
@@ -242,5 +143,47 @@ private fun DayOfWeekRangePickerSheetContent(
                 Text(text = stringResource(R.string.common_action_ok))
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DayOfWeekRangePickerModalBottomSheet(
+    startDayOfWeek: DayOfWeek,
+    endDayOfWeek: DayOfWeek,
+    onHide: () -> Unit,
+    onConfirm: (DayOfWeek, DayOfWeek) -> Unit,
+    modifier: Modifier = Modifier,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+) {
+    val scope = rememberCoroutineScope()
+    val hideSheetAnimated: () -> Unit = {
+        scope.launch { sheetState.hideAndThen { onHide() } }
+    }
+
+    LaunchedEffect(sheetState) { sheetState.show() }
+
+    ModalBottomSheet(
+        onDismissRequest = hideSheetAnimated,
+        sheetState = sheetState,
+        sheetGesturesEnabled = false,
+        modifier = modifier,
+    ) {
+        DayOfWeekRangePicker(
+            startDayOfWeek = startDayOfWeek,
+            endDayOfWeek = endDayOfWeek,
+            onConfirm = { start, end ->
+                onConfirm(start, end)
+                hideSheetAnimated()
+            },
+            onDismiss = hideSheetAnimated,
+            dismissButton = { TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) } },
+            title = {
+                Text(
+                    text = stringResource(R.string.day_of_week_range_picker_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            },
+        )
     }
 }

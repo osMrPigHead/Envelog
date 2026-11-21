@@ -16,14 +16,14 @@ import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.core.time.next
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.ui.component.AutoSizeText
-import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsPercent
 import cn.osmrpighead.envelog.ui.text.Formatter.formattedAmount
 import cn.osmrpighead.envelog.ui.text.orDefault
 import cn.osmrpighead.envelog.ui.text.relativeDate
-import cn.osmrpighead.envelog.ui.theme.AppTheme
+import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.math.BigDecimal
 import java.time.DayOfWeek
@@ -129,7 +129,7 @@ private fun EnvelopeCardViewContent(
                     R.string.overview_envelope_card_available_title,
                     model.relativeDate(today),
                 ),
-                color = AppTheme.colorScheme.onSurfaceTertiary,
+                color = EnvelogTheme.colorScheme.onSurfaceTertiary,
                 style = MaterialTheme.typography.labelSmall,
             )
             Row {
@@ -160,7 +160,7 @@ private fun EnvelopeCardViewContent(
         ) {
             Text(
                 text = stringResource(R.string.overview_envelope_card_no_budget),
-                color = AppTheme.colorScheme.onSurfaceTertiary,
+                color = EnvelogTheme.colorScheme.onSurfaceTertiary,
                 style = MaterialTheme.typography.labelSmall,
             )
         }
@@ -178,18 +178,18 @@ private fun EnvelopeCardManageContent(
     Row(modifier = modifier) {
         if (canDelete) IconButton(onClick = onDeleteClick) {
             Icon(
-                imageVector = Icon.Delete,
+                imageVector = Icons.Delete,
                 contentDescription = stringResource(R.string.overview_envelope_action_delete),
             )
         } else IconButton(onClick = onArchiveClick) {
             Icon(
-                imageVector = Icon.Inventory2,
+                imageVector = Icons.Inventory2,
                 contentDescription = stringResource(R.string.overview_envelope_action_archive),
             )
         }
         IconButton(onClick = onEditClick) {
             Icon(
-                imageVector = Icon.Edit,
+                imageVector = Icons.Edit,
                 contentDescription = stringResource(R.string.overview_envelope_action_edit),
             )
         }

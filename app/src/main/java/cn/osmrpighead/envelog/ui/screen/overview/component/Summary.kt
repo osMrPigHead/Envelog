@@ -19,7 +19,7 @@ import cn.osmrpighead.envelog.ui.screen.overview.model.*
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsPercent
-import cn.osmrpighead.envelog.ui.theme.AppTheme
+import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 
 @Composable
 fun Summary(
@@ -50,7 +50,7 @@ fun HeadlineSummary.Composable(modifier: Modifier = Modifier) = when (this) {
     is Remaining -> Column(modifier = modifier) {
         Text(
             text = stringResource(R.string.overview_summary_remaining_title),
-            color = AppTheme.colorScheme.onSurfaceTertiary,
+            color = EnvelogTheme.colorScheme.onSurfaceTertiary,
             style = MaterialTheme.typography.labelSmall,
         )
         Row(
@@ -84,7 +84,7 @@ fun HeadlineSummary.Composable(modifier: Modifier = Modifier) = when (this) {
                         Formatter.PercentInteger,
                     ) ?: stringResource(R.string.symbol_percent_nan),
                 ),
-                color = AppTheme.colorScheme.onSurfaceTertiary,
+                color = EnvelogTheme.colorScheme.onSurfaceTertiary,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -93,7 +93,7 @@ fun HeadlineSummary.Composable(modifier: Modifier = Modifier) = when (this) {
             progress = { usedProportion.ratio.toFloat() },
             gapSize = dimensionResource(R.dimen.space0),
             drawStopIndicator = {},
-            color = AppTheme.colorScheme.health, // TODO: Color
+            color = EnvelogTheme.colorScheme.health, // TODO: Color
             modifier = Modifier.fillMaxWidth().padding(vertical = dimensionResource(R.dimen.space4)),
         )
     }
@@ -104,7 +104,7 @@ private fun SimpleSummary(@StringRes title: Int, cents: Long, modifier: Modifier
     Row(verticalAlignment = Alignment.Bottom, modifier = modifier) {
         Text(
             text = stringResource(title),
-            color = AppTheme.colorScheme.onSurfaceTertiary,
+            color = EnvelogTheme.colorScheme.onSurfaceTertiary,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.End,
             modifier = Modifier.padding(end = dimensionResource(R.dimen.space8)),

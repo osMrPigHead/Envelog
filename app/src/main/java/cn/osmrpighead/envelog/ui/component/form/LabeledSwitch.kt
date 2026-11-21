@@ -1,9 +1,8 @@
 package cn.osmrpighead.envelog.ui.component.form
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Switch
@@ -23,6 +22,8 @@ fun LabeledSwitch(
     label: @Composable () -> Unit,
 ) {
     Row(
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space8)),
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .toggleable(
                 value = checked,
@@ -31,12 +32,11 @@ fun LabeledSwitch(
                 onValueChange = onCheckedChange,
             )
             .padding(
-                horizontal = dimensionResource(R.dimen.spacing8),
-                vertical = dimensionResource(R.dimen.spacing2),
+                horizontal = dimensionResource(R.dimen.space16),
+                vertical = dimensionResource(R.dimen.space4),
             ),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.weight(1f).padding(end = dimensionResource(R.dimen.spacing4))) { label() }
+        Box(modifier = Modifier.weight(1f)) { label() }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,

@@ -1,6 +1,6 @@
 package cn.osmrpighead.envelog.ui.icon
 
-object Icon {
+object Icons {
     val AddCircle = add_circle
     val ArrowBack = arrow_back
     val Backspace = backspace

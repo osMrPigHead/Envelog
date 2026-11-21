@@ -1,26 +1,25 @@
-package cn.osmrpighead.envelog.ui.component.form
+package cn.osmrpighead.envelog.ui.component
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.component.pickerwheel.YearMonthPickerModalBottomSheet
+import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.text.yearMonthText
 import java.time.YearMonth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MonthPickerButton(
+fun OutlinedYearMonthButton(
     yearMonth: YearMonth,
-    sheetBuilder: MonthPickerSheetBuilder,
+    onYearMonthChange: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     minYearMonth: YearMonth? = null,
@@ -40,16 +39,17 @@ fun MonthPickerButton(
     ) {
         Text(text = yearMonthText(yearMonth))
         Icon(
-            imageVector = Icon.KeyboardArrowDown,
+            imageVector = Icons.KeyboardArrowDown,
             contentDescription = null,
             modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing2)),
         )
     }
 
-    if (showSheet) sheetBuilder.Composable(
+    if (showSheet) YearMonthPickerModalBottomSheet(
         yearMonth = yearMonth,
         minYearMonth = minYearMonth,
         maxYearMonth = maxYearMonth,
-        hideSheet = { showSheet = false },
+        onHide = { showSheet = false },
+        onConfirm = onYearMonthChange,
     )
 }

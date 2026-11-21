@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 
 @Composable
@@ -44,7 +44,7 @@ fun PromptBar(
                 label = "icon",
             ) { isManaging ->
                 Icon(
-                    imageVector = if (isManaging) Icon.ListAltFilled else Icon.ListAlt,
+                    imageVector = if (isManaging) Icons.ListAltFilled else Icons.ListAlt,
                     contentDescription = if (isManaging) stringResource(R.string.overview_action_manage_finish)
                     else stringResource(R.string.overview_action_manage),
                 )

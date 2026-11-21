@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,7 +19,7 @@ import cn.osmrpighead.envelog.data.model.ExpenseAllocation
 import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
-import cn.osmrpighead.envelog.ui.component.form.OptionalTextField
+import cn.osmrpighead.envelog.ui.component.form.textfield.preset.SubtleTextField
 import cn.osmrpighead.envelog.ui.component.numkeypad.BottomAnimatedNumKeypad
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
@@ -55,14 +54,14 @@ fun RecordModalBottomSheet(
     val numKeypadVisibility = remember { MutableTransitionState(!imeVisible) }
     numKeypadVisibility.targetState = !imeVisible
 
-    val note = rememberTextFieldState()
+    var note by remember { mutableStateOf("") }
     var numKeypadState by remember { mutableStateOf(NumKeypadState()) }
     val consumer = remember {
         AmountConsumer(
             scale = 2,
             roundingMode = RoundingMode.HALF_UP,
             submit = {
-                submit(buildExpenseSubmission(selectedEnvelope, it, note.text.toString()))
+                submit(buildExpenseSubmission(selectedEnvelope, it, note))
             },
             cancel = hideAndClose,
         )
@@ -122,8 +121,9 @@ fun RecordModalBottomSheet(
                         else -> Spacer(modifier = Modifier.height(MaterialTheme.typography.bodySmall.lineHeightAsDp))
                     }
                 }
-                OptionalTextField(
-                    state = note,
+                SubtleTextField(
+                    value = note,
+                    onValueChange = { note = it },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(text = stringResource(R.string.record_expense_note_label)) }
             }

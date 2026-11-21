@@ -33,11 +33,7 @@ fun Ledger(
     onDateClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = dimensionResource(R.dimen.spacing4)),
-    ) {
+    Column(modifier = modifier) {
         AnimatedContent(
             targetState = activeTab,
             transitionSpec = {
@@ -60,7 +56,7 @@ fun Ledger(
                     onBudgetClick = onBudgetClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = dimensionResource(R.dimen.spacing8))
+                        .padding(horizontal = dimensionResource(R.dimen.space12))
                         .verticalScroll(rememberScrollState()),
                 )
 
@@ -68,18 +64,10 @@ fun Ledger(
                     budgets = ledgerState.budgets,
                     yearMonth = yearMonth,
                     onBudgetClick = { onBudgetClick(it, null) },
-                    modifier = Modifier.padding(
-                        top = dimensionResource(R.dimen.spacing4),
-                        bottom = dimensionResource(R.dimen.spacing8),
-                    ),
                 )
 
                 EnvelopeTab.Allocation -> AllocationList(
                     allocations = ledgerState.allocations,
-                    modifier = Modifier.padding(
-                        top = dimensionResource(R.dimen.spacing4),
-                        bottom = dimensionResource(R.dimen.spacing8),
-                    ),
                 )
             }
         }

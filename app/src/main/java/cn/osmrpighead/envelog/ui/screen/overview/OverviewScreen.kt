@@ -17,16 +17,15 @@ import cn.osmrpighead.envelog.data.model.EnvelopeId
 import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
-import cn.osmrpighead.envelog.ui.component.form.MonthPickerButton
-import cn.osmrpighead.envelog.ui.component.form.MonthPickerSheetBuilder
-import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.component.OutlinedYearMonthButton
+import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.overview.component.EnvelopeCard
 import cn.osmrpighead.envelog.ui.screen.overview.component.PromptBar
 import cn.osmrpighead.envelog.ui.screen.overview.component.RecordModalBottomSheet
 import cn.osmrpighead.envelog.ui.screen.overview.component.Summary
 import cn.osmrpighead.envelog.ui.style.animateItemWithToken
-import cn.osmrpighead.envelog.ui.theme.AppTheme
+import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -53,9 +52,9 @@ fun OverviewScreen(
                     )
                 },
                 actions = {
-                    MonthPickerButton(
+                    OutlinedYearMonthButton(
                         yearMonth = uiState.yearMonth,
-                        sheetBuilder = MonthPickerSheetBuilder.of(selectMonth),
+                        onYearMonthChange = selectMonth,
                         modifier = Modifier.padding(end = dimensionResource(R.dimen.space20)),
                     )
                 },
@@ -125,7 +124,7 @@ private fun SuccessBody(
                     managing = managing,
                     diffColor = { diffAmount ->
                         if (diffAmount < 0) MaterialTheme.colorScheme.error
-                        else AppTheme.colorScheme.positive
+                        else EnvelogTheme.colorScheme.positive
                     },  // TODO: User rule
                     onClick = {
                         requireExpenseFormState()
@@ -192,7 +191,7 @@ fun NewEnvelope(
             horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space4)),
         ) {
             Icon(
-                imageVector = Icon.AddCircle,
+                imageVector = Icons.AddCircle,
                 contentDescription = null,
                 modifier = Modifier.size(
                     with(LocalDensity.current) {

@@ -1,31 +1,18 @@
-package cn.osmrpighead.envelog.ui.component.form
+package cn.osmrpighead.envelog.ui.component.pickerwheel
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.ui.util.hideAndThen
 import kotlinx.coroutines.launch
 import java.time.YearMonth
 
@@ -56,94 +44,8 @@ object MonthPickerDefaults {
     )
 }
 
-sealed interface MonthPickerSheetBuilder {
-    @Composable
-    fun Composable(
-        yearMonth: YearMonth,
-        minYearMonth: YearMonth?,
-        maxYearMonth: YearMonth?,
-        hideSheet: () -> Unit,
-        modifier: Modifier = Modifier,
-    )
-
-    class Custom(
-        private val composable: @Composable (
-            yearMonth: YearMonth,
-            minYearMonth: YearMonth?,
-            maxYearMonth: YearMonth?,
-            hideSheet: () -> Unit,
-            modifier: Modifier,
-        ) -> Unit,
-    ) : MonthPickerSheetBuilder {
-        @Composable
-        override fun Composable(
-            yearMonth: YearMonth,
-            minYearMonth: YearMonth?,
-            maxYearMonth: YearMonth?,
-            hideSheet: () -> Unit,
-            modifier: Modifier,
-        ) = composable(yearMonth, minYearMonth, maxYearMonth, hideSheet, modifier)
-    }
-
-    class Default(
-        private val confirmEventHandler: MonthPickerConfirmEventHandler,
-        private val onDismiss: (hideSheet: () -> Unit) -> Unit = { it() },
-        private val dismissButton: (@Composable (hideSheet: () -> Unit) -> Unit)? = {
-            TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) }
-        },
-        private val title: (@Composable () -> Unit)? = {
-            Text(
-                text = stringResource(R.string.month_picker_title),
-                style = MaterialTheme.typography.titleLarge,
-            )
-        },
-        private val colors: MonthPickerColors? = null,
-    ) : MonthPickerSheetBuilder {
-        @OptIn(ExperimentalMaterial3Api::class)
-        @Composable
-        override fun Composable(
-            yearMonth: YearMonth,
-            minYearMonth: YearMonth?,
-            maxYearMonth: YearMonth?,
-            hideSheet: () -> Unit,
-            modifier: Modifier,
-        ) {
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            val scope = rememberCoroutineScope()
-            val hideSheetAnimated: () -> Unit = {
-                scope.launch { sheetState.hide() }.invokeOnCompletion { hideSheet() }
-            }
-
-            LaunchedEffect(sheetState) { sheetState.show() }
-
-            ModalBottomSheet(
-                onDismissRequest = { onDismiss(hideSheetAnimated) },
-                sheetState = sheetState,
-                sheetGesturesEnabled = false,
-                modifier = modifier,
-            ) {
-                MonthPickerSheetContent(
-                    yearMonth = yearMonth,
-                    minYearMonth = minYearMonth,
-                    maxYearMonth = maxYearMonth,
-                    onConfirm = { confirmEventHandler.onConfirm(it, hideSheetAnimated) },
-                    onDismiss = hideSheetAnimated,
-                    dismissButton = dismissButton,
-                    title = title,
-                    colors = colors ?: MonthPickerDefaults.colors(),
-                )
-            }
-        }
-    }
-
-    companion object {
-        fun of(onYearMonthChange: (YearMonth) -> Unit) =
-            Default(MonthPickerConfirmEventHandler.Default(onYearMonthChange))
-    }
-}
-
 @Composable
-private fun MonthPickerSheetContent(
+fun YearMonthPicker(
     yearMonth: YearMonth,
     minYearMonth: YearMonth?,
     maxYearMonth: YearMonth?,
@@ -151,8 +53,8 @@ private fun MonthPickerSheetContent(
     onDismiss: () -> Unit,
     dismissButton: (@Composable (hideSheet: () -> Unit) -> Unit)?,
     title: (@Composable () -> Unit)?,
-    colors: MonthPickerColors,
     modifier: Modifier = Modifier,
+    colors: MonthPickerColors = MonthPickerDefaults.colors(),
 ) {
     val range = remember(minYearMonth, maxYearMonth) { MonthPickerRange(minYearMonth, maxYearMonth) }
     val initialSelection = remember(range, yearMonth) { range.coerce(yearMonth) }
@@ -269,3 +171,46 @@ private fun MonthPickerSheetContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun YearMonthPickerModalBottomSheet(
+    yearMonth: YearMonth,
+    onHide: () -> Unit,
+    onConfirm: (YearMonth) -> Unit,
+    modifier: Modifier = Modifier,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    minYearMonth: YearMonth? = null,
+    maxYearMonth: YearMonth? = null,
+) {
+    val scope = rememberCoroutineScope()
+    val hideSheetAnimated: () -> Unit = {
+        scope.launch { sheetState.hideAndThen { onHide() } }
+    }
+
+    LaunchedEffect(sheetState) { sheetState.show() }
+
+    ModalBottomSheet(
+        onDismissRequest = hideSheetAnimated,
+        sheetState = sheetState,
+        sheetGesturesEnabled = false,
+        modifier = modifier,
+    ) {
+        YearMonthPicker(
+            yearMonth = yearMonth,
+            minYearMonth = minYearMonth,
+            maxYearMonth = maxYearMonth,
+            onConfirm = {
+                onConfirm(it)
+                hideSheetAnimated()
+            },
+            onDismiss = hideSheetAnimated,
+            dismissButton = { TextButton(onClick = it) { Text(stringResource(R.string.common_action_cancel)) } },
+            title = {
+                Text(
+                    text = stringResource(R.string.month_picker_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            },
+        )
+    }
+}

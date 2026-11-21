@@ -8,11 +8,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 
-object AppTheme {
-    val colorScheme: AppColorScheme
+object EnvelogTheme {
+    val colorScheme: EnvelogColorScheme
         @Composable
         @ReadOnlyComposable
-        get() = LocalAppColorScheme.current
+        get() = LocalEnvelogColorScheme.current
 }
 
 @Composable
@@ -22,7 +22,7 @@ fun EnvelogTheme(
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
-        LocalAppColorScheme provides if (darkTheme) AppDarkColorScheme else AppLightColorScheme
+        LocalEnvelogColorScheme provides if (darkTheme) EnvelogDarkColorScheme else EnvelogLightColorScheme
     ) {
         MaterialTheme(
             colorScheme = when {

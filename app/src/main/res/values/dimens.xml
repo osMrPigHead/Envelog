@@ -25,5 +25,6 @@
     <dimen name="space48">48dp</dimen>
 
     <dimen name="minTouchTarget">48dp</dimen>
-    <dimen name="optionalFieldVerticalPadding">4dp</dimen>
+    <dimen name="subtleFieldVerticalPadding">4dp</dimen>
+    <dimen name="wheelItemHeight">48dp</dimen>
 </resources>

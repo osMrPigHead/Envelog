@@ -1,14 +1,7 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,9 +12,8 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.component.DangerButton
 import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
-import cn.osmrpighead.envelog.ui.component.form.MonthPickerButton
-import cn.osmrpighead.envelog.ui.component.form.MonthPickerSheetBuilder
-import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.component.OutlinedYearMonthButton
+import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.component.*
 import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
@@ -41,6 +33,41 @@ val EnvelopeTab.labelRes: Int
         EnvelopeTab.Allocation -> R.string.envelope_edit_tab_expenses
     }
 
+@Composable
+fun EnvelopeScreen(
+    uiState: EnvelopeUiState,
+    onEvent: (EnvelopeEvent) -> Unit,
+    back: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopBar(
+                yearMonth = uiState.yearMonth,
+                saveBeforeQuit = uiState.detail.saveAndQuit,
+                selectMonth = { onEvent(SelectMonth(it)) },
+                saveEnvelope = { onEvent(SaveEnvelope) },
+                back = back,
+            )
+        },
+    ) { innerPadding ->
+        Body(
+            yearMonth = uiState.yearMonth,
+            today = uiState.today,
+            detail = uiState.detail,
+            onEvent = onEvent,
+            back = back,
+            modifier = Modifier.padding(innerPadding),
+        )
+        Overlays(
+            yearMonth = uiState.yearMonth,
+            detail = uiState.detail,
+            onEvent = onEvent,
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar(
@@ -56,119 +83,19 @@ private fun TopBar(
         navigationIcon = {
             IconButton(onClick = if (saveBeforeQuit) saveEnvelope else back) {
                 Icon(
-                    imageVector = Icon.ArrowBack,
+                    imageVector = Icons.ArrowBack,
                     contentDescription = stringResource(R.string.common_action_back),
                 )
             }
         },
         actions = {
-            MonthPickerButton(
-                yearMonth,
-                MonthPickerSheetBuilder.of(selectMonth),
-                modifier = Modifier.padding(end = dimensionResource(R.dimen.spacing10)),
+            OutlinedYearMonthButton(
+                yearMonth = yearMonth,
+                onYearMonthChange = selectMonth,
+                modifier = Modifier.padding(end = dimensionResource(R.dimen.space20)),
             )
         },
         modifier = modifier,
-    )
-}
-
-@Composable
-private fun SuccessBody(
-    yearMonth: YearMonth,
-    today: LocalDate,
-    dismissed: Boolean,
-    detail: EnvelopeDetail.Success,
-    onEvent: (EnvelopeEvent) -> Unit,
-    back: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LaunchedEffect(detail.envelopeForm.state) {
-        if (detail.envelopeForm.state == FormState.Completed) back()
-    }
-
-    var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
-    val visibleTabs =
-        if (detail.envelopeForm.envelope.isBudgeted) EnvelopeTab.entries
-        else EnvelopeTab.entries - EnvelopeTab.Budget
-    val activeTab = selectedTab.takeIf { it in visibleTabs } ?: visibleTabs.first()
-
-    var showArchiveConfirmation by rememberSaveable { mutableStateOf(false) }
-    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
-
-    Column(modifier = modifier) {
-        Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.spacing8))) {
-            EnvelopeForm(
-                yearMonth = yearMonth,
-                today = today,
-                form = detail.envelopeForm,
-                dismissed = dismissed,
-                update = { onEvent(UpdateEnvelope(it)) },
-                quickset = { onEvent(OpenQuickSet) },
-            )
-
-            SecondaryTabRow(selectedTabIndex = visibleTabs.indexOf(activeTab)) {
-                for (tab in visibleTabs) Tab(
-                    selected = activeTab == tab,
-                    onClick = { selectedTab = tab },
-                    text = { Text(text = stringResource(tab.labelRes)) },
-                )
-            }
-        }
-
-        Ledger(
-            yearMonth = yearMonth,
-            ledgerState = detail.ledgerState,
-            activeTab = activeTab,
-            onBudgetClick = { id, date -> onEvent(OpenDetailWithExistingBudget(id, date)) },
-            onDateClick = { onEvent(OpenDetailCreatingBudget(it)) },
-            modifier = Modifier.weight(1f),
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing3)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = dimensionResource(R.dimen.spacing10),
-                    vertical = dimensionResource(R.dimen.spacing2),
-                ),
-        ) {
-            if (detail.envelopeForm.isNew)
-                DangerButton(
-                    onClick = back,
-                    modifier = Modifier.weight(1f),
-                ) { Text(text = stringResource(R.string.common_action_cancel)) }
-            else if (detail.isDeletable)
-                DangerButton(
-                    onClick = { showDeleteConfirmation = true },
-                    modifier = Modifier.weight(1f),
-                ) { Text(text = stringResource(R.string.common_action_delete_envelope)) }
-            else
-                DangerButton(
-                    onClick = { showArchiveConfirmation = true },
-                    modifier = Modifier.weight(1f),
-                ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
-            FilledTonalButton(
-                onClick = { onEvent(SaveEnvelope) },
-                modifier = Modifier.weight(1f),
-            ) { Text(text = stringResource(R.string.common_action_save_and_back)) }
-        }
-    }
-
-    if (showArchiveConfirmation) ArchiveEnvelopeConfirmationDialog(
-        onConfirm = {
-            showArchiveConfirmation = false
-            onEvent(ArchiveEnvelope)
-        },
-        onDismiss = { showArchiveConfirmation = false },
-    )
-
-    if (showDeleteConfirmation) DeleteEnvelopeConfirmationDialog(
-        onConfirm = {
-            showDeleteConfirmation = false
-            onEvent(DeleteEnvelope)
-        },
-        onDismiss = { showDeleteConfirmation = false },
     )
 }
 
@@ -235,36 +162,105 @@ private fun Overlays(
 }
 
 @Composable
-fun EnvelopeScreen(
-    uiState: EnvelopeUiState,
+private fun SuccessBody(
+    yearMonth: YearMonth,
+    today: LocalDate,
+    dismissed: Boolean,
+    detail: EnvelopeDetail.Success,
     onEvent: (EnvelopeEvent) -> Unit,
     back: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopBar(
-                yearMonth = uiState.yearMonth,
-                saveBeforeQuit = uiState.detail.saveAndQuit,
-                selectMonth = { onEvent(SelectMonth(it)) },
-                saveEnvelope = { onEvent(SaveEnvelope) },
-                back = back,
-            )
-        },
-    ) { innerPadding ->
-        Body(
-            yearMonth = uiState.yearMonth,
-            today = uiState.today,
-            detail = uiState.detail,
-            onEvent = onEvent,
-            back = back,
-            modifier = Modifier.padding(innerPadding),
-        )
-        Overlays(
-            yearMonth = uiState.yearMonth,
-            detail = uiState.detail,
-            onEvent = onEvent,
-        )
+    LaunchedEffect(detail.envelopeForm.state) {
+        if (detail.envelopeForm.state == FormState.Completed) back()
     }
+
+    var selectedTab by rememberSaveable { mutableStateOf(EnvelopeTab.Calendar) }
+    val visibleTabs =
+        if (detail.envelopeForm.envelope.isBudgeted) EnvelopeTab.entries
+        else EnvelopeTab.entries - EnvelopeTab.Budget
+    val activeTab = selectedTab.takeIf { it in visibleTabs } ?: visibleTabs.first()
+
+    var showArchiveConfirmation by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
+
+    Column(modifier = modifier.padding(top = dimensionResource(R.dimen.space4))) {
+        Column(modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.space16))) {
+            EnvelopeForm(
+                yearMonth = yearMonth,
+                today = today,
+                form = detail.envelopeForm,
+                dismissed = dismissed,
+                update = { onEvent(UpdateEnvelope(it)) },
+                quickset = { onEvent(OpenQuickSet) },
+                modifier = Modifier,
+            )
+
+            SecondaryTabRow(selectedTabIndex = visibleTabs.indexOf(activeTab)) {
+                for (tab in visibleTabs) Tab(
+                    selected = activeTab == tab,
+                    onClick = { selectedTab = tab },
+                    text = { Text(text = stringResource(tab.labelRes)) },
+                )
+            }
+        }
+
+        Ledger(
+            yearMonth = yearMonth,
+            ledgerState = detail.ledgerState,
+            activeTab = activeTab,
+            onBudgetClick = { id, date -> onEvent(OpenDetailWithExistingBudget(id, date)) },
+            onDateClick = { onEvent(OpenDetailCreatingBudget(it)) },
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(top = dimensionResource(R.dimen.space16)),
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space8)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = dimensionResource(R.dimen.space20),
+                    vertical = dimensionResource(R.dimen.space4),
+                ),
+        ) {
+            if (detail.envelopeForm.isNew)
+                DangerButton(
+                    onClick = back,
+                    modifier = Modifier.weight(1f),
+                ) { Text(text = stringResource(R.string.common_action_cancel)) }
+            else if (detail.isDeletable)
+                DangerButton(
+                    onClick = { showDeleteConfirmation = true },
+                    modifier = Modifier.weight(1f),
+                ) { Text(text = stringResource(R.string.common_action_delete_envelope)) }
+            else
+                DangerButton(
+                    onClick = { showArchiveConfirmation = true },
+                    modifier = Modifier.weight(1f),
+                ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
+            FilledTonalButton(
+                onClick = { onEvent(SaveEnvelope) },
+                modifier = Modifier.weight(1f),
+            ) { Text(text = stringResource(R.string.common_action_save_and_back)) }
+        }
+    }
+
+    if (showArchiveConfirmation) ArchiveEnvelopeConfirmationDialog(
+        onConfirm = {
+            showArchiveConfirmation = false
+            onEvent(ArchiveEnvelope)
+        },
+        onDismiss = { showArchiveConfirmation = false },
+    )
+
+    if (showDeleteConfirmation) DeleteEnvelopeConfirmationDialog(
+        onConfirm = {
+            showDeleteConfirmation = false
+            onEvent(DeleteEnvelope)
+        },
+        onDismiss = { showDeleteConfirmation = false },
+    )
 }

@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,9 +25,9 @@ import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.ClosedDateSpan
 import cn.osmrpighead.envelog.core.time.toHalfOpenDateSpan
 import cn.osmrpighead.envelog.core.time.toLocalDate
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerDialogBuilder
-import cn.osmrpighead.envelog.ui.component.form.DateRangePickerField
-import cn.osmrpighead.envelog.ui.component.form.NumKeypadField
+import cn.osmrpighead.envelog.ui.component.form.textfield.EnvelogOutlinedTextField
+import cn.osmrpighead.envelog.ui.component.form.textfield.interactionfield.OutlinedDateRangeField
+import cn.osmrpighead.envelog.ui.component.form.textfield.interactionfield.OutlinedNumKeypadField
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadHostState
 import cn.osmrpighead.envelog.ui.model.AmountConsumer
 import cn.osmrpighead.envelog.ui.model.AmountValidationError
@@ -80,15 +78,14 @@ internal fun QuickSetIntervalField(
     val focusManager = LocalFocusManager.current
     val text = days.toString()
 
-    OutlinedTextField(
+    EnvelogOutlinedTextField(
         value = TextFieldValue(text, TextRange(text.length)),
         onValueChange = { input -> input.sanitizedIntervalDays(maxDays)?.let(onValueChange) },
         modifier = modifier.semantics { this.contentDescription = description },
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-        ),
+//        colors = OutlinedTextFieldDefaults.colors(
+//            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+//        ),
         enabled = enabled,
-        singleLine = true,
         isError = isError,
         supportingText = supportingText,
         label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_daily_label)) },
@@ -142,16 +139,16 @@ internal fun QuickSetAmountField(
             (active && consumer.validationError == AmountValidationError.NonPositive)
     val error = nonPositive || (active && consumer.validationError != null)
 
-    NumKeypadField(
+    OutlinedNumKeypadField(
         value = amount.formatAsAmount(Formatter.AmountInteger),
         host = host,
         consumer = consumer,
         fieldId = fieldId,
         enabled = selected,
         isError = error && selected,
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-        ),
+//        colors = OutlinedTextFieldDefaults.colors(
+//            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+//        ),
         supportingText =
             if (nonPositive && selected) {
                 { Text(text = stringResource(R.string.common_msg_amount_positive)) }
@@ -187,13 +184,10 @@ internal fun QuickSetTargetRangeField(
         }
     }
 
-    DateRangePickerField(
+    OutlinedDateRangeField(
         span = span,
-        dialogBuilder = DateRangePickerDialogBuilder.of(
-            onSpanChange = onSpanChange,
-            initialSpan = span,
-            selectableDates = selectableDates,
-        ),
+        onSpanChange = onSpanChange,
+        selectableDates = selectableDates,
         enabled = enabled,
         label = { Text(text = stringResource(R.string.envelope_edit_quick_set_range_label)) },
         modifier = Modifier

@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.component.numkeypad
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
@@ -18,7 +17,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.ui.icon.Icon
+import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.style.radialFilledWeight
 import cn.osmrpighead.envelog.ui.theme.ButtonColor
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
@@ -154,7 +153,7 @@ fun DeleteButton(
     enabled = state.enabled && !state.fatal,
     modifier = modifier,
     colors = ButtonColor.textDanger,
-) { Icon(imageVector = Icon.Backspace, contentDescription = stringResource(R.string.numkeypad_action_backspace)) }
+) { Icon(imageVector = Icons.Backspace, contentDescription = stringResource(R.string.numkeypad_action_backspace)) }
 
 @Composable
 fun NumKeypad(
@@ -219,7 +218,7 @@ fun NumKeypad(
                         colors = ButtonColor.textDanger,
                     ) {
                         Icon(
-                            imageVector = Icon.KeyboardArrowDown,
+                            imageVector = Icons.KeyboardArrowDown,
                             contentDescription = stringResource(R.string.common_action_cancel),
                         )
                     }
