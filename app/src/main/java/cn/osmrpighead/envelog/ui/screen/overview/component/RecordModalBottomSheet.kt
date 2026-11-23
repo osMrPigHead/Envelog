@@ -19,6 +19,7 @@ import cn.osmrpighead.envelog.data.model.ExpenseAllocation
 import cn.osmrpighead.envelog.data.model.ExpenseId
 import cn.osmrpighead.envelog.data.model.ExpenseSubmission
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
+import cn.osmrpighead.envelog.ui.component.ImeInvisibleBackHandler
 import cn.osmrpighead.envelog.ui.component.form.textfield.preset.SubtleTextField
 import cn.osmrpighead.envelog.ui.component.numkeypad.BottomAnimatedNumKeypad
 import cn.osmrpighead.envelog.ui.component.numkeypad.NumKeypadState
@@ -83,7 +84,7 @@ fun RecordModalBottomSheet(
         properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
         modifier = modifier,
     ) {
-        BackHandler { if (!imeVisible) hideAndClose() }
+        ImeInvisibleBackHandler { hideAndClose() }
 
         Column(modifier = Modifier.wrapContentHeight()) {
             LazyRow(

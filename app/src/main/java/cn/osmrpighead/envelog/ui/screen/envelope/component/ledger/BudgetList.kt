@@ -1,4 +1,4 @@
-package cn.osmrpighead.envelog.ui.screen.envelope.component
+package cn.osmrpighead.envelog.ui.screen.envelope.component.ledger
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

@@ -1,6 +1,5 @@
 package cn.osmrpighead.envelog.ui.screen.envelope
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,12 +9,15 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.ui.component.DangerButton
+import cn.osmrpighead.envelog.ui.component.ImeInvisibleBackHandler
 import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.OutlinedYearMonthButton
 import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.component.*
+import cn.osmrpighead.envelog.ui.screen.envelope.component.ledger.EnvelopeTab
+import cn.osmrpighead.envelog.ui.screen.envelope.component.ledger.Ledger
 import cn.osmrpighead.envelog.ui.screen.envelope.component.quickset.QuickSetBudgetModalBottomSheet
 import java.time.LocalDate
 import java.time.YearMonth
@@ -99,7 +101,6 @@ private fun TopBar(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Body(
     yearMonth: YearMonth,
@@ -110,10 +111,9 @@ private fun Body(
     modifier: Modifier = Modifier,
 ) {
     var dismissed by remember { mutableStateOf(false) }
-    val imeVisible = WindowInsets.isImeVisible
-    BackHandler {
-        if (imeVisible) return@BackHandler
-        if (detail.saveAndQuit) onEvent(SaveEnvelope) else {
+    ImeInvisibleBackHandler {
+        if (detail.saveAndQuit) onEvent(SaveEnvelope)
+        else {
             dismissed = true
             back()
         }
@@ -147,6 +147,7 @@ private fun Overlays(
 
     if (detail.quickSetFormModalState != null) QuickSetBudgetModalBottomSheet(
         yearMonth = yearMonth,
+        currency = detail.envelopeForm.envelope.currency,
         modalState = detail.quickSetFormModalState,
         update = { onEvent(UpdateQuickSet(it)) },
         apply = { onEvent(ApplyQuickSet(it)) },

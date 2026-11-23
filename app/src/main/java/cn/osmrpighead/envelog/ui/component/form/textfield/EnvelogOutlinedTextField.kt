@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
@@ -21,6 +22,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import cn.osmrpighead.envelog.ui.component.form.LocalFormActive
+import cn.osmrpighead.envelog.ui.component.form.LocalFormEnabled
+import cn.osmrpighead.envelog.ui.util.withTextStyle
 
 @Composable
 fun EnvelogOutlinedTextField(
@@ -28,6 +32,8 @@ fun EnvelogOutlinedTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    localEnabled: Boolean = LocalFormEnabled.current,
+    active: Boolean = LocalFormActive.current,
     readOnly: Boolean = false,
     style: EnvelogOutlinedTextFieldStyle = LocalEnvelogOutlinedTextFieldStyle.current,
     textStyle: TextStyle = LocalTextStyle.current,
@@ -44,6 +50,9 @@ fun EnvelogOutlinedTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val enabled = enabled && localEnabled && active
+    val supportingText = if (active) supportingText else null
+    val isError = active && isError
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val textColor =
         textStyle.color.takeOrElse {
@@ -93,8 +102,8 @@ fun EnvelogOutlinedTextField(
                         label = label,
                         leadingIcon = leadingIcon,
                         trailingIcon = trailingIcon,
-                        prefix = prefix,
-                        suffix = suffix,
+                        prefix = prefix?.withTextStyle(MaterialTheme.typography.bodySmall),
+                        suffix = suffix?.withTextStyle(MaterialTheme.typography.bodySmall),
                         supportingText = supportingText,
                         singleLine = style.singleLine,
                         enabled = enabled,
@@ -123,6 +132,8 @@ fun EnvelogOutlinedTextField(
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    localEnabled: Boolean = LocalFormEnabled.current,
+    active: Boolean = LocalFormActive.current,
     readOnly: Boolean = false,
     style: EnvelogOutlinedTextFieldStyle = LocalEnvelogOutlinedTextFieldStyle.current,
     textStyle: TextStyle = LocalTextStyle.current,
@@ -139,6 +150,9 @@ fun EnvelogOutlinedTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val enabled = enabled && localEnabled && active
+    val supportingText = if (active) supportingText else null
+    val isError = active && isError
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val textColor =
         textStyle.color.takeOrElse {
@@ -188,8 +202,8 @@ fun EnvelogOutlinedTextField(
                         label = label,
                         leadingIcon = leadingIcon,
                         trailingIcon = trailingIcon,
-                        prefix = prefix,
-                        suffix = suffix,
+                        prefix = prefix?.withTextStyle(MaterialTheme.typography.bodySmall),
+                        suffix = suffix?.withTextStyle(MaterialTheme.typography.bodySmall),
                         supportingText = supportingText,
                         singleLine = style.singleLine,
                         enabled = enabled,

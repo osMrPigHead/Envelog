@@ -7,11 +7,13 @@
     <string name="common_action_finish">Finish</string>
     <string name="common_action_ok">OK</string>
     <string name="common_action_save_and_back">Save and Back</string>
+    <string name="common_format_fraction" translatable="false">%1$s\u2009/\u2009%2$s</string>
     <string name="common_label_error">Error</string>
     <string name="common_label_name">Name</string>
     <string name="common_msg_amount_positive">Amount should be positive</string>
     <string name="currency_cny_prefix">¥\u2009</string>
     <string name="currency_cny_suffix">\u200b</string>
+    <string name="currency_format" translatable="false">%2$s%1$s%3$s</string>
     <string name="day_of_week_range_picker_label_end">End</string>
     <string name="day_of_week_range_picker_label_start">Start</string>
     <string name="day_of_week_range_picker_title">Select day range</string>
@@ -31,18 +33,18 @@
     <string name="envelope_edit_quick_set_title">Quick set</string>
     <string name="envelope_edit_quick_set_mode_daily_label">Daily</string>
     <string name="envelope_edit_quick_set_mode_weekly_label">Weekly</string>
+    <string name="envelope_edit_quick_set_mode_title">Entry mode</string>
     <string name="envelope_edit_quick_set_interval_prefix">Every</string>
-    <string name="envelope_edit_quick_set_interval_suffix">day(s)</string>
-    <string name="envelope_edit_quick_set_amount_unit">CNY</string>
     <string name="envelope_edit_quick_set_range_label">Target range</string>
     <string name="envelope_edit_quick_set_interval_field">Interval days</string>
     <string name="envelope_edit_quick_set_daily_amount_field">Daily amount</string>
     <string name="envelope_edit_quick_set_weekly_amount_field">Weekly amount</string>
     <string name="envelope_edit_quick_set_monthly_amount_field">Monthly amount</string>
     <string name="envelope_edit_quick_set_weekday_range_field">Day range</string>
-    <string name="envelope_edit_quick_set_preview_daily">Every %1$d day(s) %2$s · %3$d days · Total %4$s</string>
-    <string name="envelope_edit_quick_set_preview_weekly">Weekly %1$s %2$s · %3$d days · Total %4$s</string>
-    <string name="envelope_edit_quick_set_preview_monthly">Monthly total %1$s · %2$d days</string>
+    <plurals name="envelope_edit_quick_set_preview_span">
+        <item quantity="one">%1$d day total</item>
+        <item quantity="other">%1$d days total</item>
+    </plurals>
     <string name="envelope_edit_quick_set_interval_invalid">Interval must be a positive integer</string>
     <string name="envelope_edit_quick_set_cannot_generate">These settings cannot create budgets</string>
     <string name="envelope_edit_quick_set_conflict_title">Overwrite existing budgets?</string>
@@ -70,9 +72,8 @@
     <string name="overview_envelope_action_delete">Delete</string>
     <string name="overview_envelope_action_edit">Edit</string>
     <string name="overview_envelope_card_available_title">Available %1$s</string>
-    <string name="overview_envelope_card_budget_caption" translatable="false">%3$s%1$s\u2009/\u2009%2$s%4$s</string>
     <string name="overview_envelope_card_no_budget">No budget</string>
-    <string name="overview_envelope_card_non_budget_caption">%2$s%1$s%3$s used</string>
+    <string name="overview_envelope_card_non_budget_caption">%1$s used</string>
     <string name="overview_envelope_card_used_percent">(%1$s used)</string>
     <string name="overview_prompt_main">Tap an envelope to log spending</string>
     <string name="overview_summary_balance_title">Balance</string>
@@ -99,6 +100,10 @@
     <string name="time_format_within_days">within %1$dd</string>
     <string name="time_format_year">%1$04d</string>
     <string name="time_format_year_month">%1$04d-%2$02d</string>
+    <plurals name="time_plurals_day">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
     <string name="time_today">today</string>
     <string name="time_this_week">this week</string>
 </resources>

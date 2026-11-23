@@ -1,5 +1,6 @@
 package cn.osmrpighead.envelog.data.model
 
+import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.util.UUIDSerializer
 import cn.osmrpighead.envelog.util.generateUUID
 import kotlinx.serialization.Serializable
@@ -20,4 +21,5 @@ data class Envelope(
     val name: String,
     val isBudgeted: Boolean,
     val archived: Boolean,
+    val currency: CurrencyType = CurrencyType.CNY,
 )

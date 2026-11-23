@@ -1,6 +1,7 @@
 package cn.osmrpighead.envelog.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -16,3 +17,11 @@ val Typography = Typography(
         fontWeight = FontWeight.Medium,
     ),
 )
+
+data class EnvelogTypography(
+    private val typography: Typography,
+) {
+    val fieldMedium = typography.bodyMedium.copy(lineHeight = typography.bodyLarge.lineHeight)
+}
+
+val LocalEnvelogTypography = staticCompositionLocalOf { EnvelogTypography(Typography) }

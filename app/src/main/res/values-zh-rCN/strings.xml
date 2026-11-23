@@ -32,18 +32,17 @@
     <string name="envelope_edit_quick_set_title">快速设置</string>
     <string name="envelope_edit_quick_set_mode_daily_label">按日设置</string>
     <string name="envelope_edit_quick_set_mode_weekly_label">按周设置</string>
+    <string name="envelope_edit_quick_set_mode_title">设置方式</string>
     <string name="envelope_edit_quick_set_interval_prefix">每</string>
-    <string name="envelope_edit_quick_set_interval_suffix">日</string>
-    <string name="envelope_edit_quick_set_amount_unit">元</string>
     <string name="envelope_edit_quick_set_range_label">目标区间</string>
     <string name="envelope_edit_quick_set_interval_field">日数</string>
     <string name="envelope_edit_quick_set_daily_amount_field">每日金额</string>
     <string name="envelope_edit_quick_set_weekly_amount_field">每周金额</string>
     <string name="envelope_edit_quick_set_monthly_amount_field">整月金额</string>
     <string name="envelope_edit_quick_set_weekday_range_field">星期区间</string>
-    <string name="envelope_edit_quick_set_preview_daily">每 %1$d 日 %2$s · 共 %3$d 天 · 合计 %4$s</string>
-    <string name="envelope_edit_quick_set_preview_weekly">每周 %1$s %2$s · 共 %3$d 天 · 合计 %4$s</string>
-    <string name="envelope_edit_quick_set_preview_monthly">整月合计 %1$s · 共 %2$d 天</string>
+    <plurals name="envelope_edit_quick_set_preview_span">
+        <item quantity="other">%1$d 天共计</item>
+    </plurals>
     <string name="envelope_edit_quick_set_interval_invalid">日数必须为正整数</string>
     <string name="envelope_edit_quick_set_cannot_generate">当前设置无法生成预算</string>
     <string name="envelope_edit_quick_set_conflict_title">覆盖已有预算？</string>
@@ -66,7 +65,7 @@
     <string name="overview_envelope_action_edit">编辑</string>
     <string name="overview_envelope_card_available_title">%1$s可用</string>
     <string name="overview_envelope_card_no_budget">无预算</string>
-    <string name="overview_envelope_card_non_budget_caption">已用 %2$s%1$s%3$s</string>
+    <string name="overview_envelope_card_non_budget_caption">已用 %1$s</string>
     <string name="overview_envelope_card_used_percent">(已用 %1$s)</string>
     <string name="overview_prompt_main">点击信封记账</string>
     <string name="overview_summary_balance_title">结余</string>
@@ -88,6 +87,9 @@
     <string name="time_format_within_days">%1$d\u200a日内</string>
     <string name="time_format_year">%1$04d年</string>
     <string name="time_format_year_month">%1$04d年%2$02d月</string>
+    <plurals name="time_plurals_day">
+        <item quantity="other">日</item>
+    </plurals>
     <string name="time_today">今日</string>
     <string name="time_this_week">本周</string>
 </resources>

@@ -14,7 +14,34 @@ fun Modifier.formField(): Modifier = this
     .formFieldPadding()
 
 @Composable
-fun Modifier.formFieldPadding(): Modifier = padding(bottom = dimensionResource(R.dimen.space12))
+fun Modifier.formFieldPadding(): Modifier = formRowPadding().padding(horizontal = dimensionResource(R.dimen.space8))
+
+@Composable
+fun Modifier.formRow(): Modifier = this
+    .fillMaxWidth()
+    .formRowPadding()
+
+@Composable
+fun Modifier.formRowPadding(): Modifier = padding(bottom = dimensionResource(R.dimen.space12))
+
+@Composable
+fun Modifier.fieldPrefix(): Modifier = padding(end = dimensionResource(R.dimen.space4))
+
+@Composable
+fun Modifier.fieldSuffix(): Modifier = padding(start = dimensionResource(R.dimen.space4))
+
+@Composable
+fun Modifier.formSupportingText(): Modifier = this
+    .fillMaxWidth()
+    .formSupportingTextPadding()
+
+@Composable
+fun Modifier.formSupportingTextPadding(): Modifier = this
+    .padding(horizontal = dimensionResource(R.dimen.space16))
+    .padding(bottom = dimensionResource(R.dimen.space8))
+
+@Composable
+fun Modifier.inlineFormField(): Modifier = padding(end = dimensionResource(R.dimen.space8))
 
 @Composable
 fun Modifier.subtleField(): Modifier = heightIn(dimensionResource(R.dimen.minTouchTarget))

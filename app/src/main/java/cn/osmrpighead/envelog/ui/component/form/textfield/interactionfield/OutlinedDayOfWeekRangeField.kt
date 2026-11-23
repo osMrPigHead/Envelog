@@ -4,6 +4,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import cn.osmrpighead.envelog.ui.component.form.textfield.EnvelogOutlinedTextFieldStyle
+import cn.osmrpighead.envelog.ui.component.form.textfield.LocalEnvelogOutlinedTextFieldStyle
 import cn.osmrpighead.envelog.ui.component.pickerwheel.DayOfWeekRangePickerModalBottomSheet
 import cn.osmrpighead.envelog.ui.text.dayOfWeekRangeText
 import java.time.DayOfWeek
@@ -16,6 +18,7 @@ fun OutlinedDayOfWeekRangeField(
     onDayOfWeekRangeChange: (DayOfWeek, DayOfWeek) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    style: EnvelogOutlinedTextFieldStyle = LocalEnvelogOutlinedTextFieldStyle.current,
     textStyle: TextStyle = LocalTextStyle.current,
     label: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
@@ -37,6 +40,7 @@ fun OutlinedDayOfWeekRangeField(
         },
         modifier = modifier,
         enabled = enabled,
+        style = style,
         textStyle = textStyle,
         label = label,
         placeholder = placeholder,

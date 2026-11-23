@@ -24,6 +24,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
+import cn.osmrpighead.envelog.ui.component.form.LocalFormActive
+import cn.osmrpighead.envelog.ui.component.form.LocalFormEnabled
+import cn.osmrpighead.envelog.ui.util.withTextStyle
 
 @Composable
 fun EnvelogTextField(
@@ -31,6 +34,8 @@ fun EnvelogTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    localEnabled: Boolean = LocalFormEnabled.current,
+    active: Boolean = LocalFormActive.current,
     readOnly: Boolean = false,
     style: EnvelogTextFieldStyle = LocalEnvelogTextFieldStyle.current,
     textStyle: TextStyle = LocalTextStyle.current,
@@ -47,6 +52,9 @@ fun EnvelogTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val enabled = enabled && localEnabled && active
+    val supportingText = if (active) supportingText else null
+    val isError = active && isError
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val textColor =
         textStyle.color.takeOrElse {
@@ -96,8 +104,8 @@ fun EnvelogTextField(
                         label = label,
                         leadingIcon = leadingIcon,
                         trailingIcon = trailingIcon,
-                        prefix = prefix,
-                        suffix = suffix,
+                        prefix = prefix?.withTextStyle(MaterialTheme.typography.bodySmall),
+                        suffix = suffix?.withTextStyle(MaterialTheme.typography.bodySmall),
                         supportingText = supportingText,
                         singleLine = style.singleLine,
                         enabled = enabled,
@@ -128,6 +136,8 @@ fun EnvelogTextField(
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    localEnabled: Boolean = LocalFormEnabled.current,
+    active: Boolean = LocalFormActive.current,
     readOnly: Boolean = false,
     style: EnvelogTextFieldStyle = LocalEnvelogTextFieldStyle.current,
     textStyle: TextStyle = LocalTextStyle.current,
@@ -144,6 +154,9 @@ fun EnvelogTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val enabled = enabled && localEnabled && active
+    val supportingText = if (active) supportingText else null
+    val isError = active && isError
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val textColor =
         textStyle.color.takeOrElse {
@@ -184,8 +197,8 @@ fun EnvelogTextField(
                         label = label,
                         leadingIcon = leadingIcon,
                         trailingIcon = trailingIcon,
-                        prefix = prefix,
-                        suffix = suffix,
+                        prefix = prefix?.withTextStyle(MaterialTheme.typography.bodySmall),
+                        suffix = suffix?.withTextStyle(MaterialTheme.typography.bodySmall),
                         supportingText = supportingText,
                         shape = style.shape,
                         singleLine = style.singleLine,
@@ -203,20 +216,20 @@ fun EnvelogTextField(
 }
 
 @Composable
-internal fun minimizedLabelHalfHeight(): Dp =
+fun minimizedLabelHalfHeight(): Dp =
     with(LocalDensity.current) { MaterialTheme.typography.bodySmall.lineHeight.toDp() / 2 }
 
-internal fun Modifier.defaultErrorSemantics(
+fun Modifier.defaultErrorSemantics(
     isError: Boolean,
     defaultErrorMessage: String,
 ): Modifier = if (isError) semantics { error(defaultErrorMessage) } else this
 
 @Stable
-internal fun TextFieldColors.cursorColor(isError: Boolean): Color =
+fun TextFieldColors.cursorColor(isError: Boolean): Color =
     if (isError) errorCursorColor else cursorColor
 
 @Stable
-internal fun TextFieldColors.textColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
+fun TextFieldColors.textColor(enabled: Boolean, isError: Boolean, focused: Boolean): Color =
     when {
         !enabled -> disabledTextColor
         isError -> errorTextColor

@@ -20,15 +20,18 @@ fun FormConfirmActions(
     modifier: Modifier = Modifier,
     cancelEnabled: Boolean = true,
     confirmEnabled: Boolean = true,
+    localEnabled: Boolean = LocalFormEnabled.current,
     cancel: @Composable RowScope.() -> Unit = { Text(text = stringResource(R.string.common_action_cancel)) },
     confirm: @Composable RowScope.() -> Unit = { Text(text = stringResource(R.string.common_action_ok)) },
     before: @Composable RowScope.() -> Unit = {},
 ) {
+    val cancelEnabled = cancelEnabled && localEnabled
+    val confirmEnabled = confirmEnabled && localEnabled
     Row(
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space8), Alignment.End),
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space8)),
         modifier = modifier,
     ) {
-        before()
+        Row(modifier = Modifier.weight(1f), content = before)
         TextButton(
             onClick = onCancel,
             enabled = cancelEnabled,

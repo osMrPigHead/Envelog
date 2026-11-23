@@ -12,7 +12,6 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.core.time.next
 import cn.osmrpighead.envelog.data.query.EnvelopeSummary
 import cn.osmrpighead.envelog.ui.component.AutoSizeText
@@ -22,7 +21,10 @@ import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsPercent
 import cn.osmrpighead.envelog.ui.text.Formatter.formattedAmount
 import cn.osmrpighead.envelog.ui.text.orDefault
+import cn.osmrpighead.envelog.ui.text.prefix
 import cn.osmrpighead.envelog.ui.text.relativeDate
+import cn.osmrpighead.envelog.ui.text.suffix
+import cn.osmrpighead.envelog.ui.text.withCurrency
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import cn.osmrpighead.envelog.ui.theme.MotionTokens
 import java.math.BigDecimal
@@ -73,17 +75,16 @@ private fun EnvelopeCardShell(
                     }
                 }
                 AutoSizeText(
-                    text = if (model is EnvelopeSummary.Budgeted) stringResource(
-                        R.string.overview_envelope_card_budget_caption,
-                        model.allocated.formatAsAmount(Formatter.AmountConcise),
-                        model.totalBudget.formatAsAmount(Formatter.AmountConcise),
-                        model.currency.prefix,
-                        model.currency.suffix,
-                    ) else stringResource(
-                        R.string.overview_envelope_card_non_budget_caption,
-                        model.allocated.formatAsAmount(Formatter.AmountConcise),
-                        model.currency.prefix, model.currency.suffix,
-                    ),
+                    text =
+                        if (model is EnvelopeSummary.Budgeted) stringResource(
+                            R.string.common_format_fraction,
+                            model.allocated.formatAsAmount(Formatter.AmountConcise),
+                            model.totalBudget.formatAsAmount(Formatter.AmountConcise),
+                        ).withCurrency(model.currency)
+                        else stringResource(
+                            R.string.overview_envelope_card_non_budget_caption,
+                            model.allocated.formatAsAmount(Formatter.AmountConcise).withCurrency(model.currency),
+                        ),
                     overflow = TextOverflow.MiddleEllipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
@@ -95,16 +96,6 @@ private fun EnvelopeCardShell(
         }
     }
 }
-
-private val CurrencyType.prefix: String
-    @Composable get() = when (this) {
-        CurrencyType.CNY -> stringResource(R.string.currency_cny_prefix)
-    }
-
-private val CurrencyType.suffix: String
-    @Composable get() = when (this) {
-        CurrencyType.CNY -> stringResource(R.string.currency_cny_suffix)
-    }
 
 @Composable
 private fun EnvelopeSummary.Budgeted.relativeDate(today: LocalDate): String =

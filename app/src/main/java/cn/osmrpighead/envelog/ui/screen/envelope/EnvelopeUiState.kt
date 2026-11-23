@@ -65,32 +65,37 @@ data class QuickSetFormModalState(
     val dismissed: Boolean,
 ) {
     val isError = (state as? FormState.Active)?.error != null || fieldErrors.isNotEmpty()
-    val preview: QuickSetPreview? get() {
-        val plan = schedule ?: return null
+    val preview: QuickSetPreview?
+
+    init {
+        val plan = schedule
         val amount = config.selectedConfig.amount
-        if (amount <= 0L) return null
-        val days = plan.segments.sumOf { it.span.length }
-        return when (config.mode) {
-            QuickSetMode.Daily -> QuickSetPreview.Daily(
-                intervalDays = config.dailyConfig.intervalDays,
-                amount = amount,
-                days = days,
-                totalAmount = plan.totalAmount,
-            )
+        preview =
+            if (amount <= 0L || plan == null) null
+            else {
+                val days = plan.segments.sumOf { it.span.length }.toInt()
+                when (config.mode) {
+                    QuickSetMode.Daily -> QuickSetPreview.Daily(
+                        intervalDays = config.dailyConfig.intervalDays,
+                        amount = amount,
+                        days = days,
+                        totalAmount = plan.totalAmount,
+                    )
 
-            QuickSetMode.Weekly -> QuickSetPreview.Weekly(
-                startDayOfWeek = config.weeklyConfig.startDayOfWeek,
-                endDayOfWeek = config.weeklyConfig.endDayOfWeek,
-                amount = amount,
-                days = days,
-                totalAmount = plan.totalAmount,
-            )
+                    QuickSetMode.Weekly -> QuickSetPreview.Weekly(
+                        startDayOfWeek = config.weeklyConfig.startDayOfWeek,
+                        endDayOfWeek = config.weeklyConfig.endDayOfWeek,
+                        amount = amount,
+                        days = days,
+                        totalAmount = plan.totalAmount,
+                    )
 
-            QuickSetMode.Monthly -> QuickSetPreview.MonthlyTotal(
-                totalAmount = plan.totalAmount,
-                days = days,
-            )
-        }
+                    QuickSetMode.Monthly -> QuickSetPreview.MonthlyTotal(
+                        days = days,
+                        totalAmount = plan.totalAmount,
+                    )
+                }
+            }
     }
 }
 

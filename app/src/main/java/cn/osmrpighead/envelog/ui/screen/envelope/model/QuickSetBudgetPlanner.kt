@@ -21,7 +21,7 @@ sealed interface QuickSetConfig {
     val amount: Long
 
     data class Daily(
-        val intervalDays: Long,
+        val intervalDays: Int,
         override val amount: Long,
     ) : QuickSetConfig
 
@@ -124,11 +124,11 @@ object QuickSetBudgetPlanner {
 
         return buildList {
             var cursor = span.startDate
-            var current = cursor untilExclusive cursor.plusDays(periodDays)
+            var current = cursor untilExclusive cursor.plusDays(periodDays.toLong())
             while (2 * (current intersect span).length >= periodDays) {
                 add(QuickSetSegment(current, config.amount))
                 cursor = current.endDate
-                current = cursor untilExclusive cursor.plusDays(periodDays)
+                current = cursor untilExclusive cursor.plusDays(periodDays.toLong())
             }
         }
     }

@@ -3,6 +3,7 @@ package cn.osmrpighead.envelog.ui.component.form
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Switch
@@ -19,8 +20,10 @@ fun LabeledSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    label: @Composable () -> Unit,
+    localEnabled: Boolean = LocalFormEnabled.current,
+    label: @Composable RowScope.() -> Unit,
 ) {
+    val enabled = enabled && localEnabled
     Row(
         horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space8)),
         verticalAlignment = Alignment.CenterVertically,
@@ -36,7 +39,10 @@ fun LabeledSwitch(
                 vertical = dimensionResource(R.dimen.space4),
             ),
     ) {
-        Box(modifier = Modifier.weight(1f)) { label() }
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) { label() }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,

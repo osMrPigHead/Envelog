@@ -27,11 +27,16 @@ fun LabeledBox(
     borderColor: Color = MaterialTheme.colorScheme.outlineVariant,
     labelColor: Color = MaterialTheme.colorScheme.primary,
     labelBackground: Color = MaterialTheme.colorScheme.surface,
-    contentPadding: PaddingValues = PaddingValues(dimensionResource(R.dimen.spacing8)),
-    content: @Composable ColumnScope.() -> Unit
+    contentPadding: PaddingValues = PaddingValues(
+        top = dimensionResource(R.dimen.space24),
+        bottom = dimensionResource(R.dimen.space16),
+        start = dimensionResource(R.dimen.space8),
+        end = dimensionResource(R.dimen.space8),
+    ),
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val labelSize = remember { intArrayOf(0, 0) }
-    val startGap = dimensionResource(R.dimen.spacing8)
+    val startGap = dimensionResource(R.dimen.space16)
 
     Layout(
         modifier = modifier.drawBehind {
@@ -45,7 +50,7 @@ fun LabeledBox(
                 topLeft = Offset(inset, top),
                 size = Size(size.width - stroke, size.height - top - inset),
                 cornerRadius = CornerRadius(cornerRadius.toPx()),
-                style = Stroke(width = stroke)
+                style = Stroke(width = stroke),
             )
         },
         content = {
@@ -55,13 +60,13 @@ fun LabeledBox(
                 color = labelColor,
                 modifier = Modifier
                     .background(labelBackground)
-                    .padding(horizontal = dimensionResource(R.dimen.spacing4))
+                    .padding(horizontal = dimensionResource(R.dimen.space8)),
             )
             Column(
                 modifier = Modifier.padding(contentPadding),
-                content = content
+                content = content,
             )
-        }
+        },
     ) { measurables, constraints ->
         val labelPlaceable = measurables[0].measure(constraints.copy(minWidth = 0, minHeight = 0))
         val contentPlaceable = measurables[1].measure(constraints)

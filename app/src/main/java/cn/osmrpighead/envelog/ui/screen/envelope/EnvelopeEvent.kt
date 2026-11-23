@@ -49,7 +49,7 @@ sealed interface QuickSetField {
     data class TargetSpan(val span: ClosedDateSpan) : QuickSetField
 
     sealed interface Daily : QuickSetField {
-        data class Interval(val days: Long) : Daily
+        data class Interval(val days: Int) : Daily
         data class Amount(val amount: Long) : Daily
     }
 
