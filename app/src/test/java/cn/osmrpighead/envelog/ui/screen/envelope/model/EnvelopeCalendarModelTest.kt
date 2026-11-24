@@ -58,8 +58,8 @@ class EnvelopeCalendarModelTest {
         result.weeks.forEach { week ->
             assertEquals(listOf(BudgetDisplay.Spacer(7)), week.budgets)
         }
-        assertEquals(31, result.dates.size)
-        result.dates.values.forEach { dateModel ->
+        assertEquals(31, result.allocations.size)
+        result.allocations.values.forEach { dateModel ->
             assertNull(dateModel.allocationSummary)
             assertNull(dateModel.budgetId)
         }
@@ -102,10 +102,10 @@ class EnvelopeCalendarModelTest {
             result.weeks[1].budgets,
         )
         assertEquals(listOf(BudgetDisplay.Spacer(7)), result.weeks[0].budgets)
-        assertNull(result.dates[date(6)]!!.budgetId)
-        assertEquals(inner.id, result.dates[date(7)]!!.budgetId)
-        assertEquals(inner.id, result.dates[date(8)]!!.budgetId)
-        assertNull(result.dates[date(9)]!!.budgetId)
+        assertNull(result.allocations[date(6)]!!.budgetId)
+        assertEquals(inner.id, result.allocations[date(7)]!!.budgetId)
+        assertEquals(inner.id, result.allocations[date(8)]!!.budgetId)
+        assertNull(result.allocations[date(9)]!!.budgetId)
     }
 
     @Test
@@ -167,7 +167,7 @@ class EnvelopeCalendarModelTest {
         result.weeks.forEach { week ->
             assertEquals(listOf(BudgetDisplay.Spacer(7)), week.budgets)
         }
-        result.dates.values.forEach { dateModel ->
+        result.allocations.values.forEach { dateModel ->
             assertNull(dateModel.budgetId)
         }
     }
@@ -184,10 +184,10 @@ class EnvelopeCalendarModelTest {
             ),
         )
 
-        assertEquals(31, result.dates.size)
-        assertEquals(allocationOnFifth, result.dates[date(5)]!!.allocationSummary)
-        assertEquals(allocationOnLastDay, result.dates[date(31)]!!.allocationSummary)
-        assertNull(result.dates[date(6)]!!.allocationSummary)
-        assertNull(result.dates[date(5)]!!.budgetId)
+        assertEquals(31, result.allocations.size)
+        assertEquals(allocationOnFifth, result.allocations[date(5)]!!.allocationSummary)
+        assertEquals(allocationOnLastDay, result.allocations[date(31)]!!.allocationSummary)
+        assertNull(result.allocations[date(6)]!!.allocationSummary)
+        assertNull(result.allocations[date(5)]!!.budgetId)
     }
 }

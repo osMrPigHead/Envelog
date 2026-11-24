@@ -29,7 +29,7 @@ fun Ledger(
     yearMonth: YearMonth,
     ledgerState: LedgerState,
     activeTab: EnvelopeTab,
-    onBudgetClick: (BudgetId, LocalDate?) -> Unit,
+    onBudgetClick: (BudgetId) -> Unit,
     onDateClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -52,8 +52,7 @@ fun Ledger(
             when (tab) {
                 EnvelopeTab.Calendar -> EnvelopeCalendar(
                     model = ledgerState.calendar,
-                    onDateClick = onDateClick,
-                    onBudgetClick = onBudgetClick,
+                    onClick = onDateClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = dimensionResource(R.dimen.space12))
@@ -63,7 +62,7 @@ fun Ledger(
                 EnvelopeTab.Budget -> BudgetList(
                     budgets = ledgerState.budgets,
                     yearMonth = yearMonth,
-                    onBudgetClick = { onBudgetClick(it, null) },
+                    onBudgetClick = onBudgetClick,
                 )
 
                 EnvelopeTab.Allocation -> AllocationList(

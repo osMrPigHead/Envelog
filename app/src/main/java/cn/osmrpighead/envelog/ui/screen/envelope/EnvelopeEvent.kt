@@ -19,8 +19,8 @@ data object ArchiveEnvelope : EnvelopeEvent
 data object DeleteEnvelope : EnvelopeEvent
 data object DismissEnvelopeFormError : EnvelopeEvent
 
-data class OpenDetailWithExistingBudget(val id: BudgetId, val date: LocalDate?) : EnvelopeEvent
-data class OpenDetailCreatingBudget(val date: LocalDate) : EnvelopeEvent
+data class OpenDetailWithBudgetId(val id: BudgetId) : EnvelopeEvent
+data class OpenDetailWithDate(val date: LocalDate) : EnvelopeEvent
 data class UpdateBudget(val field: BudgetField) : EnvelopeEvent
 data object SaveBudget : EnvelopeEvent
 data object DeleteBudget : EnvelopeEvent

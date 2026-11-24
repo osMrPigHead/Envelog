@@ -210,8 +210,8 @@ private fun SuccessBody(
             yearMonth = yearMonth,
             ledgerState = detail.ledgerState,
             activeTab = activeTab,
-            onBudgetClick = { id, date -> onEvent(OpenDetailWithExistingBudget(id, date)) },
-            onDateClick = { onEvent(OpenDetailCreatingBudget(it)) },
+            onBudgetClick = { onEvent(OpenDetailWithBudgetId(it)) },
+            onDateClick = { onEvent(OpenDetailWithDate(it)) },
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()

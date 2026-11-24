@@ -2,13 +2,7 @@ package cn.osmrpighead.envelog.ui.screen.envelope.component.ledger
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,117 +12,142 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.times
 import cn.osmrpighead.envelog.R
-import cn.osmrpighead.envelog.data.model.BudgetId
-import cn.osmrpighead.envelog.ui.component.statitem.*
-import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
+import cn.osmrpighead.envelog.data.query.DailyAllocationSummary
 import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetDisplay
+import cn.osmrpighead.envelog.ui.screen.envelope.model.BudgetDisplayType.*
+import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
+import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarWeekModel
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
-import cn.osmrpighead.envelog.ui.text.lineHeightAsDp
 import cn.osmrpighead.envelog.ui.theme.CapsuleEnd
 import cn.osmrpighead.envelog.ui.theme.CapsuleStart
+import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 import java.time.LocalDate
 
 @Composable
-private fun DayCell(
-    style: StatItemStyle,
-    date: LocalDate,
-    allocation: Long?,
-    onClick: (() -> Unit)?,
+fun EnvelopeCalendar(
+    model: EnvelopeCalendarModel,
+    onClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    StatItem(
-        style = style,
-        content = StatItemContent(
-            title = StatItemSlot.Empty,
-            value = date.dayOfMonth.toString().asSlot(),
-            caption = allocation?.takeIf { it != 0L }?.formatAsAmount(Formatter.AmountConcise)?.asSlot()
-                ?: StatItemSlot.Space,
-        ),
-        modifier = onClick?.let { modifier.clickable(onClick = onClick) } ?: modifier,
-    )
-}
-
-@Composable
-private fun BudgetCapsule(
-    budget: BudgetDisplay.NoSpace,
-    fill: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
+    Column(
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space8)),
         modifier = modifier,
-        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = budget.amount.formatAsAmount(Formatter.AmountConcise),
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier
-                .clip(
-                    when (budget) {
-                        is BudgetDisplay.Internal -> CircleShape
-                        is BudgetDisplay.External -> RectangleShape
-                        is BudgetDisplay.LeftBound -> CapsuleStart
-                        is BudgetDisplay.RightBound -> CapsuleEnd
-                    },
-                )
-                .clickable(onClick = onClick)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(horizontal = dimensionResource(R.dimen.spacing3))
-                .then(if (fill) Modifier.fillMaxWidth() else Modifier),
+        for (week in model.weeks) WeekBox(
+            model = week,
+            allocations = model.allocations,
+            isBudgeted = model.isBudgeted,
+            onClick = onClick,
         )
     }
 }
 
 @Composable
-fun EnvelopeCalendar(
-    model: EnvelopeCalendarModel,
-    onDateClick: (LocalDate) -> Unit,
-    onBudgetClick: (BudgetId, LocalDate?) -> Unit,
+private fun WeekBox(
+    model: EnvelopeCalendarWeekModel,
+    allocations: Map<LocalDate, DailyAllocationSummary>,
+    isBudgeted: Boolean,
+    onClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val style = StatItemStyle.SmallCenter
-    val spacerModifier = Modifier.height(MaterialTheme.typography.labelSmall.lineHeightAsDp)
-    Column(modifier = modifier) {
-        for ((before, after, week, budgets) in model.weeks) {
-            Row(modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing3))) {
-                if (before > 0) Spacer(modifier = spacerModifier.weight(before.toFloat()))
-                for (date in week) {
-                    val budgetId = model.dates[date]?.budgetId
-                    DayCell(
-                        style,
-                        date,
-                        model.dates[date]?.allocationSummary?.amount,
-                        if (!model.isBudgeted) null
-                        else if (budgetId != null) {
-                            { onBudgetClick(budgetId, date) }
-                        } else {
-                            { onDateClick(date) }
-                        },
-                        Modifier.weight(1f),
-                    )
-                }
-                if (after > 0) Spacer(modifier = spacerModifier.weight(after.toFloat()))
-            }
-            if (model.isBudgeted) Row {
-                for (budget in budgets) when (budget) {
-                    is BudgetDisplay.NoSpace -> BudgetCapsule(
-                        budget = budget,
-                        fill = budget.length != 1L,
-                        onClick = { onBudgetClick(budget.id, null) },
-                        modifier = Modifier
-                            .padding(horizontal = dimensionResource(R.dimen.spacing4))
-                            .weight(budget.length.toFloat()),
-                    )
-
-                    is BudgetDisplay.Spacer -> Spacer(modifier = spacerModifier.weight(budget.length.toFloat()))
-                }
-            }
+    val (before, after, span, budgets) = model
+    Box(
+        contentAlignment = Alignment.BottomCenter,
+        modifier = modifier,
+    ) {
+        if (isBudgeted) BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val day = maxWidth / 7
+            for (budget in budgets) BudgetBar(
+                model = budget,
+                modifier = Modifier
+                    .offset(x = budget.offset * day)
+                    .width(budget.length * day),
+            )
         }
+        Row(
+            modifier = Modifier
+                .heightIn(dimensionResource(R.dimen.minTouchTarget))
+                .height(IntrinsicSize.Min),
+        ) {
+            if (before > 0) Spacer(modifier = Modifier.weight(before))
+            for (date in span) DayCell(
+                date = date,
+                allocation = allocations[date]?.amount,
+                onClick = if (isBudgeted) {
+                    { onClick(date) }
+                } else null,
+                modifier = Modifier.weight(1f),
+            )
+            if (after > 0) Spacer(modifier = Modifier.weight(after))
+        }
+    }
+}
+
+@Composable
+private fun DayCell(
+    date: LocalDate,
+    allocation: Long?,
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(MaterialTheme.shapes.medium)
+            .then(
+                if (onClick != null) Modifier.clickable(onClick = onClick)
+                else Modifier,
+            ),
+    ) {
+        Text(
+            text = date.dayOfMonth.toString(),
+            style = EnvelogTheme.typography.labelExtra,
+        )
+        allocation?.takeIf { it != 0L }?.formatAsAmount(Formatter.AmountConcise)?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelSmall,
+                color = EnvelogTheme.colorScheme.onSurfaceTertiary,
+            )
+        }
+        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.envelope_calendar_budget_dot_size)))
+    }
+}
+
+@Composable
+private fun BudgetBar(
+    model: BudgetDisplay,
+    modifier: Modifier = Modifier,
+) {
+    val (_, length, type) = model
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .padding(horizontal = dimensionResource(R.dimen.space4))
+            .height(dimensionResource(R.dimen.envelope_calendar_budget_dot_size)),
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(
+                    when (type) {
+                        Internal -> CircleShape
+                        External -> RectangleShape
+                        LeftBound -> CapsuleStart
+                        RightBound -> CapsuleEnd
+                    },
+                )
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .then(
+                    if (type == Internal && length == 1f) Modifier
+                        .size(dimensionResource(R.dimen.envelope_calendar_budget_dot_size))
+                    else Modifier
+                        .height(dimensionResource(R.dimen.envelope_calendar_budget_bar_height))
+                        .fillMaxWidth(),
+                ),
+        )
     }
 }

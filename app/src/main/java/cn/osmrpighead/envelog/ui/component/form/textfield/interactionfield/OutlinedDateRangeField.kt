@@ -65,6 +65,7 @@ fun OutlinedDateRangeField(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        showPicker = false
                         val start = state.selectedStartDateMillis?.toLocalDate() ?: return@TextButton hide()
                         val end = state.selectedEndDateMillis?.toLocalDate() ?: start
                         onSpanChange(start untilInclusive end)

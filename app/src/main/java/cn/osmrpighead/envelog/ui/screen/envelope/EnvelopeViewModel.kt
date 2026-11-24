@@ -150,8 +150,8 @@ class EnvelopeViewModel @AssistedInject constructor(
         DeleteEnvelope -> envelopeForm.delete()
         DismissEnvelopeFormError -> envelopeForm.dismissError()
 
-        is OpenDetailWithExistingBudget -> detailModal.openWithExistingBudget(event.id, event.date)
-        is OpenDetailCreatingBudget -> detailModal.openCreatingBudget(event.date)
+        is OpenDetailWithBudgetId -> detailModal.openWithBudgetId(event.id)
+        is OpenDetailWithDate -> detailModal.openWithDate(event.date)
         is UpdateBudget -> detailModal.update(event.field)
         SaveBudget -> detailModal.save()
         DeleteBudget -> detailModal.delete()

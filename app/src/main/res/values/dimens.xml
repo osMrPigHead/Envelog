@@ -27,4 +27,6 @@
     <dimen name="minTouchTarget">48dp</dimen>
     <dimen name="subtleFieldVerticalPadding">4dp</dimen>
     <dimen name="wheelItemHeight">48dp</dimen>
+    <dimen name="envelope_calendar_budget_bar_height">8dp</dimen>
+    <dimen name="envelope_calendar_budget_dot_size">10dp</dimen>
 </resources>

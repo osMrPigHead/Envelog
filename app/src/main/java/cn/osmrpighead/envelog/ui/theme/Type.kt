@@ -22,6 +22,7 @@ data class EnvelogTypography(
     private val typography: Typography,
 ) {
     val fieldMedium = typography.bodyMedium.copy(lineHeight = typography.bodyLarge.lineHeight)
+    val labelExtra = typography.bodyLarge.copy(fontWeight = typography.labelLarge.fontWeight)
 }
 
 val LocalEnvelogTypography = staticCompositionLocalOf { EnvelogTypography(Typography) }
