@@ -19,9 +19,12 @@
     <string name="day_of_week_range_picker_title">Select day range</string>
     <string name="common_action_archive_envelope">Archive Envelope</string>
     <string name="common_action_delete_envelope">Delete Envelope</string>
+    <string name="envelope_edit_allocation_list_empty">No expense recorded</string>
     <string name="envelope_edit_budget_amount_label">Amount</string>
     <string name="envelope_edit_budget_list_amount">Amount</string>
     <string name="envelope_edit_budget_list_date_range">Date Range</string>
+    <string name="envelope_edit_budget_list_empty">No budget set</string>
+    <string name="envelope_edit_budget_list_empty_action">Tap to set a budget</string>
     <string name="envelope_edit_budget_range_label">Date Range</string>
     <string name="envelope_edit_budget_title">Budget</string>
     <string name="envelope_edit_default_name">New Envelope</string>
@@ -95,7 +98,6 @@
     <string name="time_day_of_week_tuesday">Tue</string>
     <string name="time_day_of_week_wednesday">Wed</string>
     <string name="time_format_day_of_week_range">%1$s ~ %2$s</string>
-    <string name="time_format_day">%1$02d</string>
     <string name="time_format_month">%1$02d</string>
     <string name="time_format_within_days">within %1$dd</string>
     <string name="time_format_year">%1$04d</string>

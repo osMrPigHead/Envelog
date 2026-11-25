@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import cn.osmrpighead.envelog.R
+import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.core.time.HalfOpenDateSpan
 import cn.osmrpighead.envelog.ui.component.ErrorSupportingText
 import cn.osmrpighead.envelog.ui.component.LabeledBox
@@ -154,6 +155,7 @@ private fun BudgetForm(
                 onAmountChange = onAmountChange,
                 host = numKeypadHost,
                 nonPositive = AmountNonPositive in budgetForm.fieldErrors,
+                currency = CurrencyType.CNY,
                 scale = 0,
                 format = { formatAsAmount(Formatter.AmountInteger) },
                 label = { Text(stringResource(R.string.envelope_edit_budget_amount_label)) },

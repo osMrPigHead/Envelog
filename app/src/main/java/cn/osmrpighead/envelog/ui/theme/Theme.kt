@@ -6,9 +6,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 
 object EnvelogTheme {
+    val darkTheme: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalDarkTheme.current
     val colorScheme: EnvelogColorScheme
         @Composable
         @ReadOnlyComposable
@@ -18,6 +23,8 @@ object EnvelogTheme {
         @ReadOnlyComposable
         get() = LocalEnvelogTypography.current
 }
+
+val LocalDarkTheme = staticCompositionLocalOf { false }
 
 @Composable
 fun EnvelogTheme(
@@ -41,6 +48,7 @@ fun EnvelogTheme(
         CompositionLocalProvider(
             LocalEnvelogColorScheme provides if (darkTheme) EnvelogDarkColorScheme else EnvelogLightColorScheme,
             LocalEnvelogTypography provides EnvelogTypography(MaterialTheme.typography),
+            LocalDarkTheme provides darkTheme,
             content = content,
         )
     }

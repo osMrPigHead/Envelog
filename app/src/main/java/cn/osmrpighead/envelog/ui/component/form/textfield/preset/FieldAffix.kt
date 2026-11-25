@@ -8,10 +8,10 @@ import cn.osmrpighead.envelog.ui.style.fieldSuffix
 
 @Composable
 fun FieldPrefix(text: String, modifier: Modifier = Modifier) {
-    Text(text = text, modifier = modifier.fieldPrefix())
+    if (text.isNotBlank()) Text(text = text, modifier = modifier.fieldPrefix())
 }
 
 @Composable
 fun FieldSuffix(text: String, modifier: Modifier = Modifier) {
-    Text(text = text, modifier = modifier.fieldSuffix())
+    if (text.isNotBlank()) Text(text = text, modifier = modifier.fieldSuffix())
 }

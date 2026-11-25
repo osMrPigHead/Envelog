@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.ui.component.form.RadioRow
@@ -125,6 +127,7 @@ private fun QuickSetModeRow(
                 scale = 0,
                 format = { formatAsAmount(Formatter.AmountInteger) },
                 label = label,
+                textAlign = TextAlign.End,
                 modifier = Modifier.weight(1f).inlineFormField(),
             )
         }
@@ -149,6 +152,7 @@ private fun IntervalField(
         isError = isError,
         supportingText = supportingText,
         label = { Text(text = stringResource(R.string.envelope_edit_quick_set_mode_daily_label)) },
+        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
         prefix = { FieldPrefix(text = stringResource(R.string.envelope_edit_quick_set_interval_prefix)) },
         suffix = { FieldSuffix(text = pluralStringResource(R.plurals.time_plurals_day, count = days)) },
         keyboardOptions = KeyboardOptions(

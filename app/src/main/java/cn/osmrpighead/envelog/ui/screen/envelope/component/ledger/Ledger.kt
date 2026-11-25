@@ -1,14 +1,9 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.ledger
 
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +22,7 @@ enum class EnvelopeTab { Calendar, Budget, Allocation }
 @Composable
 fun Ledger(
     yearMonth: YearMonth,
+    today: LocalDate,
     ledgerState: LedgerState,
     activeTab: EnvelopeTab,
     onBudgetClick: (BudgetId) -> Unit,
@@ -54,7 +50,7 @@ fun Ledger(
                     model = ledgerState.calendar,
                     onClick = onDateClick,
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .padding(horizontal = dimensionResource(R.dimen.space12))
                         .verticalScroll(rememberScrollState()),
                 )
@@ -63,10 +59,13 @@ fun Ledger(
                     budgets = ledgerState.budgets,
                     yearMonth = yearMonth,
                     onBudgetClick = onBudgetClick,
+                    createBudget = { onDateClick(today) },
+                    modifier = Modifier.fillMaxSize(),
                 )
 
                 EnvelopeTab.Allocation -> AllocationList(
                     allocations = ledgerState.allocations,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }

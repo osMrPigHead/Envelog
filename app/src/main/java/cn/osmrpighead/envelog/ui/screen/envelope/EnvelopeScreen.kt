@@ -13,6 +13,7 @@ import cn.osmrpighead.envelog.ui.component.ImeInvisibleBackHandler
 import cn.osmrpighead.envelog.ui.component.dialog.ArchiveEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.dialog.DeleteEnvelopeConfirmationDialog
 import cn.osmrpighead.envelog.ui.component.OutlinedYearMonthButton
+import cn.osmrpighead.envelog.ui.component.PrimaryButton
 import cn.osmrpighead.envelog.ui.icon.Icons
 import cn.osmrpighead.envelog.ui.model.FormState
 import cn.osmrpighead.envelog.ui.screen.envelope.component.*
@@ -208,6 +209,7 @@ private fun SuccessBody(
 
         Ledger(
             yearMonth = yearMonth,
+            today = today,
             ledgerState = detail.ledgerState,
             activeTab = activeTab,
             onBudgetClick = { onEvent(OpenDetailWithBudgetId(it)) },
@@ -242,7 +244,7 @@ private fun SuccessBody(
                     onClick = { showArchiveConfirmation = true },
                     modifier = Modifier.weight(1f),
                 ) { Text(text = stringResource(R.string.common_action_archive_envelope)) }
-            FilledTonalButton(
+            PrimaryButton(
                 onClick = { onEvent(SaveEnvelope) },
                 modifier = Modifier.weight(1f),
             ) { Text(text = stringResource(R.string.common_action_save_and_back)) }

@@ -21,9 +21,11 @@ import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarModel
 import cn.osmrpighead.envelog.ui.screen.envelope.model.EnvelopeCalendarWeekModel
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.theme.Alpha
 import cn.osmrpighead.envelog.ui.theme.CapsuleEnd
 import cn.osmrpighead.envelog.ui.theme.CapsuleStart
 import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
+import cn.osmrpighead.envelog.ui.util.withAlpha
 import java.time.LocalDate
 
 @Composable
@@ -114,7 +116,7 @@ private fun DayCell(
                 color = EnvelogTheme.colorScheme.onSurfaceTertiary,
             )
         }
-        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.envelope_calendar_budget_dot_size)))
+        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.envelope_calendar_budget_track_space)))
     }
 }
 
@@ -127,7 +129,7 @@ private fun BudgetBar(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .padding(horizontal = dimensionResource(R.dimen.space4))
+            .padding(horizontal = dimensionResource(R.dimen.space4), vertical = dimensionResource(R.dimen.space4))
             .height(dimensionResource(R.dimen.envelope_calendar_budget_dot_size)),
     ) {
         Box(
@@ -140,7 +142,7 @@ private fun BudgetBar(
                         RightBound -> CapsuleEnd
                     },
                 )
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(MaterialTheme.colorScheme.inversePrimary.withAlpha(Alpha.High))
                 .then(
                     if (type == Internal && length == 1f) Modifier
                         .size(dimensionResource(R.dimen.envelope_calendar_budget_dot_size))

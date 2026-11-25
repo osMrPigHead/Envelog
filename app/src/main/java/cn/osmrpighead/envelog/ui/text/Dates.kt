@@ -38,19 +38,6 @@ fun yearMonthText(yearMonth: YearMonth): String = stringResource(
 )
 
 @Composable
-fun dayRangeText(span: ClosedDateSpan, diffStyle: TextStyle): AnnotatedString =
-    if (span.startDate != span.endDate) buildAnnotatedString {
-        append(stringResource(R.string.time_format_day, span.startDate.dayOfMonth))
-        append(stringResource(R.string.symbol_en_dash))
-        append(stringResource(R.string.time_format_day, span.endDate.dayOfMonth))
-        if (span.endDate.yearMonth != span.startDate.yearMonth) {
-            withStyle(diffStyle.toSpanStyle()) {
-                append(DateTimeFormatter.ofPattern("MMM", AppLocale.current()).format(span.endDate))
-            }
-        }
-    } else AnnotatedString(stringResource(R.string.time_format_day, span.startDate.dayOfMonth))
-
-@Composable
 fun dayOfWeekText(dayOfWeek: DayOfWeek): String = stringResource(dayOfWeek.shortNameRes())
 
 @Composable

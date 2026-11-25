@@ -1,25 +1,22 @@
 package cn.osmrpighead.envelog.ui.screen.envelope.component.ledger
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.time.format
 import cn.osmrpighead.envelog.data.query.AllocationWithInfo
-import cn.osmrpighead.envelog.ui.component.statitem.StatItem
-import cn.osmrpighead.envelog.ui.component.statitem.StatItemContent
-import cn.osmrpighead.envelog.ui.component.statitem.StatItemSlot
-import cn.osmrpighead.envelog.ui.component.statitem.StatItemStyle
-import cn.osmrpighead.envelog.ui.component.statitem.asSlot
+import cn.osmrpighead.envelog.ui.component.AutoSizeText
 import cn.osmrpighead.envelog.ui.text.Formatter
 import cn.osmrpighead.envelog.ui.text.Formatter.formatAsAmount
+import cn.osmrpighead.envelog.ui.theme.EnvelogTheme
 
 @Composable
 private fun AllocationRow(
@@ -27,33 +24,27 @@ private fun AllocationRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(),
     ) {
         val blank = allocation.note.isBlank()
-        val value =
-            if (!blank) allocation.note
-            else allocation.expense.happenedDate.format()
-        val caption =
-            if (!blank) allocation.expense.happenedAtLocal.format()
-            else allocation.expense.happenedTimeLocal.format()
-        StatItem(
-            style = StatItemStyle.MediumCenterStart,
-            content = StatItemContent(
-                title = StatItemSlot.Empty,
-                value = value.asSlot(),
-                caption = caption.asSlot(),
-            ),
-            modifier = Modifier.weight(1f),
-        )
-        StatItem(
-            style = StatItemStyle.MediumCenterEnd,
-            content = StatItemContent(
-                title = StatItemSlot.Empty,
-                value = allocation.amount.formatAsAmount(Formatter.AmountConcise).asSlot(),
-                caption = StatItemSlot.Empty,
-            ),
-            modifier = Modifier.padding(start = dimensionResource(R.dimen.spacing4)),
+        Column {
+            AutoSizeText(
+                text = if (!blank) allocation.note
+                else allocation.expense.happenedDate.format(),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = if (!blank) allocation.expense.happenedAtLocal.format()
+                else allocation.expense.happenedTimeLocal.format(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AutoSizeText(
+            text = allocation.amount.formatAsAmount(Formatter.AmountConcise),
+            style = MaterialTheme.typography.titleLarge,
         )
     }
 }
@@ -63,12 +54,25 @@ fun AllocationList(
     allocations: List<AllocationWithInfo>,
     modifier: Modifier = Modifier,
 ) {
-    if (allocations.isEmpty()) return
-    LazyColumn(
+    if (allocations.isEmpty()) Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(R.string.envelope_edit_allocation_list_empty),
+            style = MaterialTheme.typography.labelLarge,
+            color = EnvelogTheme.colorScheme.onSurfaceTertiary,
+        )
+    }
+    else LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.space16)),
+        contentPadding = PaddingValues(
+            top = dimensionResource(R.dimen.space4),
+            bottom = dimensionResource(R.dimen.space16),
+        ),
         modifier = modifier
-            .padding(horizontal = dimensionResource(R.dimen.spacing10))
+            .padding(horizontal = dimensionResource(R.dimen.space24))
             .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.spacing6)),
     ) {
         items(allocations.sortedBy { it.expense.happenedAtLocal }, { it.expense.id.toString() }) {
             AllocationRow(it)

@@ -16,6 +16,7 @@
     <dimen name="space0">0dp</dimen>
     <dimen name="space2">2dp</dimen>
     <dimen name="space4">4dp</dimen>
+    <dimen name="space6">6dp</dimen>
     <dimen name="space8">8dp</dimen>
     <dimen name="space12">12dp</dimen>
     <dimen name="space16">16dp</dimen>
@@ -29,4 +30,5 @@
     <dimen name="wheelItemHeight">48dp</dimen>
     <dimen name="envelope_calendar_budget_bar_height">8dp</dimen>
     <dimen name="envelope_calendar_budget_dot_size">10dp</dimen>
+    <dimen name="envelope_calendar_budget_track_space">16dp</dimen>
 </resources>

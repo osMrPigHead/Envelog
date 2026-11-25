@@ -1,10 +1,12 @@
 package cn.osmrpighead.envelog.ui.component.form.textfield.preset
 
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import cn.osmrpighead.envelog.R
 import cn.osmrpighead.envelog.core.number.CurrencyType
 import cn.osmrpighead.envelog.ui.component.form.textfield.interactionfield.OutlinedNumKeypadField
@@ -31,6 +33,7 @@ fun OutlinedAmountField(
     format: Long.() -> String = { formatAsAmount(Formatter.AmountConcise) },
     scale: Int = 2,
     roundingMode: RoundingMode = RoundingMode.HALF_UP,
+    textAlign: TextAlign = TextAlign.Start,
     onCancel: () -> Unit = {},
     label: (@Composable () -> Unit)? = null,
 ) {
@@ -56,6 +59,7 @@ fun OutlinedAmountField(
         supportingText = if (nonPositive) {
             { Text(text = stringResource(R.string.common_msg_amount_positive)) }
         } else null,
+        textStyle = LocalTextStyle.current.copy(textAlign = textAlign),
         label = label,
         prefix = currency?.let { { FieldPrefix(text = currency.prefix) } },
         suffix = currency?.let { { FieldSuffix(text = currency.suffix) } },
